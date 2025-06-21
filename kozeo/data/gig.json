@@ -1,0 +1,122 @@
+[
+  {
+    "gigId": 1,
+    "host": "@bigball",
+    "Title": "Full Stack Developer for Startup MVP",
+    "Looking_For": "React + Node.js Expert",
+    "Description": "We're building an MVP for a fintech idea. Looking for someone to take ownership of the stack.",
+    "Skills": ["React", "Node.js", "MongoDB", "Express"],
+    "currency": "USD",
+    "Amount": 1200.5,
+    "active_request": 45,
+    "hostRating": 4.6
+  },
+  {
+    "gigId": 2,
+    "host": "@codequeen",
+    "Title": "Mobile App Developer",
+    "Looking_For": "React Native Developer",
+    "Description": "Need a cross-platform app for a productivity tool. UI design is ready.",
+    "Skills": ["React Native", "Firebase", "Redux"],
+    "currency": "EUR",
+    "Amount": 950.0,
+    "active_request": 32,
+    "hostRating": 4.9
+  },
+  {
+    "gigId": 3,
+    "host": "@uxwizard",
+    "Title": "UI/UX Designer for SaaS Dashboard",
+    "Looking_For": "Figma Pro + UX Strategist",
+    "Description": "Design wireframes and high-fidelity mockups for our analytics dashboard.",
+    "Skills": ["Figma", "UX Research", "Design Systems"],
+    "currency": "GBP",
+    "Amount": 700.0,
+    "active_request": 18,
+    "hostRating": 4.3
+  },
+  {
+    "gigId": 4,
+    "host": "@devmark",
+    "Title": "Backend Developer for API Integration",
+    "Looking_For": "Django & REST API expert",
+    "Description": "Integrate third-party APIs into our existing Django backend and optimize endpoints.",
+    "Skills": ["Django", "REST", "PostgreSQL"],
+    "currency": "INR",
+    "Amount": 85000.0,
+    "active_request": 12,
+    "hostRating": 4.0
+  },
+  {
+    "gigId": 5,
+    "host": "@growthgal",
+    "Title": "Performance Marketer for E-commerce",
+    "Looking_For": "Google Ads + Meta Ads Specialist",
+    "Description": "Manage ad campaigns for a fashion e-comm brand. Conversion focused.",
+    "Skills": ["Google Ads", "Facebook Ads", "Analytics", "A/B Testing"],
+    "currency": "USD",
+    "Amount": 1400.0,
+    "active_request": 51,
+    "hostRating": 4.7
+  },
+  {
+    "gigId": 6,
+    "host": "@aitech",
+    "Title": "AI Chatbot Developer",
+    "Looking_For": "OpenAI + LangChain Experience",
+    "Description": "Build a customer support chatbot with context retention for our SaaS platform.",
+    "Skills": ["Python", "OpenAI API", "LangChain", "FastAPI"],
+    "currency": "USD",
+    "Amount": 1800.0,
+    "active_request": 28,
+    "hostRating": 4.8
+  },
+  {
+    "gigId": 7,
+    "host": "@datasleuth",
+    "Title": "Data Analyst for Product Usage Insights",
+    "Looking_For": "Tableau + SQL Specialist",
+    "Description": "Analyze feature usage and churn data to create executive reports.",
+    "Skills": ["SQL", "Tableau", "Data Visualization"],
+    "currency": "CAD",
+    "Amount": 1100.0,
+    "active_request": 22,
+    "hostRating": 4.2
+  },
+  {
+    "gigId": 8,
+    "host": "@japandesign",
+    "Title": "Landing Page Copywriter",
+    "Looking_For": "Creative, conversion-oriented writer",
+    "Description": "Write compelling copy for our landing pages. Must understand sales psychology.",
+    "Skills": ["Copywriting", "SEO", "Content Strategy"],
+    "currency": "JPY",
+    "Amount": 145000.0,
+    "active_request": 17,
+    "hostRating": 4.5
+  },
+  {
+    "gigId": 9,
+    "host": "@nocoder",
+    "Title": "Webflow Expert for Website Rebuild",
+    "Looking_For": "Clean, animated Webflow design",
+    "Description": "Revamp our old website into a slick Webflow-based one-pager with subtle animations.",
+    "Skills": ["Webflow", "CMS", "Animations"],
+    "currency": "EUR",
+    "Amount": 1050.0,
+    "active_request": 39,
+    "hostRating": 4.4
+  },
+  {
+    "gigId": 10,
+    "host": "@devopsdan",
+    "Title": "DevOps Engineer for CI/CD Pipeline",
+    "Looking_For": "Docker, GitHub Actions, AWS",
+    "Description": "Set up scalable CI/CD pipeline with auto-deploy on PR merge. Project runs on AWS.",
+    "Skills": ["Docker", "AWS", "GitHub Actions", "Terraform"],
+    "currency": "USD",
+    "Amount": 1600.0,
+    "active_request": 25,
+    "hostRating": 4.6
+  }
+]
