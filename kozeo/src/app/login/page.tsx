@@ -123,7 +123,7 @@ export default function LoginSignupPage() {
                   <input
                     id="login-password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="Enter your password"
                     className="w-full p-3 rounded-md border transform focus:outline-none focus:ring-0 transition-all duration-300 focus:-translate-y-1 focus:shadow-lg"
                     style={{
                       borderColor: currentTheme.colors.border,
@@ -309,7 +309,7 @@ export default function LoginSignupPage() {
                       </label>
                       <input
                         type="password"
-                        placeholder="••••••••"
+                        placeholder="Enter your password"
                         className="w-full p-3 rounded-md border transform focus:outline-none focus:ring-0 transition-all duration-300 focus:-translate-y-1 focus:shadow-lg"
                         style={{
                           borderColor: currentTheme.colors.border,
@@ -327,7 +327,7 @@ export default function LoginSignupPage() {
                       </label>
                       <input
                         type="password"
-                        placeholder="••••••••"
+                        placeholder="Confirm your password"
                         className="w-full p-3 rounded-md border transform focus:outline-none focus:ring-0 transition-all duration-300 focus:-translate-y-1 focus:shadow-lg"
                         style={{
                           borderColor: currentTheme.colors.border,

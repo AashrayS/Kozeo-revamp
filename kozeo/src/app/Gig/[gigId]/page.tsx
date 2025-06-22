@@ -217,7 +217,7 @@ export default function GigPage({
               {/* Tldraw Board and screen Share Window */}
               <div className="flex-1 h-full overflow-hidden flex-col hidden md:flex">
                 {/* Top - Screen Share Area */}
-                {screenShareUI && (
+                {callControls&& screenShareUI && (
                   <>
                     <div style={{ height: topHeight }} className=" p-4">
                       <span className="font-bold text-lg">
