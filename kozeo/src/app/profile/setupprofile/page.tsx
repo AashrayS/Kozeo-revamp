@@ -4,8 +4,10 @@ import { useState, useRef, useEffect } from "react";
 import { theme } from "../../../theme";
 import InputField from "../../../components/common/InputField";
 import Header from "@/components/common/Header";
+import {useRouter} from "next/navigation";
 
 export default function ProfileSetupPage() {
+  const router = useRouter();
   const isDark = true;
   const currentTheme = isDark ? theme.dark : theme.light;
 
@@ -25,7 +27,7 @@ export default function ProfileSetupPage() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
-  const otpRef = useRef<HTMLInputElement>(null);
+const otpRef = useRef<HTMLInputElement>(null);
 
   const countryCodes = [
     { code: "+91", name: "India" },
@@ -90,7 +92,7 @@ export default function ProfileSetupPage() {
                 type="email"
                 placeholder="Email"
                 value={form.email}
-                readOnly
+                
                 style={baseInputStyle(currentTheme)}
               />
               <InputField
@@ -269,6 +271,11 @@ export default function ProfileSetupPage() {
               color: "#f5f5f5", // Default: light text
               border: "1px solid #333",
             }}
+            onClick={(e) => {
+
+             router.push("/Atrium");
+            }
+            }
             onMouseEnter={(e) => {
               e.currentTarget.style.background = "#f5f5f5"; // Light background
               e.currentTarget.style.color = "#000"; // Dark text

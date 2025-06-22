@@ -334,7 +334,7 @@ const nameRef = useRef<HTMLInputElement>(null);
                     onClick={(e) => {
                       e.preventDefault();
                       // Handle signup logic here
-                      router.push("/Atrium");
+                      router.push("/profile/setupprofile");
                     }}
                     className="w-full py-3 rounded-md text-white"
                     style={{ background: currentTheme.colors.primary }}

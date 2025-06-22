@@ -85,7 +85,7 @@ export default function StorePage() {
                   <h3 className="text-base font-semibold text-white">
                     {item.title}
                   </h3>
-                  <p className="text-base text-gray-100">{item.description}</p>
+                  <p className="text-sm text-gray-300">{item.description}</p>
                 </div>
 
                 {item.type.toLowerCase() === "tshirt" && (
