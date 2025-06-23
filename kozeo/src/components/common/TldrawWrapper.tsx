@@ -6,6 +6,14 @@ import { useEffect } from "react";
 import { useSyncDemo } from "../../../lib/useSyncDemo"
 import { defaultShapeUtils } from "@tldraw/tldraw";
 
+declare global {
+  interface Window {
+    tldraw?: {
+      useEditor?: () => any;
+    };
+  }
+}
+
 function ThemeSetter() {
   const editor = window.tldraw?.useEditor?.(); // fallback if useEditor fails
   useEffect(() => {

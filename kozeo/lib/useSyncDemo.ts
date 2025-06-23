@@ -16,7 +16,7 @@ import {
 	getHashForString,
 	uniqueId,
 	
-} from 'tldraw'
+} from '@tldraw/tldraw'
 import { RemoteTLStoreWithStatus, useSync } from './useSync'
 
 /** @public */

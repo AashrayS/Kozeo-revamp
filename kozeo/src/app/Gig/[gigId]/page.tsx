@@ -13,7 +13,6 @@ import chatData from "../../../../data/chat.json";
 import { FaRegSmile } from "react-icons/fa";
 import { createTLStore, defaultShapeUtils } from "tldraw";
 
-const tldrawStore = createTLStore({ shapeUtils: defaultShapeUtils });
 import { io } from "socket.io-client";
 
 interface Props {
