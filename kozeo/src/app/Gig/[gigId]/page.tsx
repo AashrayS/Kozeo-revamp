@@ -61,7 +61,7 @@ export default function GigPage({
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
 
   useEffect(() => {
-    const socket = io("http://localhost:3001", {
+    const socket = io("wss://kozeo-ws-production.up.railway.app", {
       query: { gigID: "1" },
     });
 
@@ -569,10 +569,10 @@ export default function GigPage({
                   <span className="font-bold text-lg">@username</span>
 
                   <div className="flex gap-4">
-                    <FiVideo
+                    {/* <GiWalkieTalkie
                       onClick={() => initiateCall("video")}
                       className="text-xl cursor-pointer"
-                    />
+                    /> */}
                     <FiPhone
                       onClick={() => initiateCall("audio")}
                       className="text-xl cursor-pointer"
