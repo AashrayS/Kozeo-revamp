@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { io } from "socket.io-client";
 import {
   FiX,
   FiBell,
@@ -23,6 +24,8 @@ interface NotificationBoxProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+type Socket = ReturnType<typeof io>;
 
 // Sample notifications data
 const sampleNotifications: Notification[] = [
@@ -72,6 +75,70 @@ const sampleNotifications: Notification[] = [
 const NotificationBox = ({ isOpen, onClose }: NotificationBoxProps) => {
   const [notifications, setNotifications] =
     useState<Notification[]>(sampleNotifications);
+  const socketRef = useRef<Socket | null>(null);
+
+  // WebSocket connection setup
+  useEffect(() => {
+    // Only connect when component mounts
+    // const socket = io("wss://kozeo-ws-production.up.railway.app", { // production url
+
+    //   query: { gigID: "notifications" }, // Use a special room for notifications
+    // });
+
+  //local url conncetion
+    const socket = io("http://localhost:3001", { // Use your local server URL
+      query: { gigID: "notifications" }, // Use a special room for notifications
+    });
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      console.log("Notifications WebSocket Connected:", socket.id);
+      socket.emit("join-room", "notifications");
+      // Also join user-specific notification room
+      socket.emit("join-notification-room", "default"); // In production, use actual userId
+    });
+
+    // Listen for new notifications from server
+    socket.on("new-notification", (notification: Notification) => {
+      console.log("Received new notification:", notification);
+      setNotifications((prev) => [notification, ...prev]);
+    });
+
+    // Listen for notification updates (mark as read, etc.)
+    socket.on("notification-update", (updatedNotification: Notification) => {
+      console.log("Notification updated:", updatedNotification);
+      setNotifications((prev) =>
+        prev.map((notif) =>
+          notif.id === updatedNotification.id ? updatedNotification : notif
+        )
+      );
+    });
+
+    // Listen for notifications response from server
+    socket.on(
+      "notifications-response",
+      (serverNotifications: Notification[]) => {
+        console.log("Received notifications from server:", serverNotifications);
+        setNotifications(serverNotifications);
+      }
+    );
+
+    // Listen for bulk notification updates
+    socket.on(
+      "notifications-bulk-update",
+      (updatedNotifications: Notification[]) => {
+        console.log("Bulk notification update:", updatedNotifications);
+        setNotifications(updatedNotifications);
+      }
+    );
+
+    // Cleanup on unmount
+    return () => {
+      console.log("Disconnecting notifications WebSocket");
+      socket.disconnect();
+    };
+  }, []); // Empty dependency array - only run once on mount
 
   // Close on Escape key
   useEffect(() => {
@@ -85,6 +152,11 @@ const NotificationBox = ({ isOpen, onClose }: NotificationBoxProps) => {
       document.addEventListener("keydown", handleEscape);
       // Prevent body scroll when modal is open
       document.body.style.overflow = "hidden";
+
+      // Request latest notifications from server when modal opens
+      if (socketRef.current) {
+        socketRef.current.emit("get-notifications");
+      }
     }
 
     return () => {
@@ -97,10 +169,20 @@ const NotificationBox = ({ isOpen, onClose }: NotificationBoxProps) => {
     setNotifications((prev) =>
       prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif))
     );
+
+    // Emit to server to sync with other clients/database
+    if (socketRef.current) {
+      socketRef.current.emit("mark-notification-read", { notificationId: id });
+    }
   };
 
   const markAllAsRead = () => {
     setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })));
+
+    // Emit to server to sync with other clients/database
+    if (socketRef.current) {
+      socketRef.current.emit("mark-all-notifications-read");
+    }
   };
 
   const getIcon = (type: Notification["type"]) => {
