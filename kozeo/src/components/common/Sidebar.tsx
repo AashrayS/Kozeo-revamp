@@ -17,7 +17,7 @@ const tabs: { name: string; icon: IconType; path: string }[] = [
   { name: "Home", icon: FiHome, path: "/Atrium" },
   { name: "Profile", icon: FiUser, path: "/profile/shashwat_tripathi" },
   { name: "Store", icon: FiShoppingBag, path: "/store" },
-  { name: "Your Gigs", icon: FiBriefcase, path: "/Gig/1" },
+  { name: "Gigs", icon: FiBriefcase, path: "/gigs" }, // Update to go to gig list
   {
     name: "Discussion Rooms",
     icon: FiMessageSquare,
