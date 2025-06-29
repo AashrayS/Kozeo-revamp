@@ -538,6 +538,14 @@ export default function GigPage({
     document.addEventListener("mouseup", onMouseUp);
   };
 
+  const sendGigRequest = (request: { name: string; message: string }) => {
+    if (!socketRef.current) return;
+    socketRef.current.emit("gig-request", {
+      gigId: gigId,
+      request,
+    });
+  };
+
   if (!gig) return <div className="text-white p-10">Gig not found</div>;
 
   return (

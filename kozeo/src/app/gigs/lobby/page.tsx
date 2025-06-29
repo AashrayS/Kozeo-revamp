@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
+import { io, Socket } from "socket.io-client";
 
 interface GigInfo {
   Title: string;
@@ -21,19 +22,40 @@ interface Request {
 export default function GigLobbyPage() {
   const [gigInfo, setGigInfo] = useState<GigInfo | null>(null);
   const [requests, setRequests] = useState<Request[]>([]);
+  const socketRef = React.useRef<Socket | null>(null);
 
   useEffect(() => {
     // Read gig info from localStorage (set by create page)
-    const gigStr = typeof window !== 'undefined' ? localStorage.getItem("kozeo_gig_lobby") : null;
+    const gigStr =
+      typeof window !== "undefined"
+        ? localStorage.getItem("kozeo_gig_lobby")
+        : null;
+    let gigId: string | number | undefined = undefined;
     if (gigStr) {
       try {
-        setGigInfo(JSON.parse(gigStr));
+        const gig = JSON.parse(gigStr);
+        setGigInfo(gig);
+        gigId = gig.gigId || gig.id || gig.Title || "1";
       } catch {
         setGigInfo(null);
       }
     }
-    // Optionally, fetch requests from API or set dummy data
+    // Connect to WebSocket for incoming requests
+    const socket = io("ws://localhost:3001", {
+      query: { gigID: gigId || "1" },
+    });
+    socketRef.current = socket;
+    socket.on("connect", () => {
+      if (gigId) socket.emit("join-room", gigId.toString());
+    });
+    socket.on("gig-request", (request) => {
+      console.log("Incoming request:", request);
+      setRequests((prev) => [...prev, request]);
+    });
     setRequests([]);
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   return (
@@ -48,12 +70,29 @@ export default function GigLobbyPage() {
               <h2 className="text-2xl font-bold mb-4">Gig Info</h2>
               {gigInfo ? (
                 <div className="space-y-2">
-                  <div><span className="font-semibold">Title:</span> {gigInfo.Title}</div>
-                  <div><span className="font-semibold">Host:</span> {gigInfo.host}</div>
-                  <div><span className="font-semibold">Looking For:</span> {gigInfo.Looking_For}</div>
-                  <div><span className="font-semibold">Description:</span> {gigInfo.Description}</div>
-                  <div><span className="font-semibold">Skills:</span> {gigInfo.Skills}</div>
-                  <div><span className="font-semibold">Amount:</span> {gigInfo.Amount} {gigInfo.currency}</div>
+                  <div>
+                    <span className="font-semibold">Title:</span>{" "}
+                    {gigInfo.Title}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Host:</span> {gigInfo.host}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Looking For:</span>{" "}
+                    {gigInfo.Looking_For}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Description:</span>{" "}
+                    {gigInfo.Description}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Skills:</span>{" "}
+                    {gigInfo.Skills}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Amount:</span>{" "}
+                    {gigInfo.Amount} {gigInfo.currency}
+                  </div>
                 </div>
               ) : (
                 <div className="text-gray-400">No gig info available.</div>
@@ -64,13 +103,28 @@ export default function GigLobbyPage() {
               <h2 className="text-2xl font-bold mb-4">Incoming Requests</h2>
               {requests && requests.length > 0 ? (
                 <ul className="space-y-4">
-                  {requests.map((req: Request, idx: number) => (
-                    <li key={idx} className="bg-neutral-800/80 rounded-xl p-4 flex flex-col gap-2">
-                      <div className="font-semibold">{req.name}</div>
+                  {requests.map((req: any, idx: number) => (
+                    <li
+                      key={idx}
+                      className="bg-neutral-800/80 rounded-xl p-4 flex flex-col gap-2"
+                    >
+                      <div className="font-semibold">{req.requesterName || req.name}</div>
                       <div className="text-sm text-gray-300">{req.message}</div>
                       <div className="flex gap-2 mt-2">
-                        <button className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold">Accept</button>
-                        <button className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold">Reject</button>
+                        <button className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold"
+                          onClick={() => {
+                            const username = req.requesterName || req.name;
+                            if (username) window.open(`/profile/${username.replace(/^@/,"")}`);
+                          }}
+                        >
+                          View Profile
+                        </button>
+                        <button className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold">
+                          Accept
+                        </button>
+                        <button className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold">
+                          Reject
+                        </button>
                       </div>
                     </li>
                   ))}
