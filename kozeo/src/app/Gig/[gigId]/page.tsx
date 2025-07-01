@@ -45,6 +45,7 @@ export default function GigPage({
 
   const [input, setInput] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showMobileChat, setShowMobileChat] = useState(true);
   const [width, setWidth] = useState(400);
   const resizerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -703,43 +704,227 @@ export default function GigPage({
             className="flex-1 p-0 flex flex-col overflow-hidden overflow-x-hidden"
             ref={containerRef}
           >
-            <div className="block md:hidden bg-neutral-900  text-fuchsia-200 p-3 text-center text-sm font-medium rounded-md shadow-sm">
-              Collab and Calling features are not available on small screens.
-              Please rotate your device or use a larger screen.
+            <div className="block md:hidden bg-neutral-900 text-cyan-200 p-2 text-center text-xs font-medium rounded-md shadow-sm m-2">
+              📱 Mobile View: Chat only. Video calling available on desktop.
+            </div>
+
+            {/* Mobile Navigation Tabs */}
+            <div className="md:hidden flex bg-neutral-800 border-b border-neutral-600">
+              <button
+                onClick={() => setShowMobileChat(true)}
+                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+                  showMobileChat
+                    ? "bg-cyan-600 text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                💬 Chat
+              </button>
+              <button
+                onClick={() => setShowMobileChat(false)}
+                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+                  !showMobileChat
+                    ? "bg-cyan-600 text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                🎨 Canvas
+              </button>
             </div>
 
             {/* Row containing all three columns */}
-            <div className=" md:flex flex-1 flex-row h-full">
-              {/* Chat Column */}
+            <div className="flex flex-1 flex-col md:flex-row h-full">
+              {/* Mobile Chat View */}
+              {showMobileChat && (
+                <div className="md:hidden flex flex-col h-full overflow-x-hidden border-neutral-700 w-full">
+                  <div className="p-3 border-b border-neutral-700 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                    <span className="font-bold text-base">@username</span>
+                    <div className="flex gap-2 justify-between sm:justify-end">
+                      <button
+                        onClick={() => setShowEndGigModal(true)}
+                        className="px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-xs font-semibold"
+                      >
+                        End Gig
+                      </button>
+                      <div className="text-xs text-gray-400">
+                        Audio calls available on desktop
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-2 space-y-2 text-sm">
+                    {messages.map((msg, i) => (
+                      <div key={i}>
+                        {msg.type === "payment-request" ||
+                        msg.type === "payment-sent" ? (
+                          // Payment Message
+                          <div
+                            className={`p-2 rounded-lg border-2 max-w-[90%] ${
+                              msg.status === "completed"
+                                ? "bg-green-900/80 border-green-400 shadow-lg shadow-green-900/50"
+                                : msg.status === "declined"
+                                ? "bg-red-900/70 border-red-400"
+                                : msg.type === "payment-sent"
+                                ? "bg-green-900/50 border-green-500 self-end ml-auto"
+                                : "bg-yellow-900/50 border-yellow-500"
+                            }`}
+                          >
+                            <div className="flex items-center gap-1 mb-2">
+                              <FaDollarSign className="text-sm text-green-400" />
+                              <span className="font-semibold text-white text-xs">
+                                {msg.status === "completed"
+                                  ? "✅ Payment Completed"
+                                  : msg.status === "declined"
+                                  ? "❌ Payment Declined"
+                                  : msg.type === "payment-sent"
+                                  ? "Payment Sent"
+                                  : "Payment Request"}
+                              </span>
+                            </div>
+                            <div className="text-base font-bold mb-1 text-green-400">
+                              ${msg.amount}
+                            </div>
+                            <div className="text-gray-300 text-xs mb-2">
+                              {msg.message}
+                            </div>
+                            {msg.type === "payment-request" &&
+                              msg.status === "pending" && (
+                                <div className="flex flex-col gap-2 mt-2">
+                                  <button
+                                    onClick={() =>
+                                      handlePaymentResponse(
+                                        msg.paymentId,
+                                        "completed"
+                                      )
+                                    }
+                                    className="px-2 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-xs font-semibold"
+                                  >
+                                    Pay Now
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handlePaymentResponse(
+                                        msg.paymentId,
+                                        "declined"
+                                      )
+                                    }
+                                    className="px-2 py-1 rounded bg-gray-600 hover:bg-gray-700 text-white text-xs font-semibold"
+                                  >
+                                    Decline
+                                  </button>
+                                </div>
+                              )}
+                            <div className="text-xs text-gray-500 mt-1">
+                              {msg.time}
+                            </div>
+                          </div>
+                        ) : (
+                          // Regular Message
+                          <div
+                            className={`p-2 rounded-md max-w-[85%] break-words whitespace-pre-wrap ${
+                              msg.sender === "Bob"
+                                ? "bg-emerald-600 self-end ml-auto"
+                                : "bg-neutral-800"
+                            }`}
+                          >
+                            <div className="text-sm">{msg.message}</div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t border-neutral-700 p-2 relative">
+                    {showEmoji && (
+                      <div
+                        ref={emojiRef}
+                        className="absolute bottom-12 left-2 z-10"
+                      >
+                        <EmojiPicker
+                          onEmojiClick={(emojiData) =>
+                            setInput((prev) => prev + emojiData.emoji)
+                          }
+                          height={250}
+                          width={280}
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex gap-1 items-center">
+                      <button
+                        onClick={() => setShowEmoji(!showEmoji)}
+                        className="text-lg text-gray-400 hover:text-white p-1"
+                      >
+                        <FaRegSmile />
+                      </button>
+                      <button
+                        onClick={() => setShowPaymentModal(true)}
+                        className="text-lg text-gray-400 hover:text-green-400 transition-colors p-1"
+                        title="Request Payment"
+                      >
+                        <FaDollarSign />
+                      </button>
+                      <input
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className="flex-1 bg-neutral-800 border border-neutral-600 p-2 rounded-md text-white text-sm placeholder-gray-400"
+                        placeholder="Type a message..."
+                      />
+                      <button
+                        onClick={handleSendMessage}
+                        disabled={!input.trim()}
+                        className="px-2 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-cyan-800 disabled:opacity-50 rounded-md text-white font-semibold transition-colors text-sm"
+                      >
+                        →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Mobile Canvas View */}
+              {!showMobileChat && (
+                <div className="md:hidden flex-1 overflow-hidden flex flex-col">
+                  <div className="flex-1 overflow-hidden flex flex-col">
+                    <TldrawWrapper gigId="canvas-memories-001" />
+                  </div>
+                </div>
+              )}
+
+              {/* Desktop Chat Column */}
               <div
-                className="flex flex-col h-full overflow-x-hidden border-neutral-700"
+                className="hidden md:flex flex-col h-full overflow-x-hidden border-neutral-700"
                 style={{ width }}
               >
-                <div className="p-4 border-b border-neutral-700 flex justify-between items-center">
-                  <span className="font-bold text-lg">@username</span>
+                <div className="p-3 md:p-4 border-b border-neutral-700 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                  <span className="font-bold text-base md:text-lg">@username</span>
 
-                  <div className="flex gap-4">
+                  <div className="flex gap-2 md:gap-4 justify-between sm:justify-end">
                     <button
                       onClick={() => setShowEndGigModal(true)}
-                      className="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-semibold"
+                      className="px-2 md:px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm font-semibold"
                     >
                       End Gig
                     </button>
                     <FiPhone
                       onClick={() => initiateCall("audio")}
-                      className="text-xl cursor-pointer"
+                      className="text-lg md:text-xl cursor-pointer hidden md:block"
                     />
+                    <div className="md:hidden text-xs text-gray-400">
+                      Audio calls available on desktop
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 text-sm">
+                <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-2 md:space-y-3 text-sm">
                   {messages.map((msg, i) => (
                     <div key={i}>
                       {msg.type === "payment-request" ||
                       msg.type === "payment-sent" ? (
                         // Payment Message
                         <div
-                          className={`p-3 rounded-lg border-2 max-w-xs ${
+                          className={`p-2 md:p-3 rounded-lg border-2 max-w-[90%] sm:max-w-xs ${
                             msg.status === "completed"
                               ? "bg-green-900/80 border-green-400 shadow-lg shadow-green-900/50"
                               : msg.status === "declined"
@@ -749,9 +934,9 @@ export default function GigPage({
                               : "bg-yellow-900/50 border-yellow-500"
                           }`}
                         >
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center gap-1 md:gap-2 mb-2">
                             <FaDollarSign
-                              className={`${
+                              className={`text-sm ${
                                 msg.status === "completed"
                                   ? "text-green-300"
                                   : msg.status === "declined"
@@ -759,7 +944,7 @@ export default function GigPage({
                                   : "text-green-400"
                               }`}
                             />
-                            <span className="font-semibold text-white">
+                            <span className="font-semibold text-white text-xs md:text-sm">
                               {msg.status === "completed"
                                 ? "✅ Payment Completed"
                                 : msg.status === "declined"
@@ -770,7 +955,7 @@ export default function GigPage({
                             </span>
                           </div>
                           <div
-                            className={`text-lg font-bold mb-1 ${
+                            className={`text-base md:text-lg font-bold mb-1 ${
                               msg.status === "completed"
                                 ? "text-green-300"
                                 : msg.status === "declined"
@@ -795,7 +980,7 @@ export default function GigPage({
                           )}
                           {msg.type === "payment-request" &&
                             msg.status === "pending" && (
-                              <div className="flex gap-2 mt-2">
+                              <div className="flex flex-col sm:flex-row gap-2 mt-2">
                                 <button
                                   onClick={() =>
                                     handlePaymentResponse(
@@ -803,7 +988,7 @@ export default function GigPage({
                                       "completed"
                                     )
                                   }
-                                  className="px-3 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-xs font-semibold"
+                                  className="px-2 md:px-3 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-xs font-semibold"
                                 >
                                   Pay Now
                                 </button>
@@ -814,7 +999,7 @@ export default function GigPage({
                                       "declined"
                                     )
                                   }
-                                  className="px-3 py-1 rounded bg-gray-600 hover:bg-gray-700 text-white text-xs font-semibold"
+                                  className="px-2 md:px-3 py-1 rounded bg-gray-600 hover:bg-gray-700 text-white text-xs font-semibold"
                                 >
                                   Decline
                                 </button>
@@ -827,44 +1012,45 @@ export default function GigPage({
                       ) : (
                         // Regular Message
                         <div
-                          className={`p-2 rounded-md max-w-xs break-words whitespace-pre-wrap ${
+                          className={`p-2 rounded-md max-w-[85%] sm:max-w-xs break-words whitespace-pre-wrap ${
                             msg.sender === "Bob"
                               ? "bg-emerald-600 self-end ml-auto"
                               : "bg-neutral-800"
                           }`}
                         >
-                          {msg.message}
+                          <div className="text-sm">{msg.message}</div>
                         </div>
                       )}
                     </div>
                   ))}
                 </div>
 
-                <div className="border-t border-neutral-700 p-3 relative">
+                <div className="border-t border-neutral-700 p-2 md:p-3 relative">
                   {showEmoji && (
                     <div
                       ref={emojiRef}
-                      className="absolute bottom-16 left-3 z-10"
+                      className="absolute bottom-12 md:bottom-16 left-2 md:left-3 z-10"
                     >
                       <EmojiPicker
                         onEmojiClick={(emojiData) =>
                           setInput((prev) => prev + emojiData.emoji)
                         }
-                        height={500}
+                        height={300}
+                        width={280}
                       />
                     </div>
                   )}
 
-                  <div className="flex gap-2 items-center">
+                  <div className="flex gap-1 md:gap-2 items-center">
                     <button
                       onClick={() => setShowEmoji(!showEmoji)}
-                      className="text-xl text-gray-400 hover:text-white"
+                      className="text-lg md:text-xl text-gray-400 hover:text-white p-1"
                     >
                       <FaRegSmile />
                     </button>
                     <button
                       onClick={() => setShowPaymentModal(true)}
-                      className="text-xl text-gray-400 hover:text-green-400 transition-colors"
+                      className="text-lg md:text-xl text-gray-400 hover:text-green-400 transition-colors p-1"
                       title="Request Payment"
                     >
                       <FaDollarSign />
@@ -873,9 +1059,17 @@ export default function GigPage({
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      className="flex-1 bg-neutral-800 border border-neutral-600 p-2 rounded-md text-white"
+                      className="flex-1 bg-neutral-800 border border-neutral-600 p-2 rounded-md text-white text-sm md:text-base placeholder-gray-400"
                       placeholder="Type a message..."
                     />
+                    <button
+                      onClick={handleSendMessage}
+                      disabled={!input.trim()}
+                      className="px-2 md:px-3 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-cyan-800 disabled:opacity-50 rounded-md text-white font-semibold transition-colors text-sm"
+                    >
+                      <span className="hidden sm:inline">Send</span>
+                      <span className="sm:hidden">→</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -883,7 +1077,7 @@ export default function GigPage({
               <div
                 ref={resizerRef}
                 onMouseDown={startResize}
-                className="w-2 cursor-col-resize bg-neutral-800 hover:bg-neutral-600 transition-colors"
+                className="hidden md:block w-2 cursor-col-resize bg-neutral-800 hover:bg-neutral-600 transition-colors"
               />
 
               {/* Tldraw Board and screen Share Window */}
@@ -926,7 +1120,7 @@ export default function GigPage({
               {/* Call Column */}
               {callControls && (
                 <>
-                  <div className="w-80 border-l border-neutral-700 p-4 flex flex-col gap-4 hidden md:flex">
+                  <div className="w-80 border-l border-neutral-700 p-4 hidden md:flex flex-col gap-4">
                     <div className="h-1/2 rounded-2xl p-[2px] ">
                       <div className="flex flex-col h-full rounded-xl border border-neutral-700">
                         <p className="text-gray-400 text-sm mb-1 px-2 pt-2">

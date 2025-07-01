@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
@@ -89,6 +89,7 @@ function ProfileImage({ profilePic, username, size }: ProfileImageProps) {
 
 export default function UserProfilePage() {
   const params = useParams();
+  const router = useRouter();
   const username = params.username as string;
   const [profile, setProfile] = useState<ProfileData | null>(null);
 
@@ -144,6 +145,7 @@ export default function UserProfilePage() {
                           {profile.username3 || "Unknown User"}
                         </h3>
                         <button
+                          onClick={() => router.push(`/profile/${username}/edit`)}
                           className="ml-2 px-2 py-1 text-xs bg-cyan-600 hover:bg-cyan-700 text-white rounded transition"
                           type="button"
                         >
