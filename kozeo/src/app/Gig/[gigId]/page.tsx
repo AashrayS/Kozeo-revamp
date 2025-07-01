@@ -4,16 +4,24 @@ import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
 import gigs from "../../../../data/gig.json";
 import { FiStar, FiVideo, FiPhone } from "react-icons/fi";
-import { FaMicrophone, FaVideo, FaDesktop, FaPhoneSlash } from "react-icons/fa";
+import {
+  FaMicrophone,
+  FaVideo,
+  FaDesktop,
+  FaPhoneSlash,
+  FaRegSmile,
+  FaDollarSign,
+} from "react-icons/fa";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { use } from "react";
+import { useRouter } from "next/navigation";
 import TldrawWrapper from "@/components/common/TldrawWrapper";
 import EmojiPicker from "emoji-picker-react";
 import chatData from "../../../../data/chat.json";
-import { FaRegSmile } from "react-icons/fa";
 // import { createTLStore, defaultShapeUtils } from "tldraw";/
 
 import { io } from "socket.io-client";
+import { WEBSOCKET_URL } from "@/config";
 
 interface Props {
   params: {
@@ -28,6 +36,7 @@ export default function GigPage({
   params: Promise<{ gigId: string }>;
 }) {
   const { gigId } = use(paramsPromise);
+  const router = useRouter();
   const numericGigId = parseInt(gigId);
   const gig = useMemo(
     () => gigs.find((g) => g.gigId === numericGigId),
@@ -44,6 +53,11 @@ export default function GigPage({
   const [screenShareUI, setScreenShareUI] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
   const [isVideoEnabled, setIsVideoEnabled] = useState(false);
+  const [showEndGigModal, setShowEndGigModal] = useState(false);
+  const [showGigEndedModal, setShowGigEndedModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentDescription, setPaymentDescription] = useState("");
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -61,19 +75,20 @@ export default function GigPage({
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
 
   useEffect(() => {
-    const socket = io("wss://kozeo-ws-production.up.railway.app", {
-      query: { gigID: "1" },
+    const socket = io(WEBSOCKET_URL, {
+      query: { gigID: gigId },
     });
 
     socketRef.current = socket;
 
     socket.on("connect", () => {
       console.log("Connected:", socket.id);
-      socket.emit("join-room", "1");
+      socket.emit("join-room", gigId);
     });
 
     socket.on("chat-message", (msg) => {
       setMessages((prev) => [...prev, msg]);
+      console.log("Received chat message:", msg);
     });
 
     socket.on("screen-offer", async (offer) => {
@@ -195,6 +210,40 @@ export default function GigPage({
       setCallControls(false);
     });
 
+    socket.on("gig-ended", () => {
+      console.log("| Gig ended by the other party");
+      setShowGigEndedModal(true);
+    });
+
+    socket.on("payment-request", (paymentData) => {
+      console.log("Payment request received:", paymentData);
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: paymentData.from,
+          time: new Date().toLocaleTimeString(),
+          message:
+            paymentData.description ||
+            `Payment request for $${paymentData.amount}`,
+          type: "payment-request",
+          amount: paymentData.amount,
+          paymentId: paymentData.paymentId,
+          status: "pending",
+        },
+      ]);
+    });
+
+    socket.on("payment-response", (responseData) => {
+      console.log("Payment response received:", responseData);
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.paymentId === responseData.paymentId
+            ? { ...msg, status: responseData.status }
+            : msg
+        )
+      );
+    });
+
     socket.on("ice-candidate", async (candidate) => {
       console.log("Received ICE candidate");
       const peerConnection = peerConnectionRef.current!;
@@ -206,7 +255,7 @@ export default function GigPage({
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [gigId]);
 
   const startScreenShare = async () => {
     try {
@@ -538,12 +587,105 @@ export default function GigPage({
     document.addEventListener("mouseup", onMouseUp);
   };
 
+  const endGig = () => {
+    try {
+      console.log("Ending gig...", gigId);
+      socketRef.current?.emit("gig-ended", { gigId });
+      setShowEndGigModal(false);
+
+      // Wait 1 second before redirecting to review page
+      setTimeout(() => {
+        router.push("/review");
+      }, 1000);
+
+      console.log("Gig ended successfully");
+    } catch (error) {
+      console.error("Error ending gig:", error);
+      alert("Failed to end gig. Please try again.");
+      return;
+    }
+  };
+
+  const handlePaymentRequest = () => {
+    if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
+      alert("Please enter a valid payment amount");
+      return;
+    }
+
+    if (gig && parseFloat(paymentAmount) > gig.Amount) {
+      alert(
+        `Payment amount cannot exceed the total gig value of ${gig.currency} ${gig.Amount}`
+      );
+      return;
+    }
+
+    const paymentData = {
+      gigId,
+      from: "Bob", // In real app, get from user context
+      to: "username", // In real app, get collaborator info
+      amount: parseFloat(paymentAmount),
+      description:
+        paymentDescription || `Payment request for $${paymentAmount}`,
+      paymentId: Date.now().toString(),
+      timestamp: new Date().toISOString(),
+    };
+
+    // Send to other user
+    socketRef.current?.emit("payment-request", paymentData);
+
+    // Add to local messages as sent
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "Bob",
+        time: new Date().toLocaleTimeString(),
+        message: paymentData.description,
+        type: "payment-sent",
+        amount: paymentData.amount,
+        paymentId: paymentData.paymentId,
+        status: "pending",
+      },
+    ]);
+
+    // Reset and close modal
+    setPaymentAmount("");
+    setPaymentDescription("");
+    setShowPaymentModal(false);
+  };
+
   const sendGigRequest = (request: { name: string; message: string }) => {
     if (!socketRef.current) return;
     socketRef.current.emit("gig-request", {
       gigId: gigId,
       request,
     });
+  };
+
+  const handlePaymentResponse = (
+    paymentId: string,
+    status: "completed" | "declined"
+  ) => {
+    // Update local message status
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.paymentId === paymentId ? { ...msg, status } : msg
+      )
+    );
+
+    // Send response to other user
+    socketRef.current?.emit("payment-response", {
+      paymentId,
+      status,
+      gigId,
+    });
+
+    // Show feedback to user
+    if (status === "completed") {
+      console.log("Payment completed successfully");
+      // Could add a toast notification here
+    } else {
+      console.log("Payment declined");
+    }
   };
 
   if (!gig) return <div className="text-white p-10">Gig not found</div>;
@@ -577,10 +719,12 @@ export default function GigPage({
                   <span className="font-bold text-lg">@username</span>
 
                   <div className="flex gap-4">
-                    {/* <GiWalkieTalkie
-                      onClick={() => initiateCall("video")}
-                      className="text-xl cursor-pointer"
-                    /> */}
+                    <button
+                      onClick={() => setShowEndGigModal(true)}
+                      className="px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-semibold"
+                    >
+                      End Gig
+                    </button>
                     <FiPhone
                       onClick={() => initiateCall("audio")}
                       className="text-xl cursor-pointer"
@@ -590,15 +734,108 @@ export default function GigPage({
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 text-sm">
                   {messages.map((msg, i) => (
-                    <div
-                      key={i}
-                      className={`p-2 rounded-md max-w-xs break-words whitespace-pre-wrap ${
-                        msg.sender === "Bob"
-                          ? "bg-emerald-600 self-end ml-auto"
-                          : "bg-neutral-800"
-                      }`}
-                    >
-                      {msg.message}
+                    <div key={i}>
+                      {msg.type === "payment-request" ||
+                      msg.type === "payment-sent" ? (
+                        // Payment Message
+                        <div
+                          className={`p-3 rounded-lg border-2 max-w-xs ${
+                            msg.status === "completed"
+                              ? "bg-green-900/80 border-green-400 shadow-lg shadow-green-900/50"
+                              : msg.status === "declined"
+                              ? "bg-red-900/70 border-red-400"
+                              : msg.type === "payment-sent"
+                              ? "bg-green-900/50 border-green-500 self-end ml-auto"
+                              : "bg-yellow-900/50 border-yellow-500"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <FaDollarSign
+                              className={`${
+                                msg.status === "completed"
+                                  ? "text-green-300"
+                                  : msg.status === "declined"
+                                  ? "text-red-300"
+                                  : "text-green-400"
+                              }`}
+                            />
+                            <span className="font-semibold text-white">
+                              {msg.status === "completed"
+                                ? "✅ Payment Completed"
+                                : msg.status === "declined"
+                                ? "❌ Payment Declined"
+                                : msg.type === "payment-sent"
+                                ? "Payment Sent"
+                                : "Payment Request"}
+                            </span>
+                          </div>
+                          <div
+                            className={`text-lg font-bold mb-1 ${
+                              msg.status === "completed"
+                                ? "text-green-300"
+                                : msg.status === "declined"
+                                ? "text-red-300"
+                                : "text-green-400"
+                            }`}
+                          >
+                            ${msg.amount}
+                          </div>
+                          <div className="text-gray-300 text-xs mb-2">
+                            {msg.message}
+                          </div>
+                          {msg.status === "completed" && (
+                            <div className="text-xs text-green-300 mb-2 font-medium">
+                              ✅ Payment processed successfully
+                            </div>
+                          )}
+                          {msg.status === "declined" && (
+                            <div className="text-xs text-red-300 mb-2 font-medium">
+                              ❌ Payment was declined
+                            </div>
+                          )}
+                          {msg.type === "payment-request" &&
+                            msg.status === "pending" && (
+                              <div className="flex gap-2 mt-2">
+                                <button
+                                  onClick={() =>
+                                    handlePaymentResponse(
+                                      msg.paymentId,
+                                      "completed"
+                                    )
+                                  }
+                                  className="px-3 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-xs font-semibold"
+                                >
+                                  Pay Now
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handlePaymentResponse(
+                                      msg.paymentId,
+                                      "declined"
+                                    )
+                                  }
+                                  className="px-3 py-1 rounded bg-gray-600 hover:bg-gray-700 text-white text-xs font-semibold"
+                                >
+                                  Decline
+                                </button>
+                              </div>
+                            )}
+                          <div className="text-xs text-gray-500 mt-1">
+                            {msg.time}
+                          </div>
+                        </div>
+                      ) : (
+                        // Regular Message
+                        <div
+                          className={`p-2 rounded-md max-w-xs break-words whitespace-pre-wrap ${
+                            msg.sender === "Bob"
+                              ? "bg-emerald-600 self-end ml-auto"
+                              : "bg-neutral-800"
+                          }`}
+                        >
+                          {msg.message}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -624,6 +861,13 @@ export default function GigPage({
                       className="text-xl text-gray-400 hover:text-white"
                     >
                       <FaRegSmile />
+                    </button>
+                    <button
+                      onClick={() => setShowPaymentModal(true)}
+                      className="text-xl text-gray-400 hover:text-green-400 transition-colors"
+                      title="Request Payment"
+                    >
+                      <FaDollarSign />
                     </button>
                     <input
                       value={input}
@@ -745,6 +989,135 @@ export default function GigPage({
           </main>
         </div>
       </div>
+
+      {/* Payment Request Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0  flex items-center justify-center z-50">
+          <div className="bg-neutral-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <FaDollarSign className="text-green-400" />
+              Request Payment
+            </h3>
+
+            {/* Gig Total Payment Info */}
+            {gig && (
+              <div className="bg-neutral-900/50 border border-neutral-700 rounded-lg p-3 mb-4">
+                <div className="text-sm text-gray-400 mb-1">
+                  Total Gig Value
+                </div>
+                <div className="text-xl font-bold text-green-400">
+                  {gig.currency} {gig.Amount}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">{gig.Title}</div>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-300 text-sm mb-2">
+                  Amount ($)
+                </label>
+                <input
+                  type="number"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  placeholder="0.00"
+                  min="0"
+                  max={gig?.Amount || undefined}
+                  step="0.01"
+                  className="w-full px-3 py-2 rounded bg-neutral-700 border border-neutral-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+                {gig && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    Maximum: {gig.currency} {gig.Amount}
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-gray-300 text-sm mb-2">
+                  Description (Optional)
+                </label>
+                <textarea
+                  value={paymentDescription}
+                  onChange={(e) => setPaymentDescription(e.target.value)}
+                  placeholder="What is this payment for?"
+                  rows={3}
+                  className="w-full px-3 py-2 rounded bg-neutral-700 border border-neutral-600 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end mt-6">
+              <button
+                onClick={() => {
+                  setShowPaymentModal(false);
+                  setPaymentAmount("");
+                  setPaymentDescription("");
+                }}
+                className="px-4 py-2 rounded bg-gray-600 hover:bg-gray-700 text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePaymentRequest}
+                disabled={!paymentAmount || parseFloat(paymentAmount) <= 0}
+                className="px-4 py-2 rounded bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:opacity-50 text-white"
+              >
+                Send Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* End Gig Confirmation Modal */}
+      {showEndGigModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-neutral-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              End Gig Confirmation
+            </h3>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to end this gig? After ending, both parties
+              will be asked to review each other.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowEndGigModal(false)}
+                className="px-4 py-2 rounded bg-gray-600 hover:bg-gray-700 text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={endGig}
+                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white"
+              >
+                End Gig
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gig Ended by Other Party Modal */}
+      {showGigEndedModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-neutral-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-white mb-4">Gig Ended</h3>
+            <p className="text-gray-300 mb-6">
+              The gig has been ended by the other party. You will be redirected
+              to the review page now.
+            </p>
+            <div className="flex justify-end">
+              <button
+                onClick={() => router.push("/review")}
+                className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Go to Review
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
