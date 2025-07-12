@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 // Initial state
 const initialState = {
   user: null,
+  token: null,
   isAuthenticated: false,
   loading: false,
 };
@@ -13,23 +14,30 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     setUser: (state, action) => {
-      state.user = action.payload;
+      const { user, token } = action.payload;
+      state.user = user;
+      state.token = token;
       state.isAuthenticated = true;
       state.loading = false;
 
-      // Save to localStorage
+      // Save both user and token to localStorage
       if (typeof window !== "undefined") {
-        localStorage.setItem("kozeo_user", JSON.stringify(action.payload));
+        localStorage.setItem("kozeo_user", JSON.stringify(user));
+        localStorage.setItem("kozeo_auth_token", token);
       }
     },
     clearUser: (state) => {
+      // Reset to initial state
       state.user = null;
+      state.token = null;
       state.isAuthenticated = false;
       state.loading = false;
 
-      // Remove from localStorage
+      // Remove all auth-related data from localStorage
       if (typeof window !== "undefined") {
         localStorage.removeItem("kozeo_user");
+        localStorage.removeItem("kozeo_auth_token");
+        localStorage.removeItem("kozeo_refresh_token");
       }
     },
     setLoading: (state, action) => {
@@ -37,7 +45,9 @@ const userSlice = createSlice({
     },
     restoreUser: (state, action) => {
       // Used to restore user from localStorage without saving again
-      state.user = action.payload;
+      const { user, token } = action.payload;
+      state.user = user;
+      state.token = token;
       state.isAuthenticated = true;
       state.loading = false;
     },
@@ -50,8 +60,11 @@ export const { setUser, clearUser, setLoading, restoreUser } =
 
 // Selectors
 export const selectUser = (state) => state.user.user;
+export const selectUserName = (state) => state.user.user?.username || null;
+export const selectToken = (state) => state.user.token;
 export const selectIsAuthenticated = (state) => state.user.isAuthenticated;
 export const selectUserLoading = (state) => state.user.loading;
 
 // Export reducer
 export default userSlice.reducer;
+    

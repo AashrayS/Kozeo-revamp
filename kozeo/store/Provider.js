@@ -11,19 +11,22 @@ function UserRestorer() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    // Check localStorage for saved user on app start
+    // Check localStorage for saved user and token on app start
     if (typeof window !== "undefined") {
       try {
         const savedUser = localStorage.getItem("kozeo_user");
-        if (savedUser) {
+        const savedToken = localStorage.getItem("kozeo_auth_token");
+
+        if (savedUser && savedToken) {
           const userObject = JSON.parse(savedUser);
-          dispatch(restoreUser(userObject));
+          dispatch(restoreUser({ user: userObject, token: savedToken }));
           console.log("User restored from localStorage:", userObject);
         }
       } catch (error) {
         console.error("Error restoring user from localStorage:", error);
         // Clear corrupted data
         localStorage.removeItem("kozeo_user");
+        localStorage.removeItem("kozeo_auth_token");
       }
     }
   }, [dispatch]);

@@ -2,6 +2,48 @@
 import { callApi } from "./api.js";
 
 // ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Helper function for GraphQL queries
+ * @param {string} query - GraphQL query string
+ * @param {Object} variables - Query variables
+ * @param {Object} options - Additional options
+ * @returns {Promise<Object>} Query result
+ */
+export const query = async (queryString, variables = {}, options = {}) => {
+  const { requireAuth = true } = options;
+  let token = null;
+
+  // Get token from localStorage if authentication is required
+  if (requireAuth && typeof window !== "undefined") {
+    token = localStorage.getItem("kozeo_auth_token");
+  }
+
+  return await callApi({ query: queryString, variables, token });
+};
+
+/**
+ * Helper function for GraphQL mutations
+ * @param {string} mutation - GraphQL mutation string
+ * @param {Object} variables - Mutation variables
+ * @param {Object} options - Additional options
+ * @returns {Promise<Object>} Mutation result
+ */
+export const mutate = async (mutationString, variables = {}, options = {}) => {
+  const { requireAuth = true } = options;
+  let token = null;
+
+  // Get token from localStorage if authentication is required
+  if (requireAuth && typeof window !== "undefined") {
+    token = localStorage.getItem("kozeo_auth_token");
+  }
+
+  return await callApi({ query: mutationString, variables, token });
+};
+
+// ============================================================================
 // DEBUG/TEST FUNCTIONS
 // ============================================================================
 
@@ -194,7 +236,7 @@ export const getCurrentUser = async () => {
  * @param {Object} updateData - Data to update
  * @returns {Promise<Object>} Updated user data
  */
-export async function updateUserProfile(id, input, token) {
+export async function updateUserProfile(id, input) {
   const query = `
     mutation UpdateUser($id: ID!, $input: UpdateUserInput!) {
       updateUser(id: $id, input: $input) {
@@ -209,17 +251,23 @@ export async function updateUserProfile(id, input, token) {
       }
     }
   `;
-  const data = await callApi({ query, variables: { id, input }, token });
+  const data = await callApi({
+    query,
+    variables: { id, input },
+    token: localStorage.getItem("kozeo_auth_token"),
+  });
   return data.updateUser;
 }
 
 /**
  * Fetch User Profile (by ID, username, or email)
  * @param {Object} params - Query parameters
- * @param {string} token - Auth token
  * @returns {Promise<Object>} User profile data
  */
-export async function fetchUserProfile({ id, username, email }, token) {
+
+
+export async function fetchUserProfile({ id, username, email }) {
+  debugger
   let query, variables;
   if (id) {
     query = `
@@ -284,9 +332,23 @@ export async function fetchUserProfile({ id, username, email }, token) {
   } else {
     throw new Error("Must provide id, username, or email");
   }
-  const data = await callApi({ query, variables, token });
+  const data = await callApi({
+    query,
+    variables,
+    token: localStorage.getItem("kozeo_auth_token"),
+  });
   return data.user || data.userByUsername || data.userByEmail;
 }
+
+/**
+ * Get user by username (convenience function)
+ * @param {string} username - Username to fetch
+ * @returns {Promise<Object>} User profile data
+ */
+export const getUserByUsername = async (username) => {
+  debugger
+  return await fetchUserProfile({ username });
+};
 
 /**
  * Change user password
@@ -614,7 +676,7 @@ export const createReview = async (reviewData) => {
  */
 export const getUserReviews = async (userId) => {
   const reviewsQuery = `
-    query UserReviews($userId: ID!) {
+    query UserReviews($userId: $userId) {
       userReviews(userId: $userId) {
         id
         title

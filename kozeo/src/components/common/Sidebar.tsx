@@ -12,25 +12,34 @@ import {
 import { useState } from "react";
 import { IconType } from "react-icons";
 import { useNavigationLoader } from "./useNavigationLoader";
-
-const tabs: { name: string; icon: IconType; path: string }[] = [
-  { name: "Home", icon: FiHome, path: "/Atrium" },
-  { name: "Profile", icon: FiUser, path: "/profile/shashwat_tripathi" },
-  { name: "Store", icon: FiShoppingBag, path: "/store" },
-  { name: "Gigs", icon: FiBriefcase, path: "/gigs" }, // Update to go to gig list
-  {
-    name: "Discussion Rooms",
-    icon: FiMessageSquare,
-    path: "/Atrium/discussion",
-  },
-];
+import { useUser } from "../../../store/hooks";
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(true);
   const { navigateWithLoader, startLoading } = useNavigationLoader();
+  const { user, username, isAuthenticated } = useUser();
+
+  // Debug logging
+  console.log("Sidebar - User state:", { user, username, isAuthenticated });
+
+  // Get username from Redux user state or fallback to a default
+  const profileUsername = username || "profile";
+
+  const tabs: { name: string; icon: IconType; path: string }[] = [
+    { name: "Home", icon: FiHome, path: "/Atrium" },
+    { name: "Profile", icon: FiUser, path: `/profile/${profileUsername}` },
+    { name: "Store", icon: FiShoppingBag, path: "/store" },
+    { name: "Gigs", icon: FiBriefcase, path: "/gigs" }, // Update to go to gig list
+    {
+      name: "Discussion Rooms",
+      icon: FiMessageSquare,
+      path: "/Atrium/discussion",
+    },
+  ];
 
   const handleNavigation = (path: string) => {
     // Always trigger loader immediately for any navigation
+    debugger
     navigateWithLoader(path);
   };
 

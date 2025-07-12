@@ -5,7 +5,6 @@ import { theme } from "../../theme";
 import { useRef, useEffect } from "react";
 import { useNavigationLoader } from "../../components/common/useNavigationLoader";
 import { loginUser, registerUser } from "../../../utilities/kozeoApi";
-import { setToken } from "../../../utilities/api";
 import { useDispatch } from "react-redux";
 import { setUser } from "../../../store/userSlice";
 
@@ -81,7 +80,7 @@ export default function LoginSignupPage() {
           className="font-bold mb-2 md:mb-4 text-4xl mt-16 md:mt-0 md:text-8xl"
           style={{}}
         >
-         KOZEO
+          KOZEO
         </h1>
         <p className="mb-4 md:mb-6 text-sm md:text-base" style={{}}>
           Get your hands dirty with real life projects
@@ -190,11 +189,13 @@ export default function LoginSignupPage() {
                         password: loginPassword,
                       });
 
-                      // Save token
-                      setToken((response as any).token);
-
-                      // Save user to Redux and localStorage
-                      dispatch(setUser((response as any).user));
+                      // Save both user and token to Redux and localStorage
+                      dispatch(
+                        setUser({
+                          user: (response as any).user,
+                          token: (response as any).token,
+                        })
+                      );
 
                       navigateWithLoader("/Atrium");
                     } catch (error: any) {
@@ -544,11 +545,13 @@ export default function LoginSignupPage() {
                             role: signupData.role,
                           });
 
-                          // Save token
-                          setToken((response as any).token);
-
-                          // Save user to Redux and localStorage
-                          dispatch(setUser((response as any).user));
+                          // Save both user and token to Redux and localStorage
+                          dispatch(
+                            setUser({
+                              user: (response as any).user,
+                              token: (response as any).token,
+                            })
+                          );
 
                           navigateWithLoader("/profile/setupprofile");
                         } catch (error: any) {

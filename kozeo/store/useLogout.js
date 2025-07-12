@@ -1,17 +1,13 @@
 import { useDispatch } from "react-redux";
 import { clearUser } from "./userSlice.js";
-import { clearTokens } from "../utilities/api.js";
 
 // Custom hook for logout functionality
 export const useLogout = () => {
   const dispatch = useDispatch();
 
   const logout = () => {
-    // Clear Redux state
+    // Clear Redux state (this will also clear localStorage)
     dispatch(clearUser());
-
-    // Clear auth tokens
-    clearTokens();
 
     // Optional: redirect to login
     if (typeof window !== "undefined") {
