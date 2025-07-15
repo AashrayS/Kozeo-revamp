@@ -18,17 +18,91 @@ interface ProfileData {
   profile_Picture: string;
   bio: string;
   links: string[];
-  achievements: any[];
+  rating: number;
+  role: string;
+  phone?: string;
+  country_Code?: string;
+  resume?: string;
   wallet?: {
     amount: number;
     currency: string;
   };
-  gigsCollaborated: any[];
-  gigsHosted: any[];
-  reviewsReceived: any[];
-  role: string;
-  phone?: string;
-  country_Code?: string;
+  achievements: {
+    id: string;
+    title: string;
+    description: string;
+    icon: string;
+    category: string;
+    rarity: string;
+  }[];
+  gigsHosted: {
+    id: string;
+    title: string;
+    looking_For: string;
+    description: string;
+    skills: string[];
+    currency: string;
+    amount: number;
+    isActive: boolean;
+    host: any;
+    guest: any;
+    reviews: any[];
+  }[];
+  gigsCollaborated: {
+    id: string;
+    title: string;
+    looking_For: string;
+    description: string;
+    skills: string[];
+    currency: string;
+    amount: number;
+    isActive: boolean;
+    host: any;
+    guest: any;
+    reviews: any[];
+  }[];
+  workedWith: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    username: string;
+    profile_Picture: string;
+    rating: number;
+  }[];
+  reviewsGiven: {
+    id: string;
+    title: string;
+    description: string;
+    rating: number;
+    receiver: any;
+    gig: any;
+    createdAt: string;
+  }[];
+  activeGig?: {
+    id: string;
+    title: string;
+    status: string;
+    amount: number;
+    currency: string;
+  };
+  requestSent: {
+    id: string;
+    gigId: string;
+    status: string;
+    createdAt: string;
+  }[];
+  notifications: {
+    id: string;
+    type: string;
+    content: string;
+    action: string;
+    read: boolean;
+    createdAt: string;
+    sender: any;
+  }[];
+  unreadNotificationCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ProfileImage component with fallback handling
@@ -188,9 +262,7 @@ export default function UserProfilePage() {
 
   // Calculate stats from available data
   const totalEarnings = profile.wallet?.amount || 0;
-  const avgRating = profile.reviewsReceived?.length > 0 
-    ? profile.reviewsReceived.reduce((sum: number, review: any) => sum + (review.rating || 0), 0) / profile.reviewsReceived.length
-    : 0;
+  const avgRating = profile.rating || 0;
 
   return (
     <>
@@ -239,19 +311,17 @@ export default function UserProfilePage() {
                         profile.achievements.length > 0 && (
                           <div className="hidden lg:flex flex-wrap gap-2 ml-4">
                             {profile.achievements.map((achievement, idx) => (
-                              <a
-                                key={idx}
-                                href={achievement}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                              <div
+                                key={achievement.id}
                                 className="inline-block"
+                                title={achievement.title}
                               >
                                 <img
-                                  src={achievement}
-                                  alt={`Achievement ${idx + 1}`}
+                                  src={achievement.icon}
+                                  alt={achievement.title}
                                   className="w-8 h-8 rounded-lg  hover:border-cyan-500 transition-colors object-cover"
                                 />
-                              </a>
+                              </div>
                             ))}
                           </div>
                         )}
@@ -291,19 +361,17 @@ export default function UserProfilePage() {
                 {profile.achievements && profile.achievements.length > 0 && (
                   <div className="flex flex-wrap gap-3 justify-center sm:justify-start mt-2 lg:hidden">
                     {profile.achievements.map((achievement, idx) => (
-                      <a
-                        key={idx}
-                        href={achievement}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <div
+                        key={achievement.id}
                         className="inline-block"
+                        title={achievement.title}
                       >
                         <img
-                          src={achievement}
-                          alt={`Achievement ${idx + 1}`}
+                          src={achievement.icon}
+                          alt={achievement.title}
                           className="w-12 h-12 rounded-lg  hover:border-cyan-500 transition-colors object-cover"
                         />
-                      </a>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -360,8 +428,8 @@ export default function UserProfilePage() {
                   color: "text-white",
                 },
                 {
-                  count: profile.reviewsReceived?.length || 0,
-                  label: "Reviews Received",
+                  count: profile.reviewsGiven?.length || 0,
+                  label: "Reviews Given",
                   color: "text-white",
                 },
                 // Only show wallet info if user can view sensitive information
@@ -415,7 +483,9 @@ export default function UserProfilePage() {
                           fill="currentColor"
                         />
                         <span className="text-sm text-yellow-400">
-                          {gig.rating}
+                          {gig.reviews && gig.reviews.length > 0 
+                            ? (gig.reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / gig.reviews.length).toFixed(1)
+                            : 'No rating'}
                         </span>
                       </div>
                     </div>
@@ -424,18 +494,18 @@ export default function UserProfilePage() {
                     </p>
                     <div className="text-xs text-gray-400">
                       Looking for:{" "}
-                      <span className="text-cyan-400">{gig.lookingFor}</span>
+                      <span className="text-cyan-400">{gig.looking_For}</span>
                     </div>
-                    {gig.review && (
+                    {gig.reviews && gig.reviews.length > 0 && (
                       <div className="mt-3 p-3 bg-neutral-900 border border-neutral-700 bg-opacity-50 rounded-lg">
                         <div className="text-sm text-white font-medium mb-1">
-                          "{gig.review.title}"
+                          "{gig.reviews[0].title}"
                         </div>
                         <div className="text-xs text-gray-300 mb-1">
-                          {gig.review.description}
+                          {gig.reviews[0].description}
                         </div>
                         <div className="text-xs text-cyan-400">
-                          - @{gig.review.username}
+                          - @{gig.reviews[0].author?.username}
                         </div>
                       </div>
                     )}
@@ -479,10 +549,10 @@ export default function UserProfilePage() {
             <div className="relative flex flex-col justify-between bg-gradient-to-br from-[#111] to-[#1a1a1a] rounded-lg p-4 lg:p-6 shadow-md mb-6">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <FiStar className="text-yellow-400" />
-                Reviews Received ({profile.reviewsReceived?.length || 0})
+                Reviews Given ({profile.reviewsGiven?.length || 0})
               </h3>
               <div className="space-y-3">
-                {(profile.reviewsReceived || []).slice(0, 5).map((review: any, index: number) => (
+                {(profile.reviewsGiven || []).slice(0, 5).map((review: any, index: number) => (
                   <div
                     key={index}
                     className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-neutral-800 bg-opacity-30 rounded-lg"

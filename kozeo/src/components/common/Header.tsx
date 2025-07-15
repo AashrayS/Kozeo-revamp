@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { FiLogOut, FiBell } from "react-icons/fi";
-import { logout } from "../../../utilities/operation"; // adjust path if needed
+import { useLogout } from "../../../store/useLogout";
 import NotificationBox from "./NotificationBox";
 import { useNotificationContext } from "./NotificationContext";
 
@@ -14,6 +14,7 @@ export default function Header({
   const { notifications, markAsRead, markAllAsRead, unreadCount } =
     useNotificationContext();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const logout = useLogout();
 
   const toggleNotifications = () => {
     setIsNotificationOpen(!isNotificationOpen);

@@ -144,44 +144,44 @@ export async function registerUser(input) {
 
 /**
  * Login user
- * @param {string} email - User email
- * @param {string} password - User password
+ * @param {Object} input - Login input with email and password
+ * @param {string} input.email - User's email address
+ * @param {string} input.password - User's password
  * @returns {Promise<Object>} Auth payload with token and user data
  */
 export async function loginUser(input) {
-  const query = `
+  const mutation = `
     mutation LoginUser($input: LoginUserInput!) {
       loginUser(input: $input) {
         token
         user {
-            id
-            first_name
-            last_name
-            email
-            username
-            country_Code
-            bio
-            phone
-            profile_Picture
-            resume
-            role
-            links
-            notifications {
-                id
-                type
-                content
-                action
-                read
-                createdAt
-                sender {
-                    username
-                }
-            }
+          id
+          first_name
+          last_name
+          email
+          username
+          country_Code
+          bio
+          phone
+          profile_Picture
+          resume
+          role
+          links
+          rating
+          createdAt
+          updatedAt
         }
       }
     }
   `;
-  const data = await callApi({ query, variables: { input } });
+
+  // Use callApi directly without token since this is a login request
+  const data = await callApi({
+    query: mutation,
+    variables: { input },
+    token: null, // No token needed for login
+  });
+
   return data.loginUser;
 }
 
@@ -265,9 +265,8 @@ export async function updateUserProfile(id, input) {
  * @returns {Promise<Object>} User profile data
  */
 
-
 export async function fetchUserProfile({ id, username, email }) {
-  debugger
+  debugger;
   let query, variables;
   if (id) {
     query = `
@@ -298,13 +297,163 @@ export async function fetchUserProfile({ id, username, email }) {
           last_name
           username
           email
+          country_Code
+          bio
           phone
           profile_Picture
+          resume
+          links
+          rating
           role
-          gigsHosted { id title }
-          gigsCollaborated { id title }
-          reviewsReceived { id rating description }
-          achievements { id title }
+          gigsHosted {
+            id
+            title
+            looking_For
+            description
+            skills
+            currency
+            amount
+            isActive
+            host {
+              id
+              username
+              first_name
+              last_name
+              profile_Picture
+              rating
+            }
+            guest {
+              id
+              username
+              first_name
+              last_name
+              profile_Picture
+              rating
+            }
+            reviews {
+              id
+              title
+              rating
+              author {
+                username
+                first_name
+                last_name
+                profile_Picture
+              }
+              receiver {
+                username
+                first_name
+                last_name
+              }
+            }
+          }
+          gigsCollaborated {
+            id
+            title
+            looking_For
+            description
+            skills
+            currency
+            amount
+            isActive
+            host {
+              id
+              username
+              first_name
+              last_name
+              profile_Picture
+              rating
+            }
+            guest {
+              id
+              username
+              first_name
+              last_name
+              profile_Picture
+              rating
+            }
+            reviews {
+              id
+              title
+              rating
+              author {
+                username
+                first_name
+                last_name
+                profile_Picture
+              }
+              receiver {
+                username
+                first_name
+                last_name
+              }
+            }
+          }
+          workedWith {
+            id
+            first_name
+            last_name
+            username
+            profile_Picture
+            rating
+          }
+          reviewsGiven {
+            id
+            title
+            description
+            rating
+            receiver {
+              username
+              first_name
+              last_name
+            }
+            gig {
+              id
+              title
+            }
+            createdAt
+          }
+          wallet {
+            currency
+            amount
+          }
+          achievements {
+            id
+            title
+            description
+            icon
+            category
+            rarity
+          }
+          activeGig {
+            id
+            title
+            status
+            amount
+            currency
+          }
+          requestSent {
+            id
+            gigId
+            status
+            createdAt
+          }
+          notifications {
+            id
+            type
+            content
+            action
+            read
+            createdAt
+            sender {
+              username
+              first_name
+              last_name
+            }
+          }
+          unreadNotificationCount
+          createdAt
+          updatedAt
         }
       }
     `;
@@ -346,7 +495,7 @@ export async function fetchUserProfile({ id, username, email }) {
  * @returns {Promise<Object>} User profile data
  */
 export const getUserByUsername = async (username) => {
-  debugger
+  debugger;
   return await fetchUserProfile({ username });
 };
 

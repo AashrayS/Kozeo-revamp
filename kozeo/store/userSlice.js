@@ -27,6 +27,13 @@ const userSlice = createSlice({
       }
     },
     clearUser: (state) => {
+      console.log("clearUser action triggered");
+      console.log("State before clearing:", {
+        user: state.user,
+        token: state.token,
+        isAuthenticated: state.isAuthenticated,
+      });
+
       // Reset to initial state
       state.user = null;
       state.token = null;
@@ -39,6 +46,12 @@ const userSlice = createSlice({
         localStorage.removeItem("kozeo_auth_token");
         localStorage.removeItem("kozeo_refresh_token");
       }
+
+      console.log("State after clearing:", {
+        user: state.user,
+        token: state.token,
+        isAuthenticated: state.isAuthenticated,
+      });
     },
     setLoading: (state, action) => {
       state.loading = action.payload;
@@ -67,4 +80,3 @@ export const selectUserLoading = (state) => state.user.loading;
 
 // Export reducer
 export default userSlice.reducer;
-    
