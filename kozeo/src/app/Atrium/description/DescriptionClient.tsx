@@ -7,6 +7,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import {
   getGigById,
   getUserBasicProfile,
+  sendGigRequest,
+  respondToGigRequest,
 } from "../../../../utilities/kozeoApi";
 import { io, Socket } from "socket.io-client";
 import { useUser } from "../../../../store/hooks";
@@ -15,6 +17,7 @@ export default function DescriptionClient() {
   const router = useRouter();
   const { user } = useUser();
   const [requested, setRequested] = useState(false);
+  const [currentRequestId, setCurrentRequestId] = useState<string | null>(null);
   const [gig, setGig] = useState<any>(null);
   const [hostProfile, setHostProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +51,23 @@ export default function DescriptionClient() {
           setGig(gigData);
           console.log("Gig data fetched:", gigData);
 
+          // Check if current user has already sent a request to this gig
+          if (user && (gigData as any).activeRequest) {
+            const userRequest = (gigData as any).activeRequest.find(
+              (req: any) => req.sender?.id === user.id || req.sender?.username === user.username
+            );
+            
+            if (userRequest) {
+              console.log("Found existing request from user:", userRequest);
+              setRequested(true);
+              setCurrentRequestId(userRequest.id);
+            } else {
+              console.log("No existing request found for user");
+              setRequested(false);
+              setCurrentRequestId(null);
+            }
+          }
+
           // Fetch host profile data
           if ((gigData as any).host?.username) {
             setHostLoading(true);
@@ -77,7 +97,7 @@ export default function DescriptionClient() {
     };
 
     fetchGig();
-  }, [gigId]);
+  }, [gigId, user]); // Include user in dependencies
 
   // Setup WebSocket connection
   useEffect(() => {
@@ -117,22 +137,36 @@ export default function DescriptionClient() {
 
     setSendingRequest(true);
     try {
-      const request = {
+      // First, save the request to the database
+      const requestData = {
+        gig: gigId,
+        status: "pending",
+      };
+
+      console.log("Saving request to database:", requestData);
+      const savedRequest = (await sendGigRequest(requestData)) as any;
+      console.log("Request saved to database:", savedRequest);
+
+      // Store the request ID for potential cancellation
+      setCurrentRequestId(savedRequest?.id);
+
+      // Then send via WebSocket for real-time updates
+      const wsRequest = {
         gigId: gigId,
         request: {
           requesterName: user.username,
           message: requestMessage.trim(),
         },
-        hostUsername: hostUsername, // Add host username for notification
+        requestId: savedRequest?.id || Date.now().toString(), // Include the database ID
+        hostUsername: hostUsername,
         timestamp: new Date().toISOString(),
       };
 
-      console.log("Sending request data:", request);
+      console.log("Sending WebSocket request data:", wsRequest);
 
-      // Send via WebSocket
       if (socketRef.current) {
         if (socketRef.current.connected) {
-          socketRef.current.emit("gig-request", request);
+          socketRef.current.emit("gig-request", wsRequest);
           console.log("Request sent via WebSocket successfully");
         } else {
           console.error("WebSocket not connected");
@@ -163,9 +197,22 @@ export default function DescriptionClient() {
 
     setSendingRequest(true);
     try {
+      // First, cancel the request in the database if we have the request ID
+      if (currentRequestId) {
+        try {
+          console.log("Cancelling request in database:", currentRequestId);
+          await respondToGigRequest(currentRequestId, "cancelled");
+          console.log("Request cancelled in database successfully");
+        } catch (dbError) {
+          console.error("Error cancelling request in database:", dbError);
+          // Continue with WebSocket cancellation even if database call fails
+        }
+      }
+
       const cancelData = {
         gigId: gigId,
         requesterName: user.username,
+        requestId: currentRequestId, // Include the request ID
         hostUsername: hostUsername,
         timestamp: new Date().toISOString(),
       };
@@ -187,6 +234,7 @@ export default function DescriptionClient() {
       }
 
       setRequested(false);
+      setCurrentRequestId(null); // Clear the stored request ID
       alert("Request cancelled successfully!");
     } catch (error) {
       console.error("Error cancelling request:", error);
@@ -332,30 +380,56 @@ export default function DescriptionClient() {
                 <span className="text-sm font-semibold text-emerald-400">
                   {gig.currency} {gig.amount}
                 </span>
-                <span className="text-xs text-gray-500">
-                  {gig.activeRequest?.length || 0} active requests
-                </span>
+                <div className="flex flex-col items-end">
+                  <span className="text-xs text-gray-500">
+                    {gig.activeRequest?.length || 0} active requests
+                  </span>
+                  {user && gig.host?.id === user.id && (
+                    <span className="text-xs text-blue-400">
+                      You are the host
+                    </span>
+                  )}
+                  {user && gig.host?.id !== user.id && requested && (
+                    <span className="text-xs text-yellow-400">
+                      Request sent
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <button
-                onClick={requested ? handleCancelRequest : openMessageModal}
-                disabled={sendingRequest}
-                className={`w-auto px-5 self-center py-2 rounded-md border-0 transition-colors duration-200 ${
-                  requested
-                    ? "bg-red-500 text-white hover:bg-red-600"
+              {/* Show different button based on user status */}
+              {user && gig.host?.id === user.id ? (
+                <button
+                  onClick={() => router.push(`/gigs/${gigId}/lobby`)}
+                  className="w-auto px-5 self-center py-2 rounded-md border-0 transition-colors duration-200 bg-blue-500 text-white hover:bg-blue-600"
+                >
+                  Go to Lobby
+                </button>
+              ) : (
+                <button
+                  onClick={requested ? handleCancelRequest : openMessageModal}
+                  disabled={sendingRequest || !user}
+                  className={`w-auto px-5 self-center py-2 rounded-md border-0 transition-colors duration-200 ${
+                    !user
+                      ? "bg-gray-500 text-white cursor-not-allowed"
+                      : requested
+                      ? "bg-red-500 text-white hover:bg-red-600"
+                      : sendingRequest
+                      ? "bg-gray-500 text-white cursor-not-allowed"
+                      : "bg-emerald-400 text-black hover:bg-emerald-500"
+                  }`}
+                >
+                  {!user
+                    ? "Login to Send Request"
                     : sendingRequest
-                    ? "bg-gray-500 text-white cursor-not-allowed"
-                    : "bg-emerald-400 text-black hover:bg-emerald-500"
-                }`}
-              >
-                {sendingRequest
-                  ? requested
-                    ? "Cancelling..."
-                    : "Sending..."
-                  : requested
-                  ? "Cancel Request"
-                  : "Send Request"}
-              </button>
+                    ? requested
+                      ? "Cancelling..."
+                      : "Sending..."
+                    : requested
+                    ? "Cancel Request"
+                    : "Send Request"}
+                </button>
+              )}
             </div>
           </div>
 

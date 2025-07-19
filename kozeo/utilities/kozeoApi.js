@@ -665,10 +665,15 @@ export const getGigById = async (gigId) => {
         }
         activeRequest {
           id
+        
           sender {
             id
             username
+            first_name
+            last_name
             profile_Picture
+            rating
+            bio
           }
         }
         createdAt
@@ -688,7 +693,13 @@ export const getGigById = async (gigId) => {
  */
 export const createGig = async (gigData) => {
   // Validate input
-  if (!gigData.title || !gigData.looking_For || !gigData.description || !gigData.skills || !gigData.amount) {
+  if (
+    !gigData.title ||
+    !gigData.looking_For ||
+    !gigData.description ||
+    !gigData.skills ||
+    !gigData.amount
+  ) {
     throw new Error("All required fields must be provided");
   }
 
@@ -720,11 +731,11 @@ export const createGig = async (gigData) => {
 
   try {
     const result = await mutate(createGigMutation, { input: gigData });
-    
+
     if (result.errors) {
       throw new Error(result.errors[0].message);
     }
-    
+
     return result.createGig;
   } catch (error) {
     console.error("Error creating gig:", error);
@@ -919,26 +930,31 @@ export const sendGigRequest = async (requestData) => {
     mutation SendGigRequest($input: SendGigRequestInput!) {
       sendGigRequest(input: $input) {
         id
-        gigId {
-          id
-          title
-        }
+        gigId
         sender {
           id
           username
+          first_name
+          last_name
+          profile_Picture
+          rating
         }
         receiver {
           id
           username
+          first_name
+          last_name
+          profile_Picture
+          rating
         }
-        message
-        proposedAmount
         status
-        sentTime
+        createdAt
+        updatedAt
       }
     }
   `;
 
+  console.log("Sending request with data:", requestData);
   const result = await mutate(sendRequestMutation, { input: requestData });
   return result.sendGigRequest;
 };
@@ -951,12 +967,29 @@ export const sendGigRequest = async (requestData) => {
  */
 export const respondToGigRequest = async (requestId, status) => {
   const respondMutation = `
-    mutation RespondToGigRequest($requestId: ID!, $status: String!) {
+    mutation RespondToGigRequest($requestId: ID!, $status: RequestStatus!) {
       respondToGigRequest(requestId: $requestId, status: $status) {
         id
+        gigId
+        sender {
+          id
+          username
+          first_name
+          last_name
+          profile_Picture
+          rating
+        }
+        receiver {
+          id
+          username
+          first_name
+          lastName
+          profile_Picture
+          rating
+        }
         status
-        responseTime
-        responseMessage
+        createdAt
+        updatedAt
       }
     }
   `;
@@ -1070,33 +1103,3 @@ export const sendGigMessage = async (messageData) => {
 };
 
 // ============================================================================
-// NOTIFICATION API FUNCTIONS
-// ============================================================================
-
-/**
- * Get user notifications
- * @param {string} userId - User ID
- * @returns {Promise<Array>} User notifications
- */
-export const getUserNotifications = async (userId) => {
-  const notificationsQuery = `
-    query UserNotifications($userId: ID!) {
-      userNotifications(userId: $userId) {
-        id
-        type
-        content
-        action
-        read
-        sender {
-          id
-          username
-          profile_Picture
-        }
-        createdAt
-      }
-    }
-  `;
-
-  const result = await query(notificationsQuery, { userId });
-  return result.userNotifications;
-};

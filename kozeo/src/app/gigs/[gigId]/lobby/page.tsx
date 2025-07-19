@@ -3,16 +3,33 @@ import React, { useEffect, useState } from "react";
 import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
 import { io, Socket } from "socket.io-client";
-import { getGigById } from "../../../../../utilities/kozeoApi";
+import {
+  getGigById,
+  sendGigRequest,
+  respondToGigRequest,
+} from "../../../../../utilities/kozeoApi";
 import { use } from "react";
 import { useRouter } from "next/navigation";
+import { useUser } from "../../../../../store/hooks";
 
 interface Request {
+  id?: string;
   name?: string;
   requesterName?: string;
   message: string;
   timestamp?: string;
   gigId?: string;
+  requestId?: string; // Database ID for API operations
+  status?: string;
+  sender?: {
+    id: string;
+    username: string;
+    first_name: string;
+    last_name: string;
+    profile_Picture?: string;
+    rating?: number;
+    bio?: string;
+  };
 }
 
 export default function GigLobbyPage({
@@ -22,11 +39,15 @@ export default function GigLobbyPage({
 }) {
   const { gigId } = use(paramsPromise);
   const router = useRouter();
+  const { user } = useUser();
   const [gig, setGig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [requests, setRequests] = useState<Request[]>([]);
   const [wsConnected, setWsConnected] = useState(false);
+  const [processingRequests, setProcessingRequests] = useState<Set<number>>(
+    new Set()
+  );
   const socketRef = React.useRef<Socket | null>(null);
 
   // Setup WebSocket connection IMMEDIATELY - no waiting for anything
@@ -50,6 +71,25 @@ export default function GigLobbyPage({
       console.log("Incoming request received:", request);
       setRequests((prev) => {
         console.log("Current requests:", prev);
+
+        // Check for duplicates based on requestId or requesterName
+        const isDuplicate = prev.some(
+          (existingReq) =>
+            (existingReq.requestId &&
+              request.requestId &&
+              existingReq.requestId === request.requestId) ||
+            (existingReq.id &&
+              request.requestId &&
+              existingReq.id === request.requestId) ||
+            existingReq.requesterName === request.requesterName ||
+            existingReq.name === request.requesterName
+        );
+
+        if (isDuplicate) {
+          console.log("Duplicate request detected, not adding:", request);
+          return prev;
+        }
+
         const newRequests = [...prev, request];
         console.log("Updated requests:", newRequests);
         return newRequests;
@@ -58,17 +98,25 @@ export default function GigLobbyPage({
 
     socket.on("gig-request-cancel", (cancelData) => {
       console.log("Request cancelled:", cancelData);
-      const { requesterName } = cancelData;
-      
+      const { requesterName, requestId } = cancelData;
+
       // Remove the cancelled request from the list
       setRequests((prev) => {
         const updatedRequests = prev.filter(
-          (req) => req.requesterName !== requesterName && req.name !== requesterName
+          (req) =>
+            // Remove by requestId if available, otherwise by name
+            !(requestId && req.requestId === requestId) &&
+            !(req.requesterName === requesterName || req.name === requesterName)
         );
-        console.log(`Removed request from ${requesterName}. Remaining requests:`, updatedRequests);
+        console.log(
+          `Removed request from ${requesterName}${
+            requestId ? ` (ID: ${requestId})` : ""
+          }. Remaining requests:`,
+          updatedRequests
+        );
         return updatedRequests;
       });
-      
+
       // Optional: Show a notification about the cancellation
       console.log(`${requesterName} cancelled their request`);
     });
@@ -94,13 +142,48 @@ export default function GigLobbyPage({
     };
   }, [gigId]); // Only depends on gigId - connects immediately when component mounts
 
-  // Fetch gig data SEPARATELY (this doesn't affect WebSocket connection)
+  // Fetch gig data and extract active requests
   useEffect(() => {
     const fetchGig = async () => {
       try {
         setLoading(true);
         const gigData = await getGigById(gigId);
         setGig(gigData);
+
+        // Extract and set active requests from gig data if user is the host
+        if (
+          user &&
+          gigData &&
+          user.id === (gigData as any).host?.id &&
+          (gigData as any).activeRequest
+        ) {
+          console.log(
+            "Loading active requests from gig data:",
+            (gigData as any).activeRequest
+          );
+
+          // Transform database requests to match the expected format
+          const transformedRequests = (gigData as any).activeRequest.map(
+            (req: any) => ({
+              id: req.id,
+              requestId: req.id, // Use the database ID as requestId
+              requesterName: req.sender.username,
+              name: req.sender.username,
+              message: req.message || "Request to join this gig",
+              timestamp: req.createdAt,
+              gigId: req.gigId,
+              status: req.status,
+              sender: req.sender, // Keep full sender info for potential use
+            })
+          );
+
+          // Set initial requests from database
+          setRequests(transformedRequests);
+          console.log(
+            "Set initial requests from database:",
+            transformedRequests
+          );
+        }
       } catch (err: any) {
         console.error("Error fetching gig:", err);
         setError(err.message || "Failed to load gig");
@@ -110,37 +193,95 @@ export default function GigLobbyPage({
     };
 
     fetchGig();
-  }, [gigId]);
+  }, [gigId, user]); // Include user in dependencies so it runs when user is available
 
-  const handleAcceptRequest = (request: any, index: number) => {
-    console.log("Accepting request:", request);
+  const handleAcceptRequest = async (request: any, index: number) => {
+    if (!user || !request.requestId) {
+      alert("Unable to process request. Missing required information.");
+      return;
+    }
 
-    // Remove the request from the list
-    setRequests((prev) => prev.filter((_, i) => i !== index));
+    setProcessingRequests((prev) => new Set([...prev, index]));
 
-    // You can add logic here to:
-    // 1. Update the gig status to "in_progress"
-    // 2. Set the requester as the gig's guest
-    // 3. Send notification to the requester
-    // 4. Navigate to the actual gig workspace
+    try {
+      console.log("Accepting request:", request);
 
-    alert(`Request from ${request.requesterName || request.name} accepted!`);
+      // Call API to accept the request
+      const response = await respondToGigRequest(request.requestId, "accepted");
+      console.log("Request accepted successfully:", response);
 
-    // Navigate to the gig workspace (you can modify this URL as needed)
-    router.push(`/Gig/${gigId}`);
+      // Remove the request from the list
+      setRequests((prev) => prev.filter((_, i) => i !== index));
+
+      // Send WebSocket notification about acceptance
+      if (socketRef.current && socketRef.current.connected) {
+        socketRef.current.emit("gig-request-response", {
+          gigId: gigId,
+          requestId: request.requestId,
+          requesterName: request.requesterName || request.name,
+          response: "accepted",
+          hostUsername: user.username,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      alert(`Request from ${request.requesterName || request.name} accepted!`);
+
+      // Navigate to the gig workspace
+      router.push(`/Gig/${gigId}`);
+    } catch (error) {
+      console.error("Error accepting request:", error);
+      alert("Failed to accept request. Please try again.");
+    } finally {
+      setProcessingRequests((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(index);
+        return newSet;
+      });
+    }
   };
 
-  const handleRejectRequest = (request: any, index: number) => {
-    console.log("Rejecting request:", request);
+  const handleRejectRequest = async (request: any, index: number) => {
+    if (!user || !request.requestId) {
+      alert("Unable to process request. Missing required information.");
+      return;
+    }
 
-    // Remove the request from the list
-    setRequests((prev) => prev.filter((_, i) => i !== index));
+    setProcessingRequests((prev) => new Set([...prev, index]));
 
-    // You can add logic here to:
-    // 1. Send notification to the requester about rejection
-    // 2. Log the rejection for analytics
+    try {
+      console.log("Rejecting request:", request);
 
-    alert(`Request from ${request.requesterName || request.name} rejected.`);
+      // Call API to reject the request
+      const response = await respondToGigRequest(request.requestId, "rejected");
+      console.log("Request rejected successfully:", response);
+
+      // Remove the request from the list
+      setRequests((prev) => prev.filter((_, i) => i !== index));
+
+      // Send WebSocket notification about rejection
+      if (socketRef.current && socketRef.current.connected) {
+        socketRef.current.emit("gig-request-response", {
+          gigId: gigId,
+          requestId: request.requestId,
+          requesterName: request.requesterName || request.name,
+          response: "rejected",
+          hostUsername: user.username,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      alert(`Request from ${request.requesterName || request.name} rejected.`);
+    } catch (error) {
+      console.error("Error rejecting request:", error);
+      alert("Failed to reject request. Please try again.");
+    } finally {
+      setProcessingRequests((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(index);
+        return newSet;
+      });
+    }
   };
 
   // Test function to manually add a request (for debugging)
@@ -160,15 +301,16 @@ export default function GigLobbyPage({
       <div className="min-h-screen flex flex-col items-center justify-center bg-[radial-gradient(circle_at_center,_rgba(17,17,17,0.8),_rgba(0,0,0,0.6))] text-white">
         <div className="text-xl mb-4">Loading gig...</div>
         <div className="text-sm text-gray-400">
-          WebSocket: <span className={`font-semibold ${
-            wsConnected ? "text-green-400" : "text-red-400"
-          }`}>
+          WebSocket:{" "}
+          <span
+            className={`font-semibold ${
+              wsConnected ? "text-green-400" : "text-red-400"
+            }`}
+          >
             {wsConnected ? "Connected" : "Connecting..."}
           </span>
         </div>
-        <div className="text-xs text-gray-500 mt-2">
-          Gig ID: {gigId}
-        </div>
+        <div className="text-xs text-gray-500 mt-2">Gig ID: {gigId}</div>
       </div>
     );
   }
@@ -344,16 +486,22 @@ export default function GigLobbyPage({
                           View Profile
                         </button>
                         <button
-                          className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition"
+                          className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm font-semibold transition"
                           onClick={() => handleAcceptRequest(req, idx)}
+                          disabled={processingRequests.has(idx)}
                         >
-                          Accept
+                          {processingRequests.has(idx)
+                            ? "Processing..."
+                            : "Accept"}
                         </button>
                         <button
-                          className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition"
+                          className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm font-semibold transition"
                           onClick={() => handleRejectRequest(req, idx)}
+                          disabled={processingRequests.has(idx)}
                         >
-                          Reject
+                          {processingRequests.has(idx)
+                            ? "Processing..."
+                            : "Reject"}
                         </button>
                       </div>
                     </li>
