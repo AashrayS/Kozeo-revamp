@@ -48,6 +48,7 @@ export default function GigPage({
   const [input, setInput] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(true);
+  const [isGigInfoMinimized, setIsGigInfoMinimized] = useState(false);
   const [width, setWidth] = useState(700);
   const resizerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -66,6 +67,11 @@ export default function GigPage({
   const [expandedMessages, setExpandedMessages] = useState<Set<number>>(
     new Set()
   );
+  // Typing status states
+  const [isTyping, setIsTyping] = useState(false);
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -212,8 +218,52 @@ export default function GigPage({
     // Add to local messages
     setMessages((prev) => [...prev, messageData]);
 
-    // Clear input
+    // Clear input and stop typing
     setInput("");
+    stopTyping();
+  };
+
+  // Typing functionality
+  const startTyping = () => {
+    if (!socketRef.current || isTyping) return;
+
+    setIsTyping(true);
+    socketRef.current.emit("typing-start", {
+      gigId,
+      username: getCurrentUsername(),
+    });
+  };
+
+  const stopTyping = () => {
+    if (!socketRef.current || !isTyping) return;
+
+    setIsTyping(false);
+    socketRef.current.emit("typing-stop", {
+      gigId,
+      username: getCurrentUsername(),
+    });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.slice(0, 1500);
+    setInput(value);
+
+    // Handle typing status
+    if (value.trim() && !isTyping) {
+      startTyping();
+    }
+
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Set new timeout to stop typing after 2 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      if (isTyping) {
+        stopTyping();
+      }
+    }, 2000);
   };
 
   useEffect(() => {
@@ -234,6 +284,19 @@ export default function GigPage({
     socket.on("chat-message", (msg) => {
       setMessages((prev) => [...prev, msg]);
       console.log("Received chat message:", msg);
+    });
+
+    // Typing status events
+    socket.on("typing-start", (data) => {
+      if (data.username !== getCurrentUsername()) {
+        setOtherUserTyping(true);
+      }
+    });
+
+    socket.on("typing-stop", (data) => {
+      if (data.username !== getCurrentUsername()) {
+        setOtherUserTyping(false);
+      }
     });
 
     socket.on("screen-offer", async (offer) => {
@@ -398,6 +461,10 @@ export default function GigPage({
     });
 
     return () => {
+      // Clean up typing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
       socket.disconnect();
     };
   }, [gigId, gig]); // Only connect after gig is loaded
@@ -664,6 +731,21 @@ export default function GigPage({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Cleanup typing on component unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      if (isTyping && socketRef.current) {
+        socketRef.current.emit("typing-stop", {
+          gigId,
+          username: getCurrentUsername(),
+        });
+      }
+    };
+  }, []);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleSendMessage();
   };
@@ -904,111 +986,192 @@ export default function GigPage({
             className="flex-1 p-0 flex flex-col overflow-hidden overflow-x-hidden"
             ref={containerRef}
           >
-            <div className="block md:hidden bg-transparent text-cyan-200 p-2 text-center text-xs font-medium rounded-md shadow-sm m-2">
-              📱 Mobile View: Chat only. Video calling available on desktop.
+            <div className="block md:hidden bg-neutral-800/40 border border-neutral-700/30 text-neutral-300 p-3 text-center text-xs font-medium m-3 rounded-lg">
+              <div className="flex items-center justify-center gap-2">
+                <svg
+                  className="w-4 h-4 text-blue-400/70"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M3 4a1 1 0 011-1h12a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2v8h10V6H5z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>Mobile workspace - Video calls available on desktop</span>
+              </div>
             </div>
 
             {/* Mobile Navigation Tabs */}
-            <div className="md:hidden flex bg-neutral-800 border-b border-neutral-600">
+            <div className="md:hidden flex bg-neutral-900/80 border-b border-neutral-700/50 backdrop-blur-sm">
               <button
                 onClick={() => setShowMobileChat(true)}
-                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+                className={`flex-1 py-4 px-6 text-sm font-medium transition-all duration-200 relative ${
                   showMobileChat
-                    ? "bg-cyan-600 text-white"
-                    : "text-gray-400 hover:text-white"
+                    ? "text-white bg-neutral-800/60"
+                    : "text-neutral-400 hover:text-white hover:bg-neutral-800/30"
                 }`}
               >
-                💬 Chat
+                <div className="flex items-center justify-center gap-2">
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>Chat</span>
+                </div>
+                {showMobileChat && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400/80"></div>
+                )}
               </button>
               <button
                 onClick={() => setShowMobileChat(false)}
-                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+                className={`flex-1 py-4 px-6 text-sm font-medium transition-all duration-200 relative ${
                   !showMobileChat
-                    ? "bg-cyan-600 text-white"
-                    : "text-gray-400 hover:text-white"
+                    ? "text-white bg-neutral-800/60"
+                    : "text-neutral-400 hover:text-white hover:bg-neutral-800/30"
                 }`}
               >
-                🎨 Canvas
+                <div className="flex items-center justify-center gap-2">
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>Canvas</span>
+                </div>
+                {!showMobileChat && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-400/80"></div>
+                )}
               </button>
             </div>
 
             {/* Gig Info Bar */}
-            <div className="bg-transparent border-b border-neutral-800 px-4 md:px-6 py-2.5">
-              <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3">
-                {/* Left Section - Gig Details */}
-                <div className="flex-1 min-w-0">
-                  <h1 className="text-lg font-medium text-white mb-1 truncate">
-                    {gig.title}
-                  </h1>
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-400">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-neutral-500">Host:</span>
-                      <span className="text-neutral-200 font-medium">
-                        @{gig.host?.username || "Unknown"}
-                      </span>
-                    </div>
-                    {gig.guest && (
+            <div className="bg-transparent border-b border-neutral-800 px-4 md:px-6 py-2.5 md:py-2.5 transition-all duration-300 ease-in-out overflow-hidden">
+              {/* Mobile Toggle Button */}
+              <div className="md:hidden flex justify-between items-center mb-3">
+                <h2 className="text-sm font-medium text-neutral-300">
+                  Gig Details
+                </h2>
+                <button
+                  onClick={() => setIsGigInfoMinimized(!isGigInfoMinimized)}
+                  className="p-1.5 rounded-lg bg-neutral-800/60 hover:bg-neutral-700/60 border border-neutral-600/50 text-neutral-400 hover:text-white transition-all duration-200"
+                >
+                  <svg
+                    className={`w-4 h-4 transition-transform duration-300 ${
+                      isGigInfoMinimized ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Collapsible Content */}
+              <div
+                className={`transition-all duration-300 ease-in-out ${
+                  isGigInfoMinimized
+                    ? "md:block hidden opacity-0 max-h-0"
+                    : "opacity-100 max-h-[200px]"
+                }`}
+              >
+                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3">
+                  {/* Left Section - Gig Details */}
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-lg font-medium text-white mb-1 truncate">
+                      {gig.title}
+                    </h1>
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-400">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-neutral-500">Guest:</span>
+                        <span className="text-neutral-500">Host:</span>
                         <span className="text-neutral-200 font-medium">
-                          @{gig.guest.username}
+                          @{gig.host?.username || "Unknown"}
                         </span>
                       </div>
+                      {gig.guest && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-neutral-500">Guest:</span>
+                          <span className="text-neutral-200 font-medium">
+                            @{gig.guest.username}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {gig.description && (
+                      <p className="text-xs text-neutral-400 mt-1.5 max-w-2xl line-clamp-1">
+                        {gig.description}
+                      </p>
                     )}
                   </div>
-                  {gig.description && (
-                    <p className="text-xs text-neutral-400 mt-1.5 max-w-2xl line-clamp-1">
-                      {gig.description}
-                    </p>
-                  )}
-                </div>
 
-                {/* Right Section - Payment Info */}
-                <div className="lg:min-w-[240px]">
-                  <div className="bg-transparent rounded-md p-3 border border-neutral-700/50">
-                    <div className="grid grid-cols-2 gap-3 mb-2">
-                      <div>
-                        <p className="text-xs text-neutral-500 uppercase tracking-wide mb-0.5">
-                          Total
-                        </p>
-                        <p className="text-base font-semibold text-white">
-                          {gig.currency} {gig.amount}
-                        </p>
+                  {/* Right Section - Payment Info */}
+                  <div className="lg:min-w-[240px]">
+                    <div className="bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-md p-3  border-blue-500/20">
+                      <div className="grid grid-cols-2 gap-3 mb-2">
+                        <div>
+                          <p className="text-xs text-blue-300/80 uppercase tracking-wide mb-0.5">
+                            Total
+                          </p>
+                          <p className="text-base font-semibold text-white">
+                            {gig.currency} {gig.amount}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-green-300/80 uppercase tracking-wide mb-0.5">
+                            Remaining
+                          </p>
+                          <p className="text-base font-semibold text-neutral-300">
+                            {gig.currency}{" "}
+                            {(gig.amount - (gig.paidAmount || 0)).toFixed(2)}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs text-neutral-500 uppercase tracking-wide mb-0.5">
-                          Remaining
-                        </p>
-                        <p className="text-base font-semibold text-neutral-300">
-                          {gig.currency}{" "}
-                          {(gig.amount - (gig.paidAmount || 0)).toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
 
-                    {/* Progress Bar */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-neutral-500">
-                          Progress
-                        </span>
-                        <span className="text-xs text-neutral-400 font-medium">
-                          {Math.round(
-                            ((gig.paidAmount || 0) / gig.amount) * 100
-                          )}
-                          %
-                        </span>
-                      </div>
-                      <div className="w-full bg-neutral-700 rounded-full h-1.5">
-                        <div
-                          className="bg-neutral-400 h-1.5 rounded-full transition-all duration-300"
-                          style={{
-                            width: `${Math.min(
-                              ((gig.paidAmount || 0) / gig.amount) * 100,
-                              100
-                            )}%`,
-                          }}
-                        ></div>
+                      {/* Progress Bar */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-neutral-400">
+                            Progress
+                          </span>
+                          <span className="text-xs text-blue-300/90 font-medium">
+                            {Math.round(
+                              ((gig.paidAmount || 0) / gig.amount) * 100
+                            )}
+                            %
+                          </span>
+                        </div>
+                        <div className="w-full bg-neutral-700/60 rounded-full h-1.5">
+                          <div
+                            className="bg-gradient-to-r from-blue-400 to-green-400 h-1.5 rounded-full transition-all duration-300"
+                            style={{
+                              width: `${Math.min(
+                                ((gig.paidAmount || 0) / gig.amount) * 100,
+                                100
+                              )}%`,
+                            }}
+                          ></div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1018,8 +1181,12 @@ export default function GigPage({
 
             {/* Row containing all three columns */}
             <div
-              className="flex flex-1 flex-col md:flex-row min-h-0"
-              style={{ height: "calc(100vh - 200px)" }}
+              className="flex flex-1 flex-col md:flex-row min-h-0 transition-all duration-300 ease-in-out"
+              style={{
+                height: isGigInfoMinimized
+                  ? "calc(100vh - 140px)"
+                  : "calc(100vh - 100px)",
+              }}
             >
               {/* Mobile Chat View */}
               {showMobileChat && (
@@ -1034,7 +1201,7 @@ export default function GigPage({
                     <div className="flex gap-2 justify-between sm:justify-end">
                       <button
                         onClick={() => setShowEndGigModal(true)}
-                        className="group relative px-3 py-1.5 rounded-lg bg-neutral-800/80 hover:bg-red-600/90 border border-neutral-600 hover:border-red-500 text-neutral-200 hover:text-white text-xs font-medium transition-all duration-200 ease-in-out shadow-sm"
+                        className="group relative px-3 py-1.5 rounded-lg bg-neutral-800/80 hover:bg-red-500/20 border border-neutral-600 hover:border-red-400/50 text-neutral-200 hover:text-red-300 text-xs font-medium transition-all duration-200 ease-in-out shadow-sm"
                       >
                         <span className="flex items-center gap-1.5">
                           <svg
@@ -1059,8 +1226,12 @@ export default function GigPage({
 
                   <div
                     ref={mobileMessagesRef}
-                    className="overflow-y-auto overflow-x-auto p-2 space-y-2 text-sm min-h-0 chat-scrollbar"
-                    style={{ height: "calc(100vh - 400px)" }}
+                    className="overflow-y-auto overflow-x-auto p-2 space-y-2 text-sm min-h-0 chat-scrollbar transition-all duration-300 ease-in-out"
+                    style={{
+                      height: isGigInfoMinimized
+                        ? "calc(100vh - 280px)"
+                        : "calc(100vh - 400px)",
+                    }}
                   >
                     {messages.map((msg, i) => (
                       <div key={i} className="min-w-0">
@@ -1110,7 +1281,7 @@ export default function GigPage({
                                         "completed"
                                       )
                                     }
-                                    className="px-2 py-1 rounded bg-neutral-200 hover:bg-white text-neutral-900 text-xs font-semibold transition-colors"
+                                    className="px-2 py-1 rounded bg-green-600/80 hover:bg-green-500 text-white text-xs font-semibold transition-colors"
                                   >
                                     Pay Now
                                   </button>
@@ -1154,7 +1325,7 @@ export default function GigPage({
                             {shouldShowReadMore(msg.message) && (
                               <button
                                 onClick={() => toggleMessageExpansion(i)}
-                                className="text-xs text-blue-400 hover:text-blue-300 mt-1 font-medium"
+                                className="text-xs text-blue-400/90 hover:text-blue-300 mt-1 font-medium transition-colors"
                               >
                                 {expandedMessages.has(i)
                                   ? "Read less"
@@ -1170,7 +1341,20 @@ export default function GigPage({
                     ))}
                   </div>
 
-                  <div className="border-t border-neutral-700 p-2 relative flex-shrink-0">
+                  <div className=" border-t border-neutral-700 p-2 relative flex-shrink-0">
+                    {/* Typing Indicator - Absolutely positioned */}
+                    {otherUserTyping && (
+                      <div className="absolute -top-8 left-0 right-0 px-2 py-1  border-neutral-700/50 backdrop-blur-sm z-10">
+                        <div className="flex items-center gap-2 text-xs text-neutral-400">
+                          <div className="flex gap-1">
+                            <div className="w-1 h-1 bg-blue-400 rounded-full animate-pulse"></div>
+                            <div className="w-1 h-1 bg-blue-400 rounded-full animate-pulse animation-delay-100"></div>
+                            <div className="w-1 h-1 bg-blue-400 rounded-full animate-pulse animation-delay-200"></div>
+                          </div>
+                          <span>{getOtherPartyUsername()} is typing...</span>
+                        </div>
+                      </div>
+                    )}
                     {showEmoji && (
                       <div
                         ref={emojiRef}
@@ -1189,7 +1373,7 @@ export default function GigPage({
                     <div className="flex gap-1 items-center">
                       <button
                         onClick={() => setShowEmoji(!showEmoji)}
-                        className="text-lg text-gray-400 hover:text-white p-1"
+                        className="text-lg text-gray-400 hover:text-orange-300 p-1 transition-colors"
                       >
                         <FaRegSmile />
                       </button>
@@ -1222,11 +1406,9 @@ export default function GigPage({
                       </div>
                       <input
                         value={input}
-                        onChange={(e) =>
-                          setInput(e.target.value.slice(0, 1500))
-                        }
+                        onChange={handleInputChange}
                         onKeyDown={handleKeyDown}
-                        className="flex-1 bg-neutral-800 border border-neutral-600 p-2 rounded-md text-white text-sm placeholder-gray-400"
+                        className="flex-1 bg-neutral-800/80 border border-neutral-600 focus:border-blue-400/50 p-2 rounded-md text-white text-sm placeholder-gray-400 transition-all"
                         placeholder="Type a message..."
                       />
                       {input.length > 1400 && (
@@ -1237,9 +1419,23 @@ export default function GigPage({
                       <button
                         onClick={handleSendMessage}
                         disabled={!input.trim()}
-                        className="px-2 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-cyan-800 disabled:opacity-50 rounded-md text-white font-semibold transition-colors text-sm"
+                        className="group relative px-3 py-2 bg-gradient-to-r from-neutral-700/60 to-neutral-600/60 hover:from-blue-600/40 hover:to-blue-500/40 disabled:from-neutral-800/30 disabled:to-neutral-700/30 disabled:opacity-40 rounded-lg text-white font-medium transition-all duration-200 text-sm shadow-sm hover:shadow-blue-500/15 disabled:cursor-not-allowed"
                       >
-                        →
+                        <span className="flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 rotate-90 transition-transform duration-200 group-hover:scale-110 group-disabled:scale-100"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                            />
+                          </svg>
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -1265,10 +1461,10 @@ export default function GigPage({
                     @{getOtherPartyUsername()}
                   </span>
 
-                  <div className="flex gap-2 md:gap-4 justify-between sm:justify-end flex-shrink-0">
+                  <div className="flex gap-2 md:gap-4 justify-between sm:justify-end flex-shrink-0 items-center">
                     <button
                       onClick={() => setShowEndGigModal(true)}
-                      className="group relative px-3 md:px-4 py-1.5 md:py-2 rounded-lg bg-transparent hover:bg-red-600/90 border border-neutral-600 hover:border-red-500 text-neutral-200 hover:text-white text-xs md:text-sm font-medium transition-all duration-200 ease-in-out shadow-sm"
+                      className="group relative px-3 md:px-4 py-1.5 md:py-2 rounded-lg bg-transparent hover:bg-red-500/20 border border-neutral-600 hover:border-red-400/50 text-neutral-200 hover:text-red-300 text-xs md:text-sm font-medium transition-all duration-200 ease-in-out shadow-sm"
                     >
                       <span className="flex items-center gap-1.5 md:gap-2">
                         {/* <svg
@@ -1285,10 +1481,12 @@ export default function GigPage({
                         End Gig
                       </span>
                     </button>
-                    <FiPhone
+                    <button
                       onClick={() => initiateCall("audio")}
-                      className="text-lg md:text-xl cursor-pointer hidden md:block"
-                    />
+                      className="hidden md:flex items-center justify-center px-3 md:px-4 py-1.5 md:py-2 rounded-lg bg-transparent hover:bg-blue-500/20 border border-neutral-600 hover:border-blue-400/50 text-gray-400 hover:text-blue-300 transition-all duration-200 ease-in-out"
+                    >
+                      <FiPhone className="text-lg md:text-xl" />
+                    </button>
                     <div className="md:hidden text-xs text-gray-400">
                       Audio calls available on desktop
                     </div>
@@ -1297,8 +1495,12 @@ export default function GigPage({
 
                 <div
                   ref={desktopMessagesRef}
-                  className=" overflow-y-auto overflow-x-auto p-2 md:p-4 space-y-2 md:space-y-3 text-sm min-h-0 chat-scrollbar"
-                  style={{ height: "calc(100vh - 220px)" }}
+                  className=" overflow-y-auto overflow-x-auto p-2 md:p-4 space-y-2 md:space-y-3 text-sm min-h-0 chat-scrollbar transition-all duration-300 ease-in-out"
+                  style={{
+                    height: isGigInfoMinimized
+                      ? "calc(100vh - 160px)"
+                      : "calc(100vh - 220px)",
+                  }}
                 >
                   {messages.map((msg, i) => (
                     <div key={i} className="min-w-0">
@@ -1357,7 +1559,7 @@ export default function GigPage({
                                       "completed"
                                     )
                                   }
-                                  className="px-2 md:px-3 py-1 rounded bg-neutral-200 hover:bg-white text-neutral-900 text-xs font-semibold transition-colors"
+                                  className="px-2 md:px-3 py-1 rounded bg-green-600/80 hover:bg-green-500 text-white text-xs font-semibold transition-colors"
                                 >
                                   Pay Now
                                 </button>
@@ -1401,7 +1603,7 @@ export default function GigPage({
                           {shouldShowReadMore(msg.message) && (
                             <button
                               onClick={() => toggleMessageExpansion(i)}
-                              className="text-xs text-blue-400 hover:text-blue-300 mt-1 font-medium"
+                              className="text-xs text-blue-400/90 hover:text-blue-300 mt-1 font-medium transition-colors"
                             >
                               {expandedMessages.has(i)
                                 ? "Read less"
@@ -1417,7 +1619,20 @@ export default function GigPage({
                   ))}
                 </div>
 
-                <div className="border-t border-neutral-700 p-2 md:p-3 relative flex-shrink-0">
+                <div className="border-t border-neutral-700 p-2 relative flex-shrink-0">
+                  {/* Typing Indicator - Absolutely positioned */}
+                  {otherUserTyping && (
+                    <div className="absolute -top-8 left-0 right-0 px-2 py-1  border-neutral-700/50 backdrop-blur-sm z-10">
+                      <div className="flex items-center gap-2 text-xs text-neutral-400">
+                        <div className="flex gap-1">
+                          <div className="w-1 h-1 bg-blue-400 rounded-full animate-pulse"></div>
+                          <div className="w-1 h-1 bg-blue-400 rounded-full animate-pulse animation-delay-100"></div>
+                          <div className="w-1 h-1 bg-blue-400 rounded-full animate-pulse animation-delay-200"></div>
+                        </div>
+                        <span>{getOtherPartyUsername()} is typing...</span>
+                      </div>
+                    </div>
+                  )}
                   {showEmoji && (
                     <div
                       ref={emojiRef}
@@ -1436,7 +1651,7 @@ export default function GigPage({
                   <div className="flex gap-1 md:gap-2 items-center">
                     <button
                       onClick={() => setShowEmoji(!showEmoji)}
-                      className="text-lg md:text-xl text-gray-400 hover:text-white p-1"
+                      className="text-lg md:text-xl text-gray-400 hover:text-orange-300 p-1 transition-colors"
                     >
                       <FaRegSmile />
                     </button>
@@ -1469,9 +1684,9 @@ export default function GigPage({
                     </div>
                     <input
                       value={input}
-                      onChange={(e) => setInput(e.target.value.slice(0, 1500))}
+                      onChange={handleInputChange}
                       onKeyDown={handleKeyDown}
-                      className="flex-1 bg-neutral-800 border border-neutral-600 p-2 rounded-md text-white text-sm md:text-base placeholder-gray-400"
+                      className="flex-1 bg-neutral-800/80 border border-neutral-600 focus:border-blue-400/50 p-2 rounded-md text-white text-sm md:text-base placeholder-gray-400 transition-all"
                       placeholder="Type a message..."
                     />
                     {input.length > 1400 && (
@@ -1482,10 +1697,15 @@ export default function GigPage({
                     <button
                       onClick={handleSendMessage}
                       disabled={!input.trim()}
-                      className="px-2 md:px-3 py-2 bg-cyan-600 hover:bg-cyan-700 disabled:bg-cyan-800 disabled:opacity-50 rounded-md text-white font-semibold transition-colors text-sm"
+                      className="group relative px-3 py-2 bg-gradient-to-r from-neutral-700/60 to-neutral-600/60 hover:from-blue-600/40 hover:to-blue-500/40 disabled:from-neutral-800/40 disabled:to-neutral-700/40 disabled:opacity-50 rounded-lg text-white font-medium transition-all duration-200 shadow-sm hover:shadow-blue-500/15 disabled:shadow-none"
                     >
-                      <span className="hidden sm:inline">Send</span>
-                      <span className="sm:hidden">→</span>
+                      <svg
+                        className="w-4 h-4 rotate-90 transition-transform duration-200 group-hover:scale-110"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                      </svg>
                     </button>
                   </div>
                 </div>
@@ -1494,7 +1714,7 @@ export default function GigPage({
               <div
                 ref={resizerRef}
                 onMouseDown={startResize}
-                className="hidden md:block w-2 cursor-col-resize bg-neutral-800 hover:bg-neutral-600 transition-colors"
+                className="hidden md:block w-2 cursor-col-resize bg-transparent hover:bg-neutral-700 from-blue-500/40 hover:to-purple-500/40 transition-all duration-200"
               />
 
               {/* Tldraw Board and screen Share Window */}
@@ -1521,7 +1741,7 @@ export default function GigPage({
                     <div
                       ref={dividerRef}
                       onMouseDown={startVerticalResize}
-                      className="h-2 cursor-row-resize bg-neutral-700 hover:bg-neutral-600 transition-colors"
+                      className="h-2 cursor-row-resize bg-gradient-to-r from-orange-500/20 to-purple-500/20 hover:from-orange-500/40 hover:to-purple-500/40 transition-all duration-200"
                     />
                   </>
                 )}
@@ -1567,21 +1787,25 @@ export default function GigPage({
                       </div>
                     </div>
 
-                    <div className="flex justify-around py-4 border-t border-b border-neutral-700">
+                    <div className="flex justify-around py-4 border-t border-b border-neutral-700/50">
                       <FaDesktop
                         onClick={startScreenShare}
-                        className="text-xl cursor-pointer hover:text-white text-gray-400"
+                        className="text-xl cursor-pointer hover:text-orange-300 text-gray-400 transition-colors"
                       />
                       <FaMicrophone
                         onClick={toggleAudio}
-                        className={`text-xl cursor-pointer ${
-                          isAudioEnabled ? "text-green-400" : "text-red-400"
+                        className={`text-xl cursor-pointer transition-colors ${
+                          isAudioEnabled
+                            ? "text-green-400 hover:text-green-300"
+                            : "text-red-400 hover:text-red-300"
                         }`}
                       />
                       <FaVideo
                         onClick={toggleVideo}
-                        className={`text-xl cursor-pointer ${
-                          isVideoEnabled ? "text-green-400" : "text-red-400"
+                        className={`text-xl cursor-pointer transition-colors ${
+                          isVideoEnabled
+                            ? "text-green-400 hover:text-green-300"
+                            : "text-red-400 hover:text-red-300"
                         }`}
                       />
                     </div>
@@ -1604,18 +1828,18 @@ export default function GigPage({
       {/* Payment Request Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-neutral-800 border border-neutral-700 rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
+          <div className="bg-gradient-to-br from-neutral-800 to-neutral-900 border border-blue-500/20 rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-neutral-700 rounded-lg flex items-center justify-center">
-                  <FaDollarSign className="text-neutral-300 text-lg" />
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600/20 to-green-600/20 rounded-lg flex items-center justify-center border border-blue-500/30">
+                  <FaDollarSign className="text-green-300 text-lg" />
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-white">
                     Request Payment
                   </h3>
-                  <p className="text-sm text-neutral-400">
+                  <p className="text-sm text-blue-200/80">
                     Send a payment request
                   </p>
                 </div>
@@ -1650,16 +1874,16 @@ export default function GigPage({
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs text-neutral-500">
+                    <span className="text-xs text-blue-300/80">
                       Payment Progress
                     </span>
-                    <span className="text-xs text-neutral-400 font-medium">
+                    <span className="text-xs text-green-300/90 font-medium">
                       {Math.round(((gig.paidAmount || 0) / gig.amount) * 100)}%
                     </span>
                   </div>
-                  <div className="w-full bg-neutral-700 rounded-full h-1.5">
+                  <div className="w-full bg-neutral-700/60 rounded-full h-1.5">
                     <div
-                      className="bg-neutral-400 h-1.5 rounded-full transition-all duration-300"
+                      className="bg-gradient-to-r from-blue-400 to-green-400 h-1.5 rounded-full transition-all duration-300"
                       style={{
                         width: `${Math.min(
                           ((gig.paidAmount || 0) / gig.amount) * 100,
@@ -1689,7 +1913,7 @@ export default function GigPage({
                   min="0"
                   max={gig ? gig.amount - (gig.paidAmount || 0) : undefined}
                   step="0.01"
-                  className="w-full pl-16 pr-4 py-3 bg-neutral-900/50 border border-neutral-600 rounded-lg text-white text-lg font-medium placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-transparent transition-all"
+                  className="w-full pl-16 pr-4 py-3 bg-neutral-900/50 border border-blue-500/30 rounded-lg text-white text-lg font-medium placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all"
                 />
               </div>
               {gig && (
@@ -1727,7 +1951,7 @@ export default function GigPage({
       {/* End Gig Confirmation Modal */}
       {showEndGigModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-neutral-800 rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-gradient-to-br from-neutral-800 to-neutral-900 border border-red-500/20 rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-white mb-4">
               End Gig Confirmation
             </h3>
@@ -1738,13 +1962,13 @@ export default function GigPage({
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowEndGigModal(false)}
-                className="px-4 py-2 rounded bg-gray-600 hover:bg-gray-700 text-white"
+                className="px-4 py-2 rounded bg-neutral-600 hover:bg-neutral-500 text-white transition-colors border border-neutral-500"
               >
                 Cancel
               </button>
               <button
                 onClick={endGig}
-                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white"
+                className="px-4 py-2 rounded bg-red-600/80 hover:bg-red-500 text-white transition-colors border border-red-500/50"
               >
                 End Gig
               </button>
@@ -1756,7 +1980,7 @@ export default function GigPage({
       {/* Gig Ended by Other Party Modal */}
       {showGigEndedModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-neutral-800 rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-gradient-to-br from-neutral-800 to-neutral-900 border border-blue-500/20 rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-white mb-4">Gig Ended</h3>
             <p className="text-gray-300 mb-6">
               The gig has been ended by the other party. You will be redirected
@@ -1765,7 +1989,7 @@ export default function GigPage({
             <div className="flex justify-end">
               <button
                 onClick={() => router.push("/review")}
-                className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white"
+                className="px-4 py-2 rounded bg-blue-600/80 hover:bg-blue-500 text-white transition-colors border border-blue-500/50"
               >
                 Go to Review
               </button>
