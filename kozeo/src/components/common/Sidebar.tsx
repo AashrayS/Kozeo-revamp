@@ -29,7 +29,7 @@ export default function Sidebar() {
     { name: "Home", icon: FiHome, path: "/Atrium" },
     { name: "Profile", icon: FiUser, path: `/profile/${profileUsername}` },
     { name: "Store", icon: FiShoppingBag, path: "/store" },
-    { name: "Gigs", icon: FiBriefcase, path: "/gigs" }, // Update to go to gig list
+    { name: "My Gigs", icon: FiBriefcase, path: "/gigs" }, // Update to go to gig list
     {
       name: "Discussion Rooms",
       icon: FiMessageSquare,
@@ -44,39 +44,56 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="relative">
+    <div className="relative z-[9999]">
       <aside
-        className={`sticky top-0 h-screen border-r text-white border-neutral-700 flex flex-col justify-between transition-all duration-300 ${
+        className={`sticky top-0 h-screen border-r text-white border-neutral-700 flex flex-col justify-between transition-all duration-300 z-[9999] ${
           collapsed ? "w-20" : "w-64"
         }`}
       >
         <div className="flex flex-col p-4 space-y-6">
           <nav className="space-y-8">
             {tabs.map(({ name, icon: Icon, path }) => (
-              <button
-                key={name}
-                onClick={() => handleNavigation(path)}
-                className="flex items-center gap-3 w-full px-4 py-2 rounded-md hover:bg-neutral-800 transition-colors"
-              >
-                <Icon className="text-2xl shrink-0" />
-                {!collapsed && <span className="text-base">{name}</span>}
-              </button>
+              <div key={name} className="relative group">
+                <button
+                  onClick={() => handleNavigation(path)}
+                  className="flex items-center gap-3 w-full px-4 py-2 rounded-md hover:bg-neutral-800 transition-colors"
+                >
+                  <Icon className="text-2xl shrink-0" />
+                  {!collapsed && <span className="text-base">{name}</span>}
+                </button>
+                {/* Tooltip for collapsed view */}
+                {collapsed && (
+                  <div className="absolute left-full ml-2 px-2 py-1 bg-neutral-800 text-white text-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[99999] top-1/2 transform -translate-y-1/2 shadow-lg border border-neutral-700">
+                    {name}
+                    <div className="absolute right-full top-1/2 transform -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-neutral-800"></div>
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
 
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="flex items-center gap-3 w-full px-4 py-2 rounded-md hover:bg-neutral-800 transition-colors"
-          >
-            {collapsed ? (
-              <FiChevronRight className="text-2xl shrink-0" />
-            ) : (
-              <>
-                <FiChevronLeft className="text-2xl shrink-0" />
-                <span className="text-base">Collapse</span>
-              </>
+          <div className="relative group">
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="flex items-center gap-3 w-full px-4 py-2 rounded-md hover:bg-neutral-800 transition-colors"
+            >
+              {collapsed ? (
+                <FiChevronRight className="text-2xl shrink-0" />
+              ) : (
+                <>
+                  <FiChevronLeft className="text-2xl shrink-0" />
+                  <span className="text-base">Collapse</span>
+                </>
+              )}
+            </button>
+            {/* Tooltip for collapsed view */}
+            {collapsed && (
+              <div className="absolute left-full ml-2 px-2 py-1 bg-neutral-800 text-white text-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[99999] top-1/2 transform -translate-y-1/2 shadow-lg border border-neutral-700">
+                Expand
+                <div className="absolute right-full top-1/2 transform -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-neutral-800"></div>
+              </div>
             )}
-          </button>
+          </div>
         </div>
       </aside>
     </div>

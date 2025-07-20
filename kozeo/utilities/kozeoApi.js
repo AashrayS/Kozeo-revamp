@@ -150,28 +150,30 @@ export async function registerUser(input) {
  * @returns {Promise<Object>} Auth payload with token and user data
  */
 export async function loginUser(input) {
+
   const mutation = `
     mutation LoginUser($input: LoginUserInput!) {
       loginUser(input: $input) {
         token
         user {
-          id
-          first_name
-          last_name
-          email
-          username
-          country_Code
-          bio
-          phone
-          profile_Picture
-          resume
-          role
-          links
-          rating
-          createdAt
-          updatedAt
+            id
+            first_name
+            last_name
+            email
+            username
+            country_Code
+            bio
+            phone
+            profile_Picture
+            resume
+            links
+            rating
+            role
+            unreadNotificationCount
+            createdAt
+            updatedAt
         }
-      }
+    }
     }
   `;
 
@@ -1079,28 +1081,22 @@ export const getGigChats = async (gigId) => {
     query GigChats($gigId: ID!) {
       gigChats(gigId: $gigId) {
         id
+        gig
+        receiver
         content
         timestamp
         messageType
         isRead
-        sender {
-          id
-          username
-          profile_Picture
-        }
-        receiver {
-          id
-          username
-        }
-        attachments {
-          filename
-          url
-          fileType
-          fileSize
-        }
+        isEdited
+        editedAt
         createdAt
-      }
+        updatedAt
+        sender
+        attachments {
+            description
+        }
     }
+}
   `;
 
   const result = await query(chatQuery, { gigId });
@@ -1116,16 +1112,10 @@ export const sendGigMessage = async (messageData) => {
   const sendMessageMutation = `
     mutation SendGigMessage($input: SendGigMessageInput!) {
       sendGigMessage(input: $input) {
-        id
+        gig
         content
         timestamp
         messageType
-        sender {
-          id
-          username
-          profile_Picture
-        }
-        createdAt
       }
     }
   `;

@@ -74,6 +74,8 @@ export const { setUser, clearUser, setLoading, restoreUser } =
 // Selectors
 export const selectUser = (state) => state.user.user;
 export const selectUserName = (state) => state.user.user?.username || null;
+
+export const selectUserEmail = (state) => state.user.user?.email || null;
 export const selectToken = (state) => state.user.token;
 export const selectIsAuthenticated = (state) => state.user.isAuthenticated;
 export const selectUserLoading = (state) => state.user.loading;

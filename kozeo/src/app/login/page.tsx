@@ -190,9 +190,13 @@ export default function LoginSignupPage() {
                       });
 
                       // Save both user and token to Redux and localStorage
+                      // Include email from input to ensure it's available
                       dispatch(
                         setUser({
-                          user: (response as any).user,
+                          user: {
+                            ...(response as any).user,
+                            email: loginEmail, // Use email from input
+                          },
                           token: (response as any).token,
                         })
                       );
@@ -546,9 +550,16 @@ export default function LoginSignupPage() {
                           });
 
                           // Save both user and token to Redux and localStorage
+                          // Include email from input to ensure it's available
                           dispatch(
                             setUser({
-                              user: (response as any).user,
+                              user: {
+                                ...(response as any).user,
+                                email: signupData.email, // Use email from input
+                                first_name: signupData.first_name, // Ensure first_name is included
+                                last_name: signupData.last_name, // Ensure last_name is included
+                                username: signupData.username, // Ensure username is included
+                              },
                               token: (response as any).token,
                             })
                           );

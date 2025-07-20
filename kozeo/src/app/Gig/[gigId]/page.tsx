@@ -16,7 +16,11 @@ import { use } from "react";
 import { useRouter } from "next/navigation";
 import TldrawWrapper from "@/components/common/TldrawWrapper";
 import EmojiPicker from "emoji-picker-react";
-import { getGigById } from "../../../../utilities/kozeoApi";
+import {
+  getGigById,
+  getGigChats,
+  sendGigMessage,
+} from "../../../../utilities/kozeoApi";
 import { useUser } from "../../../../store/hooks";
 
 import { io } from "socket.io-client";
@@ -38,7 +42,7 @@ export default function GigPage({
   const router = useRouter();
 
   // Redux state for current user
-  const { user, username, isAuthenticated } = useUser();
+  const { user, username, email, isAuthenticated } = useUser();
 
   // Gig state management
   const [gig, setGig] = useState<any>(null);
@@ -71,6 +75,7 @@ export default function GigPage({
   const [isTyping, setIsTyping] = useState(false);
   const [otherUserTyping, setOtherUserTyping] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const chatSyncIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -108,6 +113,12 @@ export default function GigPage({
           console.log("Gig details fetched:", gigData);
           console.log("Current user:", { username, user });
           console.log("User role:", getCurrentUserRole());
+
+          // Fetch chat messages after gig is loaded
+          await fetchChatMessages();
+
+          // Start periodic chat sync
+          // startChatSync();
         } else {
           setGigError("Gig not found");
         }
@@ -119,8 +130,163 @@ export default function GigPage({
       }
     };
 
+    const fetchChatMessages = async () => {
+      try {
+        console.log("Fetching chat messages for gig:", gigId);
+        const chatMessages = await getGigChats(gigId);
+
+        // Transform API messages to match our current message format
+        const transformedMessages = chatMessages.map((msg: any) => {
+          // Determine display name for sender based on email
+          let senderDisplayName = "Unknown";
+
+          // Get current user email for comparison
+          const currentUserEmail = getCurrentUserEmail();
+
+          // If sender email matches current user email, use current username
+          if (msg.sender === currentUserEmail) {
+            senderDisplayName = getCurrentUserEmail();
+          } else {
+            // If sender email matches gig host email, use host username
+            if (gig?.host?.email === msg.sender) {
+              senderDisplayName = gig.host.email;
+            }
+            // If sender email matches gig guest email, use guest username
+            else if (gig?.guest?.email === msg.sender) {
+              senderDisplayName = gig.guest.email;
+            }
+            // Fallback: extract username from email
+            else {
+              senderDisplayName = msg.sender.split("@")[0];
+            }
+          }
+
+          // Determine message type based on messageType and attachments
+          let messageType = "text";
+          if (msg.messageType === "payment" && msg.attachments && msg.attachments.length > 0) {
+            const description = msg.attachments[0].description;
+            if (description === "request-made") {
+              messageType = "payment-request";
+            } else if (description === "accepted") {
+              messageType = "payment-accepted";
+            } else if (description === "rejected") {
+              messageType = "payment-rejected";
+            } else {
+              messageType = "payment-request"; // fallback
+            }
+          }
+
+          return {
+            sender: senderDisplayName,
+            senderEmail: msg.sender, // Keep original email for reference
+            message: msg.content,
+            time: new Date(msg.timestamp).toLocaleTimeString(),
+            timestamp: msg.timestamp,
+            id: msg.id,
+            type: messageType,
+            messageType: msg.messageType,
+            isRead: msg.isRead,
+            attachments: msg.attachments || [],
+          };
+        });
+
+        setMessages(transformedMessages);
+        console.log("Chat messages loaded:", transformedMessages);
+      } catch (error) {
+        console.error("Error fetching chat messages:", error);
+        // Don't show error for chat loading failure, just log it
+      }
+    };
+
+    const syncChatMessages = async () => {
+      try {
+        const chatMessages = await getGigChats(gigId);
+        const transformedMessages = chatMessages.map((msg: any) => {
+          // Determine display name for sender based on email
+          let senderDisplayName = "Unknown";
+
+          // Get current user email for comparison
+          const currentUserEmail = getCurrentUserEmail();
+
+          // If sender email matches current user email, use current username
+          if (msg.sender === currentUserEmail) {
+            senderDisplayName = getCurrentUserEmail();
+          } else {
+            // If sender email matches gig host email, use host username
+            if (gig?.host?.email === msg.sender) {
+              senderDisplayName = gig.host.email;
+            }
+            // If sender email matches gig guest email, use guest username
+            else if (gig?.guest?.email === msg.sender) {
+              senderDisplayName = gig.guest.email;
+            }
+            // Fallback: extract username from email
+            else {
+              senderDisplayName = msg.sender.split("@")[0];
+            }
+          }
+
+          // Determine message type based on messageType and attachments
+          let messageType = "text";
+          if (msg.messageType === "payment" && msg.attachments && msg.attachments.length > 0) {
+            const description = msg.attachments[0].description;
+            if (description === "request-made") {
+              messageType = "payment-request";
+            } else if (description === "accepted") {
+              messageType = "payment-accepted";
+            } else if (description === "rejected") {
+              messageType = "payment-rejected";
+            } else {
+              messageType = "payment-request"; // fallback
+            }
+          }
+
+          return {
+            sender: senderDisplayName,
+            senderEmail: msg.sender, // Keep original email for reference
+            message: msg.content,
+            time: new Date(msg.timestamp).toLocaleTimeString(),
+            timestamp: msg.timestamp,
+            id: msg.id,
+            type: messageType,
+            messageType: msg.messageType,
+            isRead: msg.isRead,
+            attachments: msg.attachments || [],
+          };
+        });
+
+        // Only update if messages are different (avoid unnecessary re-renders)
+        setMessages((prev) => {
+          if (prev.length !== transformedMessages.length) {
+            return transformedMessages;
+          }
+
+          // Check if last message is different
+          const lastPrev = prev[prev.length - 1];
+          const lastNew = transformedMessages[transformedMessages.length - 1];
+
+          if (!lastPrev || !lastNew || lastPrev.id !== lastNew.id) {
+            return transformedMessages;
+          }
+
+          return prev;
+        });
+      } catch (error) {
+        console.error("Error syncing chat messages:", error);
+      }
+    };
+
+    // Set up periodic chat sync (every 10 seconds)
+    const startChatSync = () => {
+      if (chatSyncIntervalRef.current) {
+        clearInterval(chatSyncIntervalRef.current);
+      }
+
+      chatSyncIntervalRef.current = setInterval(syncChatMessages, 10000);
+    };
+
     fetchGig();
-  }, [gigId, username, user]);
+  }, [gigId, username, user, email]);
 
   // Helper functions for user roles and messaging
   const getCurrentUserRole = () => {
@@ -154,6 +320,12 @@ export default function GigPage({
 
   const getCurrentUsername = () => {
     return username || user?.username || "Unknown User";
+  };
+
+  const getCurrentUserEmail = () => {
+    console.log("Getting current user email:", email, user);
+    return email || user?.email || "unknown@example.com";
+    
   };
 
   // Message handling functions
@@ -198,25 +370,87 @@ export default function GigPage({
     return () => clearTimeout(timer);
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (!input.trim() || !socketRef.current) return;
+  const handleSendMessage = async () => {
+    if (!input.trim()) return;
 
     // Limit message to 1500 characters
     const trimmedInput = input.trim().slice(0, 1500);
 
-    const messageData = {
-      gigId,
-      sender: getCurrentUsername(),
-      message: trimmedInput,
-      time: new Date().toLocaleTimeString(),
-      timestamp: new Date().toISOString(),
-    };
+    try {
+      // Prepare message data for API with current user's email as sender
+      const messageData = {
+        gig: gigId,
+        content: trimmedInput,
+        messageType: "text",
+      };
 
-    // Send to other user via WebSocket
-    socketRef.current.emit("chat-message", messageData);
+      // Send message via API
+      const sentMessage = (await sendGigMessage(messageData)) as any;
 
-    // Add to local messages
-    setMessages((prev) => [...prev, messageData]);
+      // Transform API response to match our current message format
+      const newMessage = {
+        sender: getCurrentUserEmail(), // Display current user's username
+        senderEmail: getCurrentUserEmail(), // Keep email for reference
+        message: sentMessage?.content || trimmedInput,
+        time: sentMessage?.timestamp
+          ? new Date(sentMessage.timestamp).toLocaleTimeString()
+          : new Date().toLocaleTimeString(),
+        timestamp: sentMessage?.timestamp || new Date().toISOString(),
+        id: sentMessage?.id || Date.now().toString(),
+        type: "text",
+        messageType: sentMessage?.messageType || "text",
+      };
+
+      // Add to local messages
+      setMessages((prev) => [...prev, newMessage]);
+
+      // Also emit via socket for real-time updates to other user
+      if (socketRef.current) {
+        socketRef.current.emit("chat-message", {
+          gigId,
+          sender: getCurrentUsername(), // For socket, still use username for compatibility
+          senderEmail: getCurrentUserEmail(), // Include email for future compatibility
+          message: trimmedInput,
+          time: newMessage.time,
+          timestamp: newMessage.timestamp,
+          id: newMessage.id,
+        });
+      }
+
+      console.log("Message sent successfully:", sentMessage);
+    } catch (error) {
+      console.error("Error sending message:", error);
+
+      // Fallback to socket-only if API fails
+      if (socketRef.current) {
+        const fallbackMessage = {
+          gigId,
+          sender: getCurrentUsername(),
+          senderEmail: getCurrentUserEmail(),
+          message: trimmedInput,
+          time: new Date().toLocaleTimeString(),
+          timestamp: new Date().toISOString(),
+          id: Date.now().toString(), // Temporary ID
+        };
+
+        socketRef.current.emit("chat-message", fallbackMessage);
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: fallbackMessage.sender,
+            senderEmail: fallbackMessage.senderEmail,
+            message: fallbackMessage.message,
+            time: fallbackMessage.time,
+            timestamp: fallbackMessage.timestamp,
+            id: fallbackMessage.id,
+            type: "text",
+          },
+        ]);
+      }
+
+      // Show user feedback for error
+      console.error("Failed to send message via API, fell back to socket only");
+    }
 
     // Clear input and stop typing
     setInput("");
@@ -282,8 +516,44 @@ export default function GigPage({
     });
 
     socket.on("chat-message", (msg) => {
-      setMessages((prev) => [...prev, msg]);
-      console.log("Received chat message:", msg);
+      // Transform socket message to match our current message format
+      let senderDisplayName = msg.sender;
+
+      // If the message has senderEmail, use email-based logic for display name
+      if (msg.senderEmail) {
+        const currentUserEmail = getCurrentUserEmail();
+
+        // If sender email matches current user email, use current username
+        if (msg.senderEmail === currentUserEmail) {
+          senderDisplayName = getCurrentUsername();
+        } else {
+          // If sender email matches gig host email, use host username
+          if (gig?.host?.email === msg.senderEmail) {
+            senderDisplayName = gig.host.username;
+          }
+          // If sender email matches gig guest email, use guest username
+          else if (gig?.guest?.email === msg.senderEmail) {
+            senderDisplayName = gig.guest.username;
+          }
+          // Fallback: extract username from email or use provided sender
+          else {
+            senderDisplayName = msg.senderEmail.split("@")[0] || msg.sender;
+          }
+        }
+      }
+
+      const transformedMessage = {
+        sender: senderDisplayName,
+        senderEmail: msg.senderEmail || null, // Keep email if available
+        message: msg.message,
+        time: msg.time,
+        timestamp: msg.timestamp,
+        id: msg.id || Date.now().toString(),
+        type: "text",
+      };
+
+      setMessages((prev) => [...prev, transformedMessage]);
+      console.log("Received chat message:", transformedMessage);
     });
 
     // Typing status events
@@ -425,10 +695,31 @@ export default function GigPage({
 
     socket.on("payment-request", (paymentData) => {
       console.log("Payment request received:", paymentData);
+
+      // Determine display name for payment sender
+      let senderDisplayName = paymentData.from;
+
+      // If paymentData has fromEmail, use email-based logic
+      if (paymentData.fromEmail) {
+        const currentUserEmail = getCurrentUserEmail();
+
+        if (paymentData.fromEmail === currentUserEmail) {
+          senderDisplayName = getCurrentUsername();
+        } else if (gig?.host?.email === paymentData.fromEmail) {
+          senderDisplayName = gig.host.username;
+        } else if (gig?.guest?.email === paymentData.fromEmail) {
+          senderDisplayName = gig.guest.username;
+        } else {
+          senderDisplayName =
+            paymentData.fromEmail.split("@")[0] || paymentData.from;
+        }
+      }
+
       setMessages((prev) => [
         ...prev,
         {
-          sender: paymentData.from,
+          sender: senderDisplayName,
+          senderEmail: paymentData.fromEmail || null,
           time: new Date().toLocaleTimeString(),
           message:
             paymentData.description ||
@@ -465,6 +756,12 @@ export default function GigPage({
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
+
+      // Clean up chat sync interval
+      if (chatSyncIntervalRef.current) {
+        clearInterval(chatSyncIntervalRef.current);
+      }
+
       socket.disconnect();
     };
   }, [gigId, gig]); // Only connect after gig is loaded
@@ -737,6 +1034,11 @@ export default function GigPage({
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
+
+      if (chatSyncIntervalRef.current) {
+        clearInterval(chatSyncIntervalRef.current);
+      }
+
       if (isTyping && socketRef.current) {
         socketRef.current.emit("typing-stop", {
           gigId,
@@ -818,7 +1120,7 @@ export default function GigPage({
     }
   };
 
-  const handlePaymentRequest = () => {
+  const handlePaymentRequest = async () => {
     if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
       alert("Please enter a valid payment amount");
       return;
@@ -836,34 +1138,115 @@ export default function GigPage({
     }
 
     const currentUser = getCurrentUsername();
+    const currentUserEmail = getCurrentUserEmail();
     const otherUser = getOtherPartyUsername();
 
-    const paymentData = {
-      gigId,
-      from: currentUser,
-      to: otherUser,
-      amount: parseFloat(paymentAmount),
-      description: `Payment request for ${gig.currency} ${paymentAmount}`,
-      paymentId: Date.now().toString(),
-      timestamp: new Date().toISOString(),
+    // Get other user's email based on current user role
+    const getCurrentUserRole = () => {
+      if (gig?.host?.email === currentUserEmail) return "host";
+      if (gig?.guest?.email === currentUserEmail) return "guest";
+      return null;
     };
 
-    // Send to other user
-    socketRef.current?.emit("payment-request", paymentData);
+    const getOtherUserEmail = () => {
+      const role = getCurrentUserRole();
+      if (role === "host") return gig?.guest?.email || "unknown@example.com";
+      if (role === "guest") return gig?.host?.email || "unknown@example.com";
+      return "unknown@example.com";
+    };
 
-    // Add to local messages as sent
-    setMessages((prev) => [
-      ...prev,
-      {
-        sender: currentUser,
-        time: new Date().toLocaleTimeString(),
-        message: paymentData.description,
-        type: "payment-sent",
-        amount: paymentData.amount,
-        paymentId: paymentData.paymentId,
-        status: "pending",
-      },
-    ]);
+    const paymentDescription = `Payment request for ${gig.currency} ${paymentAmount}`;
+    const paymentId = Date.now().toString();
+
+    try {
+      // Prepare payment message data for API
+      const messageData = {
+        gig: gigId,
+        content: paymentAmount, // Amount as content
+        messageType: "payment",
+        attachments: [{description: "request-made"}] // Description in attachments
+      };
+
+      // Send payment message via API
+      const sentMessage = await sendGigMessage(messageData) as any;
+      console.log("Payment message sent via API:", sentMessage);
+
+      // Prepare payment data for socket
+      const paymentData = {
+        gigId,
+        from: currentUser,
+        fromEmail: currentUserEmail,
+        to: otherUser,
+        toEmail: getOtherUserEmail(),
+        amount: parseFloat(paymentAmount),
+        description: paymentDescription,
+        paymentId: sentMessage?.id || paymentId,
+        timestamp: sentMessage?.timestamp || new Date().toISOString(),
+      };
+
+      // Send to other user via socket for real-time notification
+      socketRef.current?.emit("payment-request", paymentData);
+
+      // Add to local messages as sent
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: currentUserEmail,
+          senderEmail: currentUserEmail,
+          time: sentMessage?.timestamp 
+            ? new Date(sentMessage.timestamp).toLocaleTimeString() 
+            : new Date().toLocaleTimeString(),
+          message: paymentAmount, // Use amount as message content to match API format
+          type: "payment-request", // Use consistent type
+          amount: paymentData.amount,
+          paymentId: paymentData.paymentId,
+          id: sentMessage?.id || paymentId,
+          timestamp: sentMessage?.timestamp || new Date().toISOString(),
+          messageType: "payment",
+          attachments: [{description: "request-made"}], // Include attachments for consistency
+        },
+      ]);
+
+      console.log("Payment request sent successfully");
+    } catch (error) {
+      console.error("Error sending payment request via API:", error);
+      
+      // Fallback to socket-only if API fails
+      const fallbackPaymentData = {
+        gigId,
+        from: currentUser,
+        fromEmail: currentUserEmail,
+        to: otherUser,
+        toEmail: getOtherUserEmail(),
+        amount: parseFloat(paymentAmount),
+        description: paymentDescription,
+        paymentId: paymentId,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Send to other user via socket
+      socketRef.current?.emit("payment-request", fallbackPaymentData);
+
+      // Add to local messages as sent
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: currentUser,
+          senderEmail: currentUserEmail,
+          time: new Date().toLocaleTimeString(),
+          message: paymentAmount, // Use amount as message content to match API format
+          type: "payment-request", // Use consistent type
+          amount: fallbackPaymentData.amount,
+          paymentId: fallbackPaymentData.paymentId,
+          id: paymentId,
+          timestamp: new Date().toISOString(),
+          messageType: "payment",
+          attachments: [{description: "request-made"}], // Include attachments for consistency
+        },
+      ]);
+
+      console.error("Failed to send payment request via API, fell back to socket only");
+    }
 
     // Reset and close modal
     setPaymentAmount("");
@@ -1236,16 +1619,16 @@ export default function GigPage({
                     {messages.map((msg, i) => (
                       <div key={i} className="min-w-0">
                         {msg.type === "payment-request" ||
-                        msg.type === "payment-sent" ? (
+                        msg.type === "payment-accepted" ||
+                        msg.type === "payment-rejected" ? (
                           // Payment Message
                           <div
                             className={`p-2 rounded-lg border max-w-[90%] min-w-[200px] ${
-                              msg.status === "completed"
-                                ? "bg-neutral-800/40 border-neutral-600"
-                                : msg.status === "declined"
-                                ? "bg-neutral-800/40 border-neutral-600"
-                                : msg.type === "payment-sent" ||
-                                  msg.sender === getCurrentUsername()
+                              msg.type === "payment-accepted"
+                                ? "bg-green-500/10 border-green-500/30"
+                                : msg.type === "payment-rejected"
+                                ? "bg-red-500/10 border-red-500/30"
+                                : msg.sender === getCurrentUserEmail()
                                 ? "bg-neutral-800/40 border-neutral-600 self-end ml-auto"
                                 : "bg-neutral-800/40 border-neutral-600"
                             }`}
@@ -1253,51 +1636,67 @@ export default function GigPage({
                             <div className="flex items-center gap-1 mb-2">
                               <FaDollarSign className="text-sm text-neutral-400" />
                               <span className="font-semibold text-white text-xs">
-                                {msg.status === "completed"
-                                  ? "✅ Payment Completed"
-                                  : msg.status === "declined"
-                                  ? "❌ Payment Declined"
-                                  : msg.type === "payment-sent" ||
-                                    msg.sender === getCurrentUsername()
+                                {msg.type === "payment-accepted"
+                                  ? "✅ Payment Accepted"
+                                  : msg.type === "payment-rejected"
+                                  ? "❌ Payment Rejected"
+                                  : msg.sender === getCurrentUserEmail()
                                   ? "Payment request sent"
                                   : "Payment Request"}
                               </span>
                             </div>
                             <div className="text-base font-bold mb-1 text-white">
-                              ${msg.amount}
+                              ${msg.amount || msg.message}
                             </div>
                             <div className="text-neutral-300 text-xs mb-2">
-                              {msg.message}
+                              {msg.type === "payment-accepted" 
+                                ? "Payment has been accepted and processed"
+                                : msg.type === "payment-rejected"
+                                ? "Payment request was declined"
+                                : `Payment request for $${msg.amount || msg.message}`}
                             </div>
-                            {/* ...existing payment buttons... */}
-                            {msg.type === "payment-request" &&
-                              msg.status === "pending" &&
-                              msg.sender !== getCurrentUsername() && (
-                                <div className="flex flex-col gap-2 mt-2">
-                                  <button
-                                    onClick={() =>
-                                      handlePaymentResponse(
-                                        msg.paymentId,
-                                        "completed"
-                                      )
-                                    }
-                                    className="px-2 py-1 rounded bg-green-600/80 hover:bg-green-500 text-white text-xs font-semibold transition-colors"
-                                  >
-                                    Pay Now
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      handlePaymentResponse(
-                                        msg.paymentId,
-                                        "declined"
-                                      )
-                                    }
-                                    className="px-2 py-1 rounded bg-neutral-600 hover:bg-neutral-500 text-white text-xs font-semibold transition-colors"
-                                  >
-                                    Decline
-                                  </button>
-                                </div>
-                              )}
+                            {/* Show action buttons only for pending payment requests to other party */}
+                            {msg.type === "payment-request" && (
+                              <>
+                                {msg.sender === getCurrentUserEmail() ? (
+                                  // Show waiting message for sender
+                                  <div className="mt-2 px-3 py-2 bg-neutral-700/50 border border-neutral-600/50 rounded-lg">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                                      <span className="text-xs text-neutral-300 font-medium">
+                                        Waiting for response...
+                                      </span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  // Show action buttons for receiver
+                                  <div className="flex flex-col gap-2 mt-2">
+                                    <button
+                                      onClick={() =>
+                                        handlePaymentResponse(
+                                          msg.paymentId || msg.id,
+                                          "completed"
+                                        )
+                                      }
+                                      className="px-2 py-1 rounded bg-green-600/80 hover:bg-green-500 text-white text-xs font-semibold transition-colors"
+                                    >
+                                      Accept & Pay
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handlePaymentResponse(
+                                          msg.paymentId || msg.id,
+                                          "declined"
+                                        )
+                                      }
+                                      className="px-2 py-1 rounded bg-neutral-600 hover:bg-neutral-500 text-white text-xs font-semibold transition-colors"
+                                    >
+                                      Decline
+                                    </button>
+                                  </div>
+                                )}
+                              </>
+                            )}
                             <div className="text-xs text-neutral-500 mt-1">
                               {msg.time}
                             </div>
@@ -1306,12 +1705,12 @@ export default function GigPage({
                           // Regular Message
                           <div
                             className={`p-3 rounded-lg border max-w-[85%] min-w-[120px] break-words ${
-                              msg.sender === getCurrentUsername()
+                              msg.sender === getCurrentUserEmail()
                                 ? "bg-neutral-700/30 border-neutral-600/30 self-end ml-auto"
                                 : "bg-neutral-800/30 border-neutral-700/30"
                             }`}
                           >
-                            {msg.sender !== getCurrentUsername() && (
+                            {msg.sender !== getCurrentUserEmail() && (
                               <div className="text-xs text-neutral-400 mb-1 font-medium">
                                 {msg.sender}
                               </div>
@@ -1505,16 +1904,16 @@ export default function GigPage({
                   {messages.map((msg, i) => (
                     <div key={i} className="min-w-0">
                       {msg.type === "payment-request" ||
-                      msg.type === "payment-sent" ? (
+                      msg.type === "payment-accepted" ||
+                      msg.type === "payment-rejected" ? (
                         // Payment Message
                         <div
                           className={`p-2 md:p-3 rounded-lg border max-w-[90%] sm:max-w-xs min-w-[200px] ${
-                            msg.status === "completed"
-                              ? "bg-neutral-800/40 border-neutral-600"
-                              : msg.status === "declined"
-                              ? "bg-neutral-800/40 border-neutral-600"
-                              : msg.type === "payment-sent" ||
-                                msg.sender === getCurrentUsername()
+                            msg.type === "payment-accepted"
+                              ? "bg-green-500/10 border-green-500/30"
+                              : msg.type === "payment-rejected"
+                              ? "bg-red-500/10 border-red-500/30"
+                              : msg.sender === getCurrentUserEmail()
                               ? "bg-neutral-800/40 border-neutral-600 self-end ml-auto"
                               : "bg-neutral-800/40 border-neutral-600"
                           }`}
@@ -1522,60 +1921,67 @@ export default function GigPage({
                           <div className="flex items-center gap-1 md:gap-2 mb-2">
                             <FaDollarSign className="text-sm text-neutral-400" />
                             <span className="font-semibold text-white text-xs md:text-sm">
-                              {msg.status === "completed"
-                                ? "✅ Payment Completed"
-                                : msg.status === "declined"
-                                ? "❌ Payment Declined"
-                                : msg.type === "payment-sent" ||
-                                  msg.sender === getCurrentUsername()
+                              {msg.type === "payment-accepted"
+                                ? "✅ Payment Accepted"
+                                : msg.type === "payment-rejected"
+                                ? "❌ Payment Rejected"
+                                : msg.sender === getCurrentUserEmail()
                                 ? "Payment request Sent"
                                 : "Payment Request"}
                             </span>
                           </div>
                           <div className="text-base md:text-lg font-bold mb-1 text-white">
-                            ${msg.amount}
+                            ${msg.amount || msg.message}
                           </div>
                           <div className="text-neutral-300 text-xs mb-2">
-                            {msg.message}
+                            {msg.type === "payment-accepted" 
+                              ? "Payment has been accepted and processed"
+                              : msg.type === "payment-rejected"
+                              ? "Payment request was declined"
+                              : `Payment request for $${msg.amount || msg.message}`}
                           </div>
-                          {msg.status === "completed" && (
-                            <div className="text-xs text-neutral-300 mb-2 font-medium">
-                              ✅ Payment processed successfully
-                            </div>
+                          {/* Show action buttons only for pending payment requests to other party */}
+                          {msg.type === "payment-request" && (
+                            <>
+                              {msg.sender === getCurrentUserEmail() ? (
+                                // Show waiting message for sender
+                                <div className="mt-2 px-3 py-2 bg-neutral-700/50 border border-neutral-600/50 rounded-lg">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                                    <span className="text-xs text-neutral-300 font-medium">
+                                      Waiting for response...
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                // Show action buttons for receiver
+                                <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                                  <button
+                                    onClick={() =>
+                                      handlePaymentResponse(
+                                        msg.paymentId || msg.id,
+                                        "completed"
+                                      )
+                                    }
+                                    className="px-2 md:px-3 py-1 rounded bg-green-600/80 hover:bg-green-500 text-white text-xs font-semibold transition-colors"
+                                  >
+                                    Accept & Pay
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handlePaymentResponse(
+                                        msg.paymentId || msg.id,
+                                        "declined"
+                                      )
+                                    }
+                                    className="px-2 md:px-3 py-1 rounded bg-neutral-600 hover:bg-neutral-500 text-white text-xs font-semibold transition-colors"
+                                  >
+                                    Decline
+                                  </button>
+                                </div>
+                              )}
+                            </>
                           )}
-                          {msg.status === "declined" && (
-                            <div className="text-xs text-neutral-300 mb-2 font-medium">
-                              ❌ Payment was declined
-                            </div>
-                          )}
-                          {msg.type === "payment-request" &&
-                            msg.status === "pending" &&
-                            msg.sender !== getCurrentUsername() && (
-                              <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                                <button
-                                  onClick={() =>
-                                    handlePaymentResponse(
-                                      msg.paymentId,
-                                      "completed"
-                                    )
-                                  }
-                                  className="px-2 md:px-3 py-1 rounded bg-green-600/80 hover:bg-green-500 text-white text-xs font-semibold transition-colors"
-                                >
-                                  Pay Now
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handlePaymentResponse(
-                                      msg.paymentId,
-                                      "declined"
-                                    )
-                                  }
-                                  className="px-2 md:px-3 py-1 rounded bg-neutral-600 hover:bg-neutral-500 text-white text-xs font-semibold transition-colors"
-                                >
-                                  Decline
-                                </button>
-                              </div>
-                            )}
                           <div className="text-xs text-neutral-500 mt-1">
                             {msg.time}
                           </div>
@@ -1584,12 +1990,12 @@ export default function GigPage({
                         // Regular Message
                         <div
                           className={`p-3 rounded-lg border max-w-[85%] sm:max-w-xs min-w-[120px] break-words ${
-                            msg.sender === getCurrentUsername()
+                            msg.sender === getCurrentUserEmail()
                               ? "bg-neutral-700/30 border-neutral-600/30 self-end ml-auto"
                               : "bg-neutral-800/30 border-neutral-700/30"
                           }`}
                         >
-                          {msg.sender !== getCurrentUsername() && (
+                          {msg.sender !== getCurrentUserEmail() && (
                             <div className="text-xs text-neutral-400 mb-1 font-medium">
                               {msg.sender}
                             </div>

@@ -344,6 +344,7 @@ export default function GigLobbyPage({
       message: "This is a test request to check if the UI works",
       timestamp: new Date().toISOString(),
       gigId: gigId,
+      status: "pending", // Add pending status so it shows up
     };
     setRequests((prev) => [...prev, testRequest]);
     console.log("Added test request:", testRequest);
@@ -484,6 +485,55 @@ export default function GigLobbyPage({
                   </span>
                 </div>
               </div>
+
+              {/* Chat Entry Option for Host when Guest is assigned - Bottom of container */}
+              {user && gig.host?.id === user.id && gig.guest && (
+                <div className="mt-6 pt-4 border-t border-neutral-700/50">
+                  <div className="flex items-center justify-between text-sm text-neutral-300 mb-3">
+                    <span>Workspace Status:</span>
+                    <span className="text-green-400 font-medium">
+                      Ready to start
+                    </span>
+                  </div>
+
+                  {/* Guest Information */}
+                  <div className="mb-4 p-3 bg-neutral-800/40 rounded-lg border border-neutral-700/50">
+                    <div className="text-sm text-neutral-300 mb-1">
+                      Current Guest:
+                    </div>
+                    <div className="text-white font-medium">
+                      @{gig.guest.username}
+                      {(gig.guest.first_name || gig.guest.last_name) && (
+                        <span className="text-neutral-300 ml-2 font-normal">
+                          ({gig.guest.first_name} {gig.guest.last_name})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => router.push(`/Gig/${gigId}`)}
+                    className="w-full px-4 py-3 bg-neutral-800/60 hover:bg-neutral-700/80 border border-neutral-600/50 hover:border-cyan-500/50 text-neutral-200 hover:text-white rounded-lg transition-all duration-300 group"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <svg
+                        className="w-4 h-4 group-hover:text-cyan-400 transition-colors"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                        />
+                      </svg>
+                      <span className="font-medium">Enter Workspace</span>
+                    </div>
+                  </button>
+                </div>
+              )}
             </section>
 
             {/* Incoming Requests Container */}
@@ -491,9 +541,9 @@ export default function GigLobbyPage({
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold">Incoming Requests</h2>
                 <div className="flex items-center gap-2">
-                  {requests.length > 0 && (
+                  {requests.filter(req => req.status === 'pending').length > 0 && (
                     <div className="bg-cyan-600 text-white px-2 py-1 rounded-full text-sm font-semibold">
-                      {requests.length}
+                      {requests.filter(req => req.status === 'pending').length}
                     </div>
                   )}
                   {/* Test button for debugging */}
@@ -505,9 +555,9 @@ export default function GigLobbyPage({
                   </button>
                 </div>
               </div>
-              {requests && requests.length > 0 ? (
+              {requests && requests.filter(req => req.status === 'pending').length > 0 ? (
                 <ul className="space-y-4">
-                  {requests.map((req: any, idx: number) => (
+                  {requests.filter(req => req.status === 'pending').map((req: any, idx: number) => (
                     <li
                       key={idx}
                       className="bg-neutral-800/80 rounded-xl p-4 flex flex-col gap-3 border border-neutral-700 hover:border-neutral-600 transition-colors"
