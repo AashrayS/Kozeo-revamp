@@ -54,8 +54,8 @@ export default function Sidebar() {
           collapsed ? "w-20" : "w-64"
         } ${
           theme === "light"
-            ? "bg-white text-gray-900 border-gray-200"
-            : "bg-black text-white border-neutral-700"
+            ? "bg-transaprent text-gray-900 border-gray-200"
+            : "bg-transparent text-white border-neutral-700"
         }`}
       >
         <div className="flex flex-col p-4 space-y-6">

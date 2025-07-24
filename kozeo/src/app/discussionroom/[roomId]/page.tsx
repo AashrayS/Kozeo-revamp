@@ -7,8 +7,13 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { use } from "react";
 import { useRouter } from "next/navigation";
 import EmojiPicker from "emoji-picker-react";
-import discussionRooms from "../../../../data/discussionRooms.json";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useUser } from "../../../../store/hooks";
+import {
+  getDiscussionRoom,
+  getDiscussionRoomChats,
+  sendDiscussionMessage,
+} from "../../../../utilities/kozeoApi";
 
 import { io } from "socket.io-client";
 import { WEBSOCKET_URL } from "@/config";
@@ -29,19 +34,31 @@ export default function DiscussionRoomPage({
   const { roomId } = use(paramsPromise);
   const router = useRouter();
   const { theme } = useTheme();
-  const room = useMemo(
-    () => discussionRooms.find((r) => r.id.toString() === roomId),
-    [roomId]
-  );
+  const { user } = useUser();
+
+  // State for room data and loading
+  const [room, setRoom] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [input, setInput] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
   const [showMobileUsers, setShowMobileUsers] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
   const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [draggedMessage, setDraggedMessage] = useState<any>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [dragStartPos, setDragStartPos] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [dragThreshold] = useState(100); // Minimum pixels to drag right for reply
   const [currentUser] = useState(
-    "User_" + Math.random().toString(36).substr(2, 9)
-  ); // Generate random username
+    user
+      ? user.username || `User_${user.id}`
+      : "Guest_" + Math.random().toString(36).substr(2, 9)
+  );
 
   const emojiRef = useRef(null);
   const socketRef = useRef<Socket | null>(null);
@@ -50,6 +67,48 @@ export default function DiscussionRoomPage({
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  // Fetch room data and messages
+  useEffect(() => {
+    const fetchRoomData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch room details
+        const roomData = await getDiscussionRoom(roomId);
+        if (!roomData) {
+          setError("Discussion room not found");
+          return;
+        }
+
+        setRoom(roomData);
+
+        // Fetch existing messages
+        const messagesData = await getDiscussionRoomChats(roomId);
+        const formattedMessages = messagesData.map((msg) => ({
+          id: msg.id,
+          sender: msg.sender,
+          message: msg.content,
+          time: new Date(msg.timestamp).toLocaleTimeString(),
+          timestamp: msg.timestamp,
+          type: "user",
+          replyTo: msg.replyTo,
+        }));
+
+        setMessages(formattedMessages);
+      } catch (err) {
+        console.error("Error fetching room data:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to load room data"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRoomData();
+  }, [roomId]);
 
   useEffect(() => {
     scrollToBottom();
@@ -68,8 +127,14 @@ export default function DiscussionRoomPage({
     });
 
     socket.on("chat-message", (msg) => {
-      setMessages((prev) => [...prev, msg]);
-      console.log("Received chat message:", msg);
+      // Format incoming socket messages to match our format
+      const formattedMsg = {
+        ...msg,
+        id: msg.id || Date.now() + Math.random(), // Ensure each message has an ID
+        type: msg.type || "user",
+      };
+      setMessages((prev) => [...prev, formattedMsg]);
+      console.log("Received chat message:", formattedMsg);
     });
 
     socket.on("user-joined-discussion", (data) => {
@@ -111,21 +176,41 @@ export default function DiscussionRoomPage({
     };
   }, [roomId, currentUser]);
 
-  const handleSendMessage = () => {
-    if (!input.trim()) return;
+  const handleSendMessage = async () => {
+    if (!input.trim() || !user) return;
 
     const messageData = {
+      id: Date.now() + Math.random(), // Unique ID for local message
       sender: currentUser,
       time: new Date().toLocaleTimeString(),
       message: input,
       roomId: roomId,
+      type: "user",
+      replyTo: replyTo || null,
     };
 
+    // Add message to local state immediately for responsiveness
     setMessages((prev) => [...prev, messageData]);
-    socketRef.current?.emit("discussion-message", messageData);
+
+    try {
+      // Send message to API
+      await sendDiscussionMessage({
+        discussionRoom: roomId,
+        content: input,
+        replyTo: replyTo || undefined,
+      });
+
+      // Send via websocket for real-time updates to other users
+      socketRef.current?.emit("discussion-message", messageData);
+    } catch (err) {
+      console.error("Error sending message:", err);
+      // Remove the optimistic message on error
+      setMessages((prev) => prev.filter((msg) => msg !== messageData));
+    }
 
     setInput("");
     setShowEmoji(false);
+    setReplyTo(null); // Clear reply after sending
   };
 
   useEffect(() => {
@@ -141,8 +226,13 @@ export default function DiscussionRoomPage({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleSendMessage();
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    } else if (e.key === "Escape" && replyTo) {
+      setReplyTo(null);
+    }
   };
 
   const leaveRoom = () => {
@@ -155,7 +245,93 @@ export default function DiscussionRoomPage({
     router.push("/Atrium/discussion");
   };
 
-  if (!room) {
+  // Drag and drop handlers for reply functionality with horizontal drag detection
+  const handleDragStart = (e: React.DragEvent, message: any) => {
+    if (message.type === "system") return; // Don't allow dragging system messages
+    setDraggedMessage(message);
+    setDragStartPos({ x: e.clientX, y: e.clientY });
+    e.dataTransfer.effectAllowed = "copy";
+    // Create a transparent drag image to hide default drag preview
+    const dragImage = new Image();
+    dragImage.src =
+      "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+    e.dataTransfer.setDragImage(dragImage, 0, 0);
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    if (!dragStartPos || !draggedMessage || e.clientX === 0) return;
+
+    const deltaX = e.clientX - dragStartPos.x;
+    const deltaY = Math.abs(e.clientY - dragStartPos.y);
+
+    // Check if dragging horizontally to the right with minimal vertical movement
+    const isHorizontalRightDrag = deltaX > dragThreshold && deltaY < 50;
+
+    if (isHorizontalRightDrag !== isDragOver) {
+      setIsDragOver(isHorizontalRightDrag);
+    }
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    if (!dragStartPos || !draggedMessage) {
+      setDraggedMessage(null);
+      setIsDragOver(false);
+      setDragStartPos(null);
+      return;
+    }
+
+    const deltaX = e.clientX - dragStartPos.x;
+    const deltaY = Math.abs(e.clientY - dragStartPos.y);
+
+    // If dragged right beyond threshold with minimal vertical movement, set reply
+    if (
+      deltaX > dragThreshold &&
+      deltaY < 50 &&
+      draggedMessage.type !== "system"
+    ) {
+      setReplyTo(draggedMessage.id);
+    }
+
+    setDraggedMessage(null);
+    setIsDragOver(false);
+    setDragStartPos(null);
+  };
+
+  // Helper function to find the original message for a reply
+  const findReplyMessage = (replyId: string) => {
+    return messages.find((msg) => msg.id === replyId);
+  };
+
+  if (loading) {
+    return (
+      <>
+        <Header logoText="Kozeo" />
+        <div
+          className={`min-h-screen relative z-10 flex flex-row transition-colors duration-300 ${
+            theme === "dark"
+              ? "bg-[radial-gradient(circle_at_center,_rgba(17,17,17,0.8),_rgba(0,0,0,0.6))] text-white"
+              : "bg-gradient-to-br from-white via-gray-50 to-blue-50 text-gray-900"
+          }`}
+        >
+          <Sidebar />
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-xl mb-2">Loading discussion room...</div>
+              <div
+                className={`text-sm ${
+                  theme === "dark" ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                Please wait...
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (error || !room) {
     return (
       <div
         className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
@@ -170,8 +346,19 @@ export default function DiscussionRoomPage({
               theme === "dark" ? "text-white" : "text-gray-900"
             }`}
           >
-            Discussion Room Not Found
+            {error
+              ? "Error Loading Discussion Room"
+              : "Discussion Room Not Found"}
           </h1>
+          {error && (
+            <p
+              className={`mb-4 text-sm ${
+                theme === "dark" ? "text-red-400" : "text-red-600"
+              }`}
+            >
+              {error}
+            </p>
+          )}
           <button
             onClick={() => router.push("/Atrium/discussion")}
             className="px-6 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg transition-colors text-white"
@@ -219,7 +406,7 @@ export default function DiscussionRoomPage({
                       theme === "dark" ? "text-white" : "text-gray-900"
                     }`}
                   >
-                    {room.name}
+                    {room.title}
                   </h1>
                   <p
                     className={`text-xs md:text-sm truncate transition-colors duration-300 ${
@@ -311,10 +498,31 @@ export default function DiscussionRoomPage({
             )}
 
             <div className="flex flex-1 overflow-hidden">
+              {/* Global drag indicator */}
+              {draggedMessage && (
+                <div
+                  className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 rounded-lg shadow-lg transition-all duration-300 ${
+                    isDragOver
+                      ? theme === "dark"
+                        ? "bg-cyan-900 text-cyan-300 border border-cyan-500"
+                        : "bg-cyan-100 text-cyan-700 border border-cyan-400"
+                      : theme === "dark"
+                      ? "bg-neutral-800 text-gray-300 border border-neutral-600"
+                      : "bg-gray-200 text-gray-700 border border-gray-400"
+                  }`}
+                >
+                  <div className="text-sm font-medium flex items-center gap-2">
+                    {isDragOver
+                      ? "✓ Release to reply"
+                      : "← Drag right to reply"}
+                  </div>
+                </div>
+              )}
+
               {/* Chat Area */}
               <div className="flex-1 flex flex-col min-w-0">
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-2 md:space-y-3 text-sm">
+                <div className="h-screen overflow-y-scroll p-2 md:p-4 space-y-2 md:space-y-3 text-sm">
                   {messages.map((msg, i) => (
                     <div key={i}>
                       {msg.type === "system" ? (
@@ -327,21 +535,70 @@ export default function DiscussionRoomPage({
                         </div>
                       ) : (
                         <div
-                          className={`flex ${
+                          className={`flex gap-2 items-start ${
                             msg.sender === currentUser
                               ? "justify-end"
                               : "justify-start"
                           }`}
                         >
+                          {/* User Avatar - Only show for other users (left side) */}
+                          {msg.sender !== currentUser && (
+                            <div
+                              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 mt-1 ${
+                                theme === "dark"
+                                  ? "bg-neutral-600 text-white"
+                                  : "bg-gray-300 text-gray-700"
+                              }`}
+                            >
+                              {msg.sender.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+
                           <div
-                            className={`max-w-[85%] sm:max-w-xs lg:max-w-md p-2 md:p-3 rounded-lg break-words whitespace-pre-wrap ${
+                            className={`max-w-[85%] sm:max-w-xs lg:max-w-md p-2 md:p-3 rounded-lg break-words whitespace-pre-wrap transition-all duration-200 ${
+                              msg.type !== "system"
+                                ? "cursor-grab active:cursor-grabbing hover:shadow-md"
+                                : ""
+                            } ${
                               msg.sender === currentUser
                                 ? "bg-cyan-600 text-white"
                                 : theme === "dark"
                                 ? "bg-neutral-800 text-white"
                                 : "bg-gray-200 text-gray-900"
+                            } ${
+                              draggedMessage?.id === msg.id
+                                ? isDragOver
+                                  ? "opacity-75 transform translate-x-4 shadow-lg ring-2 ring-cyan-400"
+                                  : "opacity-50 transform translate-x-1"
+                                : ""
                             }`}
+                            draggable={msg.type !== "system"}
+                            onDragStart={(e) => handleDragStart(e, msg)}
+                            onDrag={handleDrag}
+                            onDragEnd={handleDragEnd}
                           >
+                            {/* ...existing code... */}
+                            {msg.replyTo && (
+                              <div
+                                className={`text-xs mb-2 p-2 rounded border-l-2 max-w-full overflow-hidden ${
+                                  theme === "dark"
+                                    ? "bg-neutral-700/50 border-cyan-400 text-gray-300"
+                                    : "bg-gray-100/80 border-cyan-600 text-gray-600"
+                                }`}
+                              >
+                                <div className="font-semibold text-cyan-400 text-[10px] mb-1 truncate">
+                                   Replying to{" "}
+                                  {findReplyMessage(msg.replyTo)?.sender ||
+                                    "Unknown"}
+                                  :
+                                </div>
+                                <div className="text-[10px] line-clamp-2 break-words">
+                                  {findReplyMessage(msg.replyTo)?.message ||
+                                    "Message not found"}
+                                </div>
+                              </div>
+                            )}
+
                             {msg.sender !== currentUser && (
                               <div
                                 className={`text-xs mb-1 font-semibold truncate ${
@@ -353,11 +610,39 @@ export default function DiscussionRoomPage({
                                 {msg.sender}
                               </div>
                             )}
-                            <div className="text-sm">{msg.message}</div>
-                            <div className="text-xs opacity-70 mt-1">
-                              {msg.time}
+                            <div className="text-sm whitespace-pre-wrap break-words">{msg.message}</div>
+                            <div className="text-xs opacity-70 mt-1 flex items-center justify-between">
+                              <span>{msg.time}</span>
+                              <div className="flex items-center gap-2">
+                                {draggedMessage?.id === msg.id &&
+                                  isDragOver && (
+                                    <span className="text-cyan-400 animate-pulse">
+                                      →
+                                    </span>
+                                  )}
+                                <button
+                                  onClick={() => setReplyTo(msg.id)}
+                                  className={`text-[10px] opacity-50 hover:opacity-100 transition-opacity ${
+                                    theme === "dark"
+                                      ? "hover:text-cyan-400"
+                                      : "hover:text-cyan-600"
+                                  }`}
+                                  title="Reply to this message"
+                                >
+                                  Reply
+                                </button>
+                              </div>
                             </div>
                           </div>
+
+                          {/* User Avatar - Only show for current user (right side) */}
+                          {msg.sender === currentUser && (
+                            <div
+                              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 mt-1 bg-cyan-700 text-white`}
+                            >
+                              {msg.sender.charAt(0).toUpperCase()}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -369,8 +654,66 @@ export default function DiscussionRoomPage({
                 <div
                   className={`border-t p-2 md:p-4 relative transition-colors duration-300 ${
                     theme === "dark" ? "border-neutral-700" : "border-gray-200"
+                  } ${
+                    isDragOver
+                      ? theme === "dark"
+                        ? "bg-cyan-900/20 border-cyan-500"
+                        : "bg-cyan-50 border-cyan-300"
+                      : ""
                   }`}
                 >
+                  {/* Reply Preview */}
+                  {replyTo && (
+                    <div
+                      className={`mb-3 p-2 rounded border-l-4 max-w-full overflow-hidden ${
+                        theme === "dark"
+                          ? "bg-neutral-800/50 border-cyan-400 text-gray-300"
+                          : "bg-gray-100/80 border-cyan-600 text-gray-600"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-cyan-400 text-xs mb-1 truncate">
+                            Replying to{" "}
+                            {findReplyMessage(replyTo)?.sender || "Unknown"}:
+                          </div>
+                          <div className="text-sm line-clamp-2 break-words">
+                            {findReplyMessage(replyTo)?.message ||
+                              "Message not found"}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setReplyTo(null)}
+                          className={`flex-shrink-0 p-1 rounded hover:bg-red-500/20 transition-colors ${
+                            theme === "dark"
+                              ? "text-red-400 hover:text-red-300"
+                              : "text-red-600 hover:text-red-500"
+                          }`}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Drag Drop Indicator */}
+                  {isDragOver && (
+                    <div
+                      className={`mb-3 p-4 rounded-lg border-2 border-dashed text-center transition-colors ${
+                        theme === "dark"
+                          ? "border-cyan-400 bg-cyan-900/20 text-cyan-400"
+                          : "border-cyan-600 bg-cyan-50 text-cyan-600"
+                      }`}
+                    >
+                      <div className="text-sm font-medium">
+                        ✓ Reply mode activated
+                      </div>
+                      <div className="text-xs opacity-70">
+                        Release to set as reply target
+                      </div>
+                    </div>
+                  )}
+
                   {showEmoji && (
                     <div
                       ref={emojiRef}
@@ -387,31 +730,45 @@ export default function DiscussionRoomPage({
                   )}
 
                   <div className="flex gap-1 md:gap-2 items-center">
-                    <button
-                      onClick={() => setShowEmoji(!showEmoji)}
-                      className={`text-lg md:text-xl p-1 transition-colors duration-300 ${
-                        theme === "dark"
-                          ? "text-gray-400 hover:text-white"
-                          : "text-gray-600 hover:text-gray-900"
-                      }`}
-                    >
-                      <FaRegSmile />
-                    </button>
-                    <input
+                    {user && (
+                      <button
+                        onClick={() => setShowEmoji(!showEmoji)}
+                        className={`text-lg md:text-xl p-1 transition-colors duration-300 ${
+                          theme === "dark"
+                            ? "text-gray-400 hover:text-white"
+                            : "text-gray-600 hover:text-gray-900"
+                        }`}
+                      >
+                        <FaRegSmile />
+                      </button>
+                    )}
+                    <textarea
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      className={`flex-1 border p-2 md:p-3 rounded-md text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all duration-300 ${
+                      disabled={!user}
+                      rows={Math.min(Math.max(input.split('\n').length, 1), 5)}
+                      className={`flex-1 border p-2 md:p-3 rounded-md text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-all duration-300 resize-none ${
+                        !user ? "opacity-50 cursor-not-allowed" : ""
+                      } ${
                         theme === "dark"
                           ? "bg-neutral-800 border-neutral-600 text-white placeholder-gray-400"
                           : "bg-white border-gray-300 text-gray-900 placeholder-gray-500"
                       }`}
-                      placeholder="Type a message..."
-                      maxLength={500}
+                      placeholder={
+                        replyTo
+                          ? `Replying to ${
+                              findReplyMessage(replyTo)?.sender || "Unknown"
+                            }...`
+                          : user
+                          ? "Type a message..."
+                          : "Please login to send messages..."
+                      }
+                      maxLength={1000}
                     />
                     <button
                       onClick={handleSendMessage}
-                      disabled={!input.trim()}
+                      disabled={!input.trim() || !user}
                       className="px-2 md:px-4 py-2 md:py-3 bg-cyan-600 hover:bg-cyan-700 disabled:bg-cyan-800 disabled:opacity-50 rounded-md text-white font-semibold transition-colors text-sm md:text-base"
                     >
                       <span className="hidden sm:inline">Send</span>

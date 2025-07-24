@@ -150,7 +150,6 @@ export async function registerUser(input) {
  * @returns {Promise<Object>} Auth payload with token and user data
  */
 export async function loginUser(input) {
-
   const mutation = `
     mutation LoginUser($input: LoginUserInput!) {
       loginUser(input: $input) {
@@ -848,6 +847,57 @@ export const getUserGigStats = async (userId) => {
   return result.userGigStats;
 };
 
+/**
+ * Get user's gigs (both hosted and collaborated)
+ * @returns {Promise<Object>} User's gigs data
+ */
+export const getUserGigs = async (userId) => {
+  const userGigsQuery = `
+  query {
+    userGigs(userId: "${userId}") {
+      id
+      isActive
+      date
+      title
+      looking_For
+      description
+      skills
+      currency
+      amount
+      paidTillNow
+      status
+      remainingPayment
+      createdAt
+      updatedAt
+      host {
+        id
+        first_name
+        last_name
+        username
+        email
+        profile_Picture
+        bio
+        rating
+      }
+      guest {
+        id
+        first_name
+        last_name
+        username
+        email
+        profile_Picture
+        bio
+        rating
+      }
+    }
+  }
+`;
+
+  const result = await query(userGigsQuery, {}, { requireAuth: true });
+
+  return result.userGigs || [];
+};
+
 // ============================================================================
 // REVIEW API FUNCTIONS
 // ============================================================================
@@ -925,9 +975,10 @@ export const getUserReviews = async (userId) => {
 /**
  * Send gig request
  * @param {Object} requestData - Request data
+ * @param {Object} gigData - Gig data for notification context
  * @returns {Promise<Object>} Sent request
  */
-export const sendGigRequest = async (requestData) => {
+export const sendGigRequest = async (requestData, gigData = null) => {
   const sendRequestMutation = `
     mutation SendGigRequest($input: SendGigRequestInput!) {
       sendGigRequest(input: $input) {
@@ -958,6 +1009,23 @@ export const sendGigRequest = async (requestData) => {
 
   console.log("Sending request with data:", requestData);
   const result = await mutate(sendRequestMutation, { input: requestData });
+
+  // Create notification for the gig host about the new request
+  if (result.sendGigRequest && gigData) {
+    try {
+      await createNotification({
+        userId: result.sendGigRequest.receiver.id,
+        type: "gig_request",
+        senderId: result.sendGigRequest.sender.id,
+        content: `You have received a new request for your gig "${gigData.title}"`,
+        action: "view_requests",
+      });
+    } catch (error) {
+      console.error("Failed to create notification for gig request:", error);
+      // Don't fail the request if notification creation fails
+    }
+  }
+
   return result.sendGigRequest;
 };
 
@@ -965,9 +1033,14 @@ export const sendGigRequest = async (requestData) => {
  * Respond to gig request
  * @param {string} requestId - Request ID
  * @param {string} status - Response status (accepted/rejected)
+ * @param {Object} gigData - Gig data for notification context
  * @returns {Promise<Object>} Updated request
  */
-export const respondToGigRequest = async (requestId, status) => {
+export const respondToGigRequest = async (
+  requestId,
+  status,
+  gigData = null
+) => {
   // Note: GraphQL enums are case-sensitive. Check if backend expects uppercase or lowercase
   const validStatuses = {
     accepted: "accepted",
@@ -1019,6 +1092,34 @@ export const respondToGigRequest = async (requestId, status) => {
       status: normalizedStatus,
     });
 
+    // Create notification for the request sender about the response
+    if (result.respondToGigRequest && gigData) {
+      try {
+        const notificationType =
+          normalizedStatus === "accepted" ? "gig_accepted" : "gig_rejected";
+        const notificationContent =
+          normalizedStatus === "accepted"
+            ? `Your request for the gig "${gigData.title}" has been accepted!`
+            : `Your request for the gig "${gigData.title}" has been rejected.`;
+        const notificationAction =
+          normalizedStatus === "accepted" ? "view_gig" : "view_requests";
+
+        await createNotification({
+          userId: result.respondToGigRequest.sender.id,
+          type: notificationType,
+          senderId: result.respondToGigRequest.receiver.id,
+          content: notificationContent,
+          action: notificationAction,
+        });
+      } catch (error) {
+        console.error(
+          "Failed to create notification for gig request response:",
+          error
+        );
+        // Don't fail the response if notification creation fails
+      }
+    }
+
     console.log("Response API result:", result);
     return result.respondToGigRequest;
   } catch (error) {
@@ -1053,7 +1154,6 @@ export const getSentRequests = async () => {
           username
           profile_Picture
         }
-        message
         proposedAmount
         status
         sentTime
@@ -1074,7 +1174,7 @@ export const getSentRequests = async () => {
 /**
  * Get gig chat messages
  * @param {string} gigId - Gig ID
- * @returns {Promise<Array>} Chat messages
+ * @returns {Promise<Array} Chat messages
  */
 export const getGigChats = async (gigId) => {
   const chatQuery = `
@@ -1124,4 +1224,339 @@ export const sendGigMessage = async (messageData) => {
   return result.sendGigMessage;
 };
 
+
+export const getUserNotifications = async (userId) => {
+  const queryString = `
+    query GetUserNotifications($userId: ID!) {
+      userNotifications(userId: $userId) {
+        id
+        type
+        sender {
+          id
+          username
+          first_name
+          last_name
+          profile_Picture
+        }
+        content
+        action
+        read
+        createdAt
+      }
+    }
+  `;
+
+  const result = await query(queryString, { userId });
+  return result.userNotifications;
+};
+
+/**
+ * Get unread notifications for a user
+ * @param {string} userId - User ID to get unread notifications for
+ * @returns {Promise<Array>} Array of unread notifications
+ */
+export const getUnreadNotifications = async (userId) => {
+  const queryString = `
+    query GetUnreadNotifications($userId: ID!) {
+      unreadNotifications(userId: $userId) {
+        id
+        type
+        sender {
+          id
+          username
+          first_name
+          last_name
+          profile_Picture
+        }
+        content
+        action
+        read
+        createdAt
+      }
+    }
+  `;
+
+  const result = await query(queryString, { userId });
+  return result.unreadNotifications;
+};
+
+/**
+ * Create a new notification
+ * @param {Object} notificationData - Notification data
+ * @param {string} notificationData.userId - User ID to receive notification
+ * @param {string} notificationData.type - Notification type
+ * @param {string} [notificationData.senderId] - ID of user who triggered notification
+ * @param {string} notificationData.content - Notification content
+ * @param {string} [notificationData.action] - Action identifier for frontend routing
+ * @returns {Promise<Object>} Created notification
+ */
+export const createNotification = async (notificationData) => {
+  const mutationString = `
+    mutation CreateNotification($input: CreateNotificationInput!) {
+      createNotification(input: $input) {
+        id
+        type
+        sender {
+          id
+          username
+          first_name
+          last_name
+          profile_Picture
+        }
+        content
+        action
+        read
+        createdAt
+      }
+    }
+  `;
+
+  const result = await mutate(mutationString, { input: notificationData });
+  return result.createNotification;
+};
+
+/**
+ * Mark a notification as read
+ * @param {string} userId - User ID who owns the notification
+ * @param {string} notificationId - Notification ID to mark as read
+ * @returns {Promise<boolean>} Success status
+ */
+export const markNotificationAsRead = async (userId, notificationId) => {
+  const mutationString = `
+    mutation MarkNotificationAsRead($userId: ID!, $notificationId: ID!) {
+      markNotificationAsRead(userId: $userId, notificationId: $notificationId)
+    }
+  `;
+
+  const result = await mutate(mutationString, { userId, notificationId });
+  return result.markNotificationAsRead;
+};
+
+/**
+ * Mark all notifications as read for a user
+ * @param {string} userId - User ID to mark all notifications as read
+ * @returns {Promise<boolean>} Success status
+ */
+export const markAllNotificationsAsRead = async (userId) => {
+  const mutationString = `
+    mutation MarkAllNotificationsAsRead($userId: ID!) {
+      markAllNotificationsAsRead(userId: $userId)
+    }
+  `;
+
+  const result = await mutate(mutationString, { userId });
+  return result.markAllNotificationsAsRead;
+};
+
+/**
+ * Delete a notification
+ * @param {string} userId - User ID who owns the notification
+ * @param {string} notificationId - Notification ID to delete
+ * @returns {Promise<boolean>} Success status
+ */
+export const deleteNotification = async (userId, notificationId) => {
+  const mutationString = `
+    mutation DeleteNotification($userId: ID!, $notificationId: ID!) {
+      deleteNotification(userId: $userId, notificationId: $notificationId)
+    }
+  `;
+
+  const result = await mutate(mutationString, { userId, notificationId });
+  return result.deleteNotification;
+};
+
+/**
+ * Cancel a gig request (sender cancels their own request)
+ * @param {string} requestId - Request ID to cancel
+ * @param {Object} gigData - Gig data for notification context
+ * @returns {Promise<Object>} Cancelled request
+ */
+export const cancelGigRequest = async (requestId, gigData = null) => {
+  const cancelMutation = `
+    mutation CancelGigRequest($requestId: ID!) {
+      cancelGigRequest(requestId: $requestId)
+    }
+  `;
+
+  try {
+    console.log(`Cancelling gig request ${requestId}`);
+
+    const result = await mutate(cancelMutation, { requestId });
+
+    // Create notification for the gig host about the cancellation
+    if (result.cancelGigRequest && gigData) {
+      try {
+        // Since the mutation only returns a boolean, we need to get user info from elsewhere
+        // We'll use the current user context for the notification
+        const currentUser =
+          typeof window !== "undefined"
+            ? JSON.parse(localStorage.getItem("kozeo_user") || "{}")
+            : {};
+
+        await createNotification({
+          userId: gigData.host?.id, // Use the gig host ID from gigData
+          type: "gig_cancelled",
+          senderId: currentUser.id, // Use current user as sender
+          content: `${
+            currentUser.first_name || currentUser.username || "A user"
+          } has cancelled their request for your gig "${gigData.title}"`,
+          action: "view_requests",
+        });
+      } catch (error) {
+        console.error(
+          "Failed to create notification for gig request cancellation:",
+          error
+        );
+        // Don't fail the cancellation if notification creation fails
+      }
+    }
+
+    console.log("Cancel API result:", result);
+    return result.cancelGigRequest;
+  } catch (error) {
+    console.error("Error in cancelGigRequest:", error);
+    console.error("Request details:", { requestId });
+    throw error;
+  }
+};
 // ============================================================================
+
+// ============================================================================
+// DISCUSSION ROOM APIs
+// ============================================================================
+
+/**
+ * Get all discussion rooms
+ * @returns {Promise<Array>} Array of discussion rooms
+ */
+export const getDiscussionRooms = async () => {
+  const queryString = `
+    query GetDiscussionRooms {
+      discussionRooms {
+        id
+        isActive
+        moderators {
+          id
+          first_name
+          last_name
+          username
+          profile_Picture
+          rating
+        }
+        title
+        description
+        displayPicture
+        createdAt
+        updatedAt
+      }
+    }
+  `;
+
+  const result = await query(queryString, {}, { requireAuth: false });
+  return result.discussionRooms;
+};
+
+/**
+ * Get a specific discussion room by ID
+ * @param {string} roomId - Discussion room ID
+ * @returns {Promise<Object>} Discussion room details
+ */
+export const getDiscussionRoom = async (roomId) => {
+  const queryString = `
+    query GetDiscussionRoom($id: ID!) {
+      discussionRoom(id: $id) {
+        id
+        isActive
+        moderators {
+          id
+          first_name
+          last_name
+          username
+          profile_Picture
+          rating
+        }
+        title
+        description
+        displayPicture
+        createdAt
+        updatedAt
+      }
+    }
+  `;
+
+  const result = await query(
+    queryString,
+    { id: roomId },
+    { requireAuth: false }
+  );
+  return result.discussionRoom;
+};
+
+/**
+ * Get messages for a specific discussion room
+ * @param {string} roomId - Discussion room ID
+ * @returns {Promise<Array>} Array of discussion room messages
+ */
+export const getDiscussionRoomChats = async (roomId) => {
+  const queryString = `
+    query GetDiscussionRoomMessages($roomId: ID!) {
+      discussionRoomChats(roomId: $roomId) {
+        id
+        discussionRoom
+        sender
+        content
+        timestamp
+        replyTo
+        isRead
+        isEdited
+        editedAt
+        createdAt
+        updatedAt
+      }
+    }
+  `;
+
+  const result = await query(queryString, { roomId }, { requireAuth: false });
+  return result.discussionRoomChats;
+};
+
+/**
+ * Send a message to a discussion room
+ * @param {Object} messageData - Message data
+ * @param {string} messageData.discussionRoom - Discussion room ID
+ * @param {string} messageData.content - Message content
+ * @param {string} [messageData.replyTo] - ID of message being replied to
+ * @returns {Promise<Object>} Created message
+ */
+export const sendDiscussionMessage = async (messageData) => {
+  const mutationString = `
+    mutation SendDiscussionMessage($input: SendDiscussionMessageInput!) {
+      sendDiscussionMessage(input: $input) {
+        id
+        discussionRoom
+        sender
+        content
+        timestamp
+        replyTo
+        isRead
+        isEdited
+        editedAt
+        createdAt
+        updatedAt
+      }
+    }
+  `;
+
+  const result = await mutate(mutationString, { input: messageData });
+  return result.sendDiscussionMessage;
+};
+
+// ============================================================================
+// NOTIFICATION FUNCTIONS
+// ============================================================================
+
+/**
+ * Get all notifications for a user
+ * @param {string} userId - User ID to get notifications for
+ * @returns {Promise<Array>} Array of notifications
+ */
