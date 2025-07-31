@@ -29,7 +29,7 @@ export default function Header({
   return (
     <>
       <header
-        className={`w-full px-6 py-4 Z-40 flex justify-between items-center relative theme-transition ${
+        className={`w-full px-6 py-4 Z-40 flex justify-between border-b-1 border-neutral-700 items-center relative theme-transition ${
           theme === "light" ? "bg-white text-gray-900" : "bg-gradient-to-r from-black to-neutral-900 text-white"
         }`}
       >

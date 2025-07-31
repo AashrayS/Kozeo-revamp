@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
 import ProfessionalButton from "@/components/common/ProfessionalButton";
+import RequestCard from "@/components/common/RequestCard";
 import { io, Socket } from "socket.io-client";
 import {
   getGigById,
@@ -13,7 +14,6 @@ import { use } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "../../../../../store/hooks";
 import { useTheme } from "../../../../contexts/ThemeContext";
-import { FaStar } from "react-icons/fa";
 
 interface Request {
   id?: string;
@@ -570,143 +570,237 @@ export default function GigLobbyPage({
       >
         <Sidebar />
         <div className="flex-1 flex flex-col p-0 sm:p-8">
-          <main className="flex-1 flex flex-col md:flex-row gap-8 items-stretch justify-center w-full max-w-6xl mx-auto py-8">
-            {/* Gig Info Container */}
+          {/* Glows */}
+          <div className="fixed top-56 right-4 w-2 h-0 rounded-full opacity-90 bg-purple-500 shadow-[0_0_250px_100px_rgba(168,85,247,0.35)] pointer-events-none z-0" />
+          <div className="fixed bottom-4 left-4 w-2 h-0 rounded-full opacity-90 bg-cyan-400 shadow-[0_0_250px_100px_rgba(34,211,238,0.35)] pointer-events-none z-0" />
+
+          <main className="flex-1 flex flex-col md:flex-row gap-8 items-stretch justify-center w-full  mx-auto py-8">
+            {/* Gig Info Container - Golden Ratio smaller section (38.2%) */}
             <section
-              className={`flex-1 rounded-2xl p-6 shadow-xl drop-shadow-glow backdrop-blur-md min-w-[300px] max-w-xl border theme-transition ${
+              className={`md:flex-[0.618] rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 min-w-[0] w-full border-0 relative drop-shadow-glow backdrop-blur-md overflow-hidden theme-transition ${
                 theme === "light"
                   ? "bg-white/90 border-gray-200"
                   : "bg-neutral-900/70 border-neutral-800"
               }`}
             >
-              <h2 className="text-2xl font-bold mb-4">Gig Info</h2>
-              <div className="space-y-4">
-                <div>
+              {/* Header */}
+              <div className="mb-8">
+                <h1
+                  className={`text-2xl sm:text-3xl md:text-4xl font-light tracking-tight mb-2 ${
+                    theme === "light" ? "text-gray-900" : "text-white"
+                  }`}
+                >
+                  {gig.title}
+                </h1>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                   <span
-                    className={`font-semibold ${
-                      theme === "light" ? "text-cyan-600" : "text-cyan-400"
+                    className={`text-sm sm:text-base font-medium ${
+                      theme === "light" ? "text-gray-600" : "text-gray-400"
                     }`}
-                  >
-                    Title:
-                  </span>{" "}
-                  <span
-                    className={
-                      theme === "light" ? "text-gray-900" : "text-white"
-                    }
-                  >
-                    {gig.title}
-                  </span>
-                </div>
-                <div>
-                  <span
-                    className={`font-semibold ${
-                      theme === "light" ? "text-cyan-600" : "text-cyan-400"
-                    }`}
-                  >
-                    Host:
-                  </span>{" "}
-                  <span
-                    className={
-                      theme === "light" ? "text-gray-900" : "text-white"
-                    }
                   >
                     @{gig.host?.username || "Unknown"}
                   </span>
-                </div>
-                <div>
-                  <span
-                    className={`font-semibold ${
-                      theme === "light" ? "text-cyan-600" : "text-cyan-400"
+                  <div
+                    className={`h-1 w-1 rounded-full ${
+                      theme === "light" ? "bg-gray-300" : "bg-gray-600"
+                    }`}
+                  />
+                  <div
+                    className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium border ${
+                      gig.status === "active"
+                        ? theme === "light"
+                          ? "bg-green-50 border-green-200 text-green-700"
+                          : "bg-green-950/50 border-green-800/50 text-green-300"
+                        : theme === "light"
+                        ? "bg-gray-50 border-gray-200 text-gray-600"
+                        : "bg-gray-800/50 border-gray-700/50 text-gray-400"
                     }`}
                   >
-                    Gig ID:
-                  </span>{" "}
-                  <span
-                    className={
-                      theme === "light" ? "text-gray-900" : "text-white"
-                    }
-                  >
-                    {gigId}
-                  </span>
+                    {gig.status || "Unknown"}
+                  </div>
                 </div>
+              </div>
+
+              {/* Project Value */}
+              <div className="mb-8">
+                <div
+                  className={`text-xl sm:text-2xl md:text-3xl font-semibold ${
+                    theme === "light" ? "text-gray-900" : "text-white"
+                  }`}
+                >
+                  {gig.currency} {gig.amount}
+                </div>
+                <div
+                  className={`text-sm sm:text-base ${
+                    theme === "light" ? "text-gray-500" : "text-gray-500"
+                  }`}
+                >
+                  Project value
+                </div>
+              </div>
+
+              {/* Content Sections */}
+              <div className="space-y-8">
+                {/* Description */}
                 <div>
-                  <span className="font-semibold text-cyan-400">
-                    WebSocket Status:
-                  </span>{" "}
-                  <span
-                    className={`text-sm px-2 py-1 rounded ${
-                      wsConnected
-                        ? "bg-green-900 text-green-300"
-                        : "bg-red-900 text-red-300"
+                  <h3
+                    className={`text-sm sm:text-base font-medium mb-2 sm:mb-3 tracking-wide uppercase ${
+                      theme === "light" ? "text-gray-700" : "text-gray-300"
                     }`}
                   >
-                    {wsConnected ? "Connected" : "Disconnected"}
-                  </span>
+                    Description
+                  </h3>
+                  <p
+                    className={`text-sm sm:text-base leading-relaxed ${
+                      theme === "light" ? "text-gray-600" : "text-gray-400"
+                    }`}
+                  >
+                    {gig.description}
+                  </p>
                 </div>
+
+                {/* Looking For */}
                 <div>
-                  <span className="font-semibold text-cyan-400">
-                    Looking For:
-                  </span>{" "}
-                  <span className="text-white">{gig.looking_For}</span>
+                  <h3
+                    className={`text-sm sm:text-base font-medium mb-2 sm:mb-3 tracking-wide uppercase ${
+                      theme === "light" ? "text-gray-700" : "text-gray-300"
+                    }`}
+                  >
+                    Looking For
+                  </h3>
+                  <p
+                    className={`text-sm sm:text-base leading-relaxed ${
+                      theme === "light" ? "text-gray-600" : "text-gray-400"
+                    }`}
+                  >
+                    {gig.looking_For}
+                  </p>
                 </div>
+
+                {/* Skills */}
                 <div>
-                  <span className="font-semibold text-cyan-400">
-                    Description:
-                  </span>{" "}
-                  <span className="text-gray-300">{gig.description}</span>
-                </div>
-                <div>
-                  <span className="font-semibold text-cyan-400">Skills:</span>{" "}
-                  <div className="flex flex-wrap gap-2 mt-2">
+                  <h3
+                    className={`text-sm sm:text-base font-medium mb-2 sm:mb-3 tracking-wide uppercase ${
+                      theme === "light" ? "text-gray-700" : "text-gray-300"
+                    }`}
+                  >
+                    Required Skills
+                  </h3>
+                  <div className="flex flex-wrap gap-1 sm:gap-2">
                     {gig.skills?.map((skill: string, idx: number) => (
                       <span
                         key={idx}
-                        className="px-2 py-1 text-xs bg-neutral-800 border border-neutral-600 text-gray-300 rounded-md"
+                        className={`px-2 py-1 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium rounded-full border ${
+                          theme === "light"
+                            ? "bg-gray-50 border-gray-200 text-gray-700"
+                            : "bg-gray-800/50 border-gray-700/50 text-gray-300"
+                        }`}
                       >
                         {skill}
                       </span>
                     ))}
                   </div>
                 </div>
-                <div>
-                  <span className="font-semibold text-cyan-400">Amount:</span>{" "}
-                  <span className="text-green-400 font-bold">
-                    {gig.currency} {gig.amount}
-                  </span>
-                </div>
-                <div>
-                  <span className="font-semibold text-cyan-400">Status:</span>{" "}
-                  <span
-                    className={`px-2 py-1 rounded text-xs font-medium ${
-                      gig.status === "active"
-                        ? "bg-green-900 text-green-300"
-                        : "bg-gray-900 text-gray-300"
-                    }`}
-                  >
-                    {gig.status || "Unknown"}
-                  </span>
+
+                {/* System Information */}
+                <div className="pt-6 border-t border-gray-200/50 dark:border-gray-700/50">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`text-sm uppercase tracking-wide font-medium ${
+                          theme === "light" ? "text-gray-500" : "text-gray-500"
+                        }`}
+                      >
+                        Connection
+                      </span>
+                      <div
+                        className={`flex items-center gap-2 ${
+                          wsConnected
+                            ? "text-green-600 dark:text-green-400"
+                            : "text-red-500 dark:text-red-400"
+                        }`}
+                      >
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            wsConnected ? "bg-green-500" : "bg-red-500"
+                          }`}
+                        />
+                        <span className="text-sm font-medium">
+                          {wsConnected ? "Online" : "Offline"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`text-sm uppercase tracking-wide font-medium ${
+                          theme === "light" ? "text-gray-500" : "text-gray-500"
+                        }`}
+                      >
+                        Project ID
+                      </span>
+                      <code
+                        className={`text-sm font-mono px-2 py-1 rounded ${
+                          theme === "light"
+                            ? "bg-gray-100 text-gray-700"
+                            : "bg-gray-800 text-gray-300"
+                        }`}
+                      >
+                        {gigId}
+                      </code>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Chat Entry Option for Host when Guest is assigned - Bottom of container */}
               {user && gig.host?.id === user.id && gig.guest && (
-                <div className="mt-6 pt-4 border-t border-neutral-700/50">
-                  <div className="flex items-center justify-between text-sm text-neutral-300 mb-3">
-                    <span>Workspace Status:</span>
-                    <span className="text-green-400 font-medium">
+                <div className="mt-8 pt-6 border-t border-gray-200/50 dark:border-gray-700/50">
+                  <div className="flex items-center justify-between mb-4">
+                    <span
+                      className={`text-sm uppercase tracking-wide font-medium ${
+                        theme === "light" ? "text-gray-500" : "text-gray-500"
+                      }`}
+                    >
+                      Workspace Status
+                    </span>
+                    <span
+                      className={`text-sm font-medium ${
+                        theme === "light" ? "text-green-600" : "text-green-400"
+                      }`}
+                    >
                       Ready to start
                     </span>
                   </div>
 
                   {/* Guest Information */}
-                  <div className="mb-4 p-3 bg-neutral-800/40 rounded-lg border border-neutral-700/50">
-                    <div className="text-sm text-neutral-300 mb-1">
-                      Current Guest:
+                  <div
+                    className={`mb-4 p-4 rounded-xl border ${
+                      theme === "light"
+                        ? "bg-gray-50/50 border-gray-200/50"
+                        : "bg-gray-800/30 border-gray-700/50"
+                    }`}
+                  >
+                    <div
+                      className={`text-sm uppercase tracking-wide font-medium mb-2 ${
+                        theme === "light" ? "text-gray-500" : "text-gray-500"
+                      }`}
+                    >
+                      Current Guest
                     </div>
-                    <div className="text-white font-medium">
+                    <div
+                      className={`text-base font-medium ${
+                        theme === "light" ? "text-gray-900" : "text-white"
+                      }`}
+                    >
                       @{gig.guest.username}
                       {(gig.guest.first_name || gig.guest.last_name) && (
-                        <span className="text-neutral-300 ml-2 font-normal">
+                        <span
+                          className={`ml-2 font-normal ${
+                            theme === "light"
+                              ? "text-gray-600"
+                              : "text-gray-400"
+                          }`}
+                        >
                           ({gig.guest.first_name} {gig.guest.last_name})
                         </span>
                       )}
@@ -740,50 +834,98 @@ export default function GigLobbyPage({
               )}
             </section>
 
-            {/* Incoming Requests Container */}
+            {/* Incoming Requests Container - Golden Ratio larger section (61.8%) */}
             <section
-              className={`flex-1 rounded-2xl p-6 shadow-xl drop-shadow-glow backdrop-blur-md min-w-[300px] max-w-xl border theme-transition ${
+              className={`md:flex-[1] rounded-2xl p-6 shadow-xl drop-shadow-glow backdrop-blur-md min-w-[300px] border theme-transition ${
                 theme === "light"
                   ? "bg-white/90 border-gray-200"
                   : "bg-neutral-900/70 border-neutral-800"
               }`}
             >
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold">Request History</h2>
-                <div className="flex items-center gap-2">
+              <div className="flex justify-between items-center mb-6">
+                <h2
+                  className={`text-2xl font-light tracking-tight ${
+                    theme === "light" ? "text-gray-900" : "text-white"
+                  }`}
+                >
+                  Gig Requests
+                </h2>
+                <div className="flex items-center gap-3">
                   {requests.filter((req) => req.status === "pending").length >
                     0 && (
-                    <div className="bg-indigo-600 text-white px-2 py-1 rounded-full text-sm font-semibold">
-                      {
-                        requests.filter((req) => req.status === "pending")
-                          .length
-                      }
+                    <div
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
+                        theme === "light"
+                          ? "bg-slate-50/80 border-slate-200/60 text-slate-700"
+                          : "bg-slate-800/50 border-slate-700/50 text-slate-300"
+                      }`}
+                    >
+                      <div
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          theme === "light" ? "bg-slate-400" : "bg-slate-400"
+                        }`}
+                      />
+                      <span className="text-sm font-medium">
+                        {
+                          requests.filter((req) => req.status === "pending")
+                            .length
+                        }{" "}
+                        Pending
+                      </span>
                     </div>
                   )}
                   {requests.filter((req) => req.status === "accepted").length >
                     0 && (
-                    <div className="bg-green-600 text-white px-2 py-1 rounded-full text-sm font-semibold">
-                      {
-                        requests.filter((req) => req.status === "accepted")
-                          .length
-                      }{" "}
-                      ✓
+                    <div
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
+                        theme === "light"
+                          ? "bg-emerald-50/80 border-emerald-200/60 text-emerald-700"
+                          : "bg-emerald-950/50 border-emerald-800/50 text-emerald-300"
+                      }`}
+                    >
+                      <div
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          theme === "light"
+                            ? "bg-emerald-500"
+                            : "bg-emerald-400"
+                        }`}
+                      />
+                      <span className="text-sm font-medium">
+                        {
+                          requests.filter((req) => req.status === "accepted")
+                            .length
+                        }{" "}
+                        Accepted
+                      </span>
                     </div>
                   )}
                   {requests.filter((req) => req.status === "rejected").length >
                     0 && (
-                    <div className="bg-red-600 text-white px-2 py-1 rounded-full text-sm font-semibold">
-                      {
-                        requests.filter((req) => req.status === "rejected")
-                          .length
-                      }{" "}
-                      ✗
+                    <div
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${
+                        theme === "light"
+                          ? "bg-gray-50/80 border-gray-200/60 text-gray-600"
+                          : "bg-gray-800/50 border-gray-700/50 text-gray-400"
+                      }`}
+                    >
+                      <div
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          theme === "light" ? "bg-gray-400" : "bg-gray-500"
+                        }`}
+                      />
+                      <span className="text-sm font-medium">
+                        {
+                          requests.filter((req) => req.status === "rejected")
+                            .length
+                        }{" "}
+                        Declined
+                      </span>
                     </div>
                   )}
                 </div>
               </div>
               {requests && requests.length > 0 ? (
-                <ul className="space-y-4">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                   {requests
                     .sort((a, b) => {
                       // Sort by status priority: pending first, then accepted, then rejected
@@ -800,523 +942,16 @@ export default function GigLobbyPage({
                       );
                     })
                     .map((req: any, idx: number) => (
-                      <li
+                      <RequestCard
                         key={idx}
-                        className={`
-                          relative rounded-2xl p-6 flex flex-col gap-4 
-                          transition-all duration-300 ease-out
-                          backdrop-blur-sm shadow-lg hover:shadow-xl
-                          border group overflow-hidden
-                          ${
-                            req.status === "pending"
-                              ? theme === "light"
-                                ? "bg-gradient-to-br from-slate-50/90 via-indigo-25/80 to-slate-100/90 border-slate-300/60 hover:border-indigo-300/80 hover:shadow-slate-200/30"
-                                : "bg-gradient-to-br from-slate-900/40 via-indigo-950/30 to-slate-800/40 border-slate-600/60 hover:border-indigo-500/80 hover:shadow-slate-900/20"
-                              : req.status === "accepted"
-                              ? theme === "light"
-                                ? "bg-gradient-to-br from-emerald-50/90 via-green-25/80 to-emerald-50/90 border-emerald-200/60 hover:border-emerald-300/80 hover:shadow-emerald-200/20"
-                                : "bg-gradient-to-br from-emerald-950/40 via-emerald-900/30 to-green-950/40 border-emerald-700/60 hover:border-emerald-600/80 hover:shadow-emerald-900/20"
-                              : req.status === "rejected"
-                              ? theme === "light"
-                                ? "bg-gradient-to-br from-red-50/90 via-rose-25/80 to-red-50/90 border-red-200/60 hover:border-red-300/80 hover:shadow-red-200/20"
-                                : "bg-gradient-to-br from-red-950/40 via-red-900/30 to-rose-950/40 border-red-700/60 hover:border-red-600/80 hover:shadow-red-900/20"
-                              : theme === "light"
-                              ? "bg-gradient-to-br from-gray-50/90 via-slate-25/80 to-gray-50/90 border-gray-200/60 hover:border-gray-300/80 hover:shadow-gray-200/20"
-                              : "bg-gradient-to-br from-neutral-900/60 via-neutral-800/50 to-neutral-900/60 border-neutral-700/60 hover:border-neutral-600/80 hover:shadow-neutral-900/20"
-                          }
-                        `}
-                      >
-                        {/* Subtle shine effect on hover */}
-                        <div
-                          className={`
-                            absolute inset-0 opacity-0 transition-opacity duration-500
-                            ${
-                              req.status === "pending"
-                                ? "group-hover:opacity-100"
-                                : ""
-                            }
-                            bg-gradient-to-r from-transparent via-white/5 to-transparent
-                            transform -skew-x-12 translate-x-full group-hover:-translate-x-full
-                            transition-transform duration-700 pointer-events-none
-                          `}
-                        />
-
-                        {/* Header section with user info and status */}
-                        <div className="relative z-10 flex justify-between items-start">
-                          <div className="flex items-center gap-3">
-                            {/* Profile Picture or Avatar */}
-                            <div className="relative">
-                              {req.requesterProfilePicture ? (
-                                <img
-                                  src={req.requesterProfilePicture}
-                                  alt={`${
-                                    req.requesterName || req.name
-                                  } profile`}
-                                  className={`
-                                    w-14 h-14 rounded-full object-cover shadow-lg border-2 transition-all duration-300
-                                    ${
-                                      req.status === "pending"
-                                        ? "border-indigo-400/50"
-                                        : req.status === "accepted"
-                                        ? "border-emerald-400/50"
-                                        : req.status === "rejected"
-                                        ? "border-red-400/50"
-                                        : "border-gray-400/50"
-                                    }
-                                  `}
-                                />
-                              ) : (
-                                <div
-                                  className={`
-                                    w-14 h-14 rounded-full flex items-center justify-center
-                                    bg-gradient-to-br font-bold text-white shadow-lg border-2 transition-all duration-300
-                                    ${
-                                      req.status === "pending"
-                                        ? "from-slate-500 to-indigo-600 border-indigo-400/50"
-                                        : req.status === "accepted"
-                                        ? "from-emerald-500 to-green-600 border-emerald-400/50"
-                                        : req.status === "rejected"
-                                        ? "from-red-500 to-rose-600 border-red-400/50"
-                                        : "from-gray-500 to-slate-600 border-gray-400/50"
-                                    }
-                                  `}
-                                >
-                                  {(req.requesterName || req.name || "U")
-                                    .charAt(0)
-                                    .toUpperCase()}
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="flex flex-col">
-                              <div
-                                className={`font-bold text-lg transition-colors duration-300 ${
-                                  theme === "light"
-                                    ? "text-gray-900"
-                                    : "text-white"
-                                }`}
-                              >
-                                @{req.requesterName || req.name}
-                              </div>
-
-                              {/* Gig stats - Hosted and Collaborated counts */}
-                              <div className="flex items-center gap-3 mt-1">
-                                <div
-                                  className={`
-                                    flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium
-                                    backdrop-blur-sm border transition-colors duration-300
-                                    ${
-                                      theme === "light"
-                                        ? "bg-blue-100/50 border-blue-200/50 text-blue-700"
-                                        : "bg-blue-900/30 border-blue-700/50 text-blue-300"
-                                    }
-                                  `}
-                                >
-                                  <svg
-                                    className="w-3 h-3"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                  >
-                                    <path
-                                      fillRule="evenodd"
-                                      d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm2 6a2 2 0 11-4 0 2 2 0 014 0zm8 0a2 2 0 11-4 0 2 2 0 014 0z"
-                                      clipRule="evenodd"
-                                    />
-                                  </svg>
-                                  <span>
-                                    {req.requesterGigHostedCount || 0} hosted
-                                  </span>
-                                </div>
-                                <div
-                                  className={`
-                                    flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium
-                                    backdrop-blur-sm border transition-colors duration-300
-                                    ${
-                                      theme === "light"
-                                        ? "bg-purple-100/50 border-purple-200/50 text-purple-700"
-                                        : "bg-purple-900/30 border-purple-700/50 text-purple-300"
-                                    }
-                                  `}
-                                >
-                                  <svg
-                                    className="w-3 h-3"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
-                                  >
-                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
-                                  <span>
-                                    {req.requesterGigCollaboratedCount || 0}{" "}
-                                    collaborated
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Enhanced status indicator */}
-                              <div
-                                className={`
-                                  inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold mt-2
-                                  backdrop-blur-sm border shadow-sm transition-all duration-300 w-fit
-                                  ${
-                                    req.status === "pending"
-                                      ? "bg-indigo-500/20 border-indigo-400/30 text-indigo-700 dark:text-indigo-300"
-                                      : req.status === "accepted"
-                                      ? "bg-emerald-500/20 border-emerald-400/30 text-emerald-700 dark:text-emerald-300"
-                                      : req.status === "rejected"
-                                      ? "bg-red-500/20 border-red-400/30 text-red-700 dark:text-red-300"
-                                      : "bg-gray-500/20 border-gray-400/30 text-gray-700 dark:text-gray-300"
-                                  }
-                                `}
-                              >
-                                {req.status === "pending" && (
-                                  <>
-                                    <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-                                    Pending Review
-                                  </>
-                                )}
-                                {req.status === "accepted" && (
-                                  <>
-                                    <svg
-                                      className="w-3 h-3"
-                                      fill="currentColor"
-                                      viewBox="0 0 20 20"
-                                    >
-                                      <path
-                                        fillRule="evenodd"
-                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                        clipRule="evenodd"
-                                      />
-                                    </svg>
-                                    Accepted
-                                  </>
-                                )}
-                                {req.status === "rejected" && (
-                                  <>
-                                    <svg
-                                      className="w-3 h-3"
-                                      fill="currentColor"
-                                      viewBox="0 0 20 20"
-                                    >
-                                      <path
-                                        fillRule="evenodd"
-                                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                        clipRule="evenodd"
-                                      />
-                                    </svg>
-                                    Rejected
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Rating and timestamp section */}
-                          <div className="flex flex-col items-end gap-2">
-                            <div
-                              className={`
-                              flex items-center gap-1.5 px-2 py-1 rounded-lg
-                              backdrop-blur-sm border transition-colors duration-300
-                              ${
-                                theme === "light"
-                                  ? "bg-white/50 border-gray-200/50 text-gray-600"
-                                  : "bg-black/20 border-neutral-600/30 text-gray-300"
-                              }
-                            `}
-                            >
-                              <FaStar
-                                className={`${
-                                  theme === "light"
-                                    ? "text-yellow-500"
-                                    : "text-yellow-400"
-                                }`}
-                                size={12}
-                              />
-                              <span className="text-sm font-medium">
-                                {(() => {
-                                  const rating =
-                                    req.requesterRating ||
-                                    req.rating ||
-                                    req.sender?.rating;
-                                  return rating
-                                    ? `${Number(rating).toFixed(1)}`
-                                    : "N/A";
-                                })()}
-                              </span>
-                            </div>
-
-                            <div
-                              className={`text-xs font-medium ${
-                                theme === "light"
-                                  ? "text-gray-500"
-                                  : "text-gray-400"
-                              }`}
-                            >
-                              {req.timestamp
-                                ? new Date(req.timestamp).toLocaleString([], {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })
-                                : "Just now"}
-                            </div>
-
-                            {req.responseTime && req.status !== "pending" && (
-                              <div
-                                className={`text-xs px-2 py-0.5 rounded backdrop-blur-sm border font-medium ${
-                                  req.status === "accepted"
-                                    ? theme === "light"
-                                      ? "bg-emerald-100/50 border-emerald-200/50 text-emerald-700"
-                                      : "bg-emerald-900/30 border-emerald-700/50 text-emerald-300"
-                                    : theme === "light"
-                                    ? "bg-red-100/50 border-red-200/50 text-red-700"
-                                    : "bg-red-900/30 border-red-700/50 text-red-300"
-                                }`}
-                              >
-                                {new Date(req.responseTime).toLocaleString([], {
-                                  month: "short",
-                                  day: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {/* Bio section */}
-                        {(req.requesterBio || req.sender?.bio) && (
-                          <div
-                            className={`
-                              relative p-4 rounded-xl transition-colors duration-300
-                              backdrop-blur-sm border
-                              ${
-                                theme === "light"
-                                  ? "bg-slate-50/40 border-slate-200/40 text-slate-700"
-                                  : "bg-slate-900/20 border-slate-700/30 text-slate-300"
-                              }
-                            `}
-                          >
-                            <div className="flex items-center gap-2 mb-2">
-                              <svg
-                                className={`w-4 h-4 ${
-                                  theme === "light"
-                                    ? "text-slate-500"
-                                    : "text-slate-400"
-                                }`}
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                              <span
-                                className={`text-xs font-semibold uppercase tracking-wide ${
-                                  theme === "light"
-                                    ? "text-slate-500"
-                                    : "text-slate-400"
-                                }`}
-                              >
-                                About
-                              </span>
-                            </div>
-                            <div className="text-sm leading-relaxed">
-                              {req.requesterBio ||
-                                req.sender?.bio ||
-                                "No bio available"}
-                            </div>
-                          </div>
-                        )}
-                        {/* Message section */}
-                        <div
-                          className={`
-                            relative p-4 rounded-xl transition-colors duration-300
-                            backdrop-blur-sm border
-                            ${
-                              theme === "light"
-                                ? "bg-white/40 border-gray-200/40 text-gray-800"
-                                : "bg-black/20 border-neutral-600/30 text-gray-200"
-                            }
-                          `}
-                        >
-                          <div className="text-sm leading-relaxed font-medium">
-                            {req.message}
-                          </div>
-                        </div>
-
-                        {/* Action buttons section */}
-                        {req.status === "pending" && (
-                          <div className="relative z-10 flex gap-3 mt-2">
-                            <ProfessionalButton
-                              onClick={() => {
-                                const username = req.requesterName || req.name;
-                                if (username) {
-                                  const cleanUsername = username.replace(
-                                    /^@/,
-                                    ""
-                                  );
-                                  router.push(`/profile/${cleanUsername}`);
-                                }
-                              }}
-                              variant="neutral"
-                              size="sm"
-                              className="flex-1"
-                              icon={
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                  />
-                                </svg>
-                              }
-                            >
-                              View Profile
-                            </ProfessionalButton>
-                            <ProfessionalButton
-                              onClick={() => handleAcceptRequest(req, idx)}
-                              disabled={processingRequests.has(idx)}
-                              variant="primary"
-                              size="sm"
-                              className="flex-1"
-                              loading={processingRequests.has(idx)}
-                              loadingText="Processing..."
-                              icon={
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M5 13l4 4L19 7"
-                                  />
-                                </svg>
-                              }
-                            >
-                              Accept
-                            </ProfessionalButton>
-                            <ProfessionalButton
-                              onClick={() => handleRejectRequest(req, idx)}
-                              disabled={processingRequests.has(idx)}
-                              variant="danger"
-                              size="sm"
-                              className="flex-1"
-                              loading={processingRequests.has(idx)}
-                              loadingText="Processing..."
-                              icon={
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M6 18L18 6M6 6l12 12"
-                                  />
-                                </svg>
-                              }
-                            >
-                              Reject
-                            </ProfessionalButton>
-                          </div>
-                        )}
-
-                        {/* Enhanced status messages for processed requests */}
-                        {req.status === "accepted" && (
-                          <div
-                            className={`
-                            relative z-10 mt-3 p-4 rounded-xl backdrop-blur-sm border
-                            transition-all duration-300
-                            ${
-                              theme === "light"
-                                ? "bg-emerald-100/60 border-emerald-200/60 text-emerald-800"
-                                : "bg-emerald-900/30 border-emerald-700/50 text-emerald-200"
-                            }
-                          `}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={`
-                                w-8 h-8 rounded-full flex items-center justify-center
-                                ${
-                                  theme === "light"
-                                    ? "bg-emerald-200 text-emerald-700"
-                                    : "bg-emerald-800/50 text-emerald-300"
-                                }
-                              `}
-                              >
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              </div>
-                              <div className="flex-1">
-                                <div className="font-semibold text-sm">
-                                  Request Accepted
-                                </div>
-                                <div className="text-xs opacity-90">
-                                  User can now join the gig workspace
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {req.status === "rejected" && (
-                          <div
-                            className={`
-                            relative z-10 mt-2 px-3 py-2 rounded-lg backdrop-blur-sm border
-                            transition-all duration-300 text-center
-                            ${
-                              theme === "light"
-                                ? "bg-red-100/40 border-red-200/40 text-red-700"
-                                : "bg-red-900/20 border-red-700/30 text-red-300"
-                            }
-                          `}
-                          >
-                            <div className="flex items-center justify-center gap-2">
-                              <svg
-                                className="w-3 h-3"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                              <span className="font-medium text-xs">
-                                Request Declined
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </li>
+                        request={req}
+                        index={idx}
+                        processingRequests={processingRequests}
+                        onAccept={handleAcceptRequest}
+                        onReject={handleRejectRequest}
+                      />
                     ))}
-                </ul>
+                </div>
               ) : (
                 <div className="text-gray-400 text-center py-8">
                   <div className="text-4xl mb-4">📥</div>
@@ -1329,10 +964,6 @@ export default function GigLobbyPage({
             </section>
           </main>
         </div>
-
-        {/* Glows */}
-        <div className="fixed top-56 right-4 w-2 h-0 rounded-full opacity-90 bg-purple-500 shadow-[0_0_250px_100px_rgba(168,85,247,0.35)] pointer-events-none z-0" />
-        <div className="fixed bottom-4 left-4 w-2 h-0 rounded-full opacity-90 bg-cyan-400 shadow-[0_0_250px_100px_rgba(34,211,238,0.35)] pointer-events-none z-0" />
       </div>
     </>
   );

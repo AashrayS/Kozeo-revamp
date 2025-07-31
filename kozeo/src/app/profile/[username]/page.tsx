@@ -4,7 +4,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
-import ProfessionalButton from "@/components/common/ProfessionalButton";
 import { FiStar, FiCalendar, FiDollarSign, FiUsers } from "react-icons/fi";
 import { getUserByUsername } from "../../../../utilities/kozeoApi";
 import { useUser } from "../../../../store/hooks";
@@ -153,7 +152,7 @@ function ProfileImage({ profilePic, username, size }: ProfileImageProps) {
         <img
           src={profilePic}
           alt={`${username}'s profile`}
-          className={`w-full h-full object-cover ${
+          className={`w-full h-full object-cover transition-opacity duration-200 ${
             imageLoaded ? "opacity-100" : "opacity-0"
           }`}
           onError={handleImageError}
@@ -163,7 +162,7 @@ function ProfileImage({ profilePic, username, size }: ProfileImageProps) {
       <span
         className={`text-white ${textSizeClasses[size]} font-bold ${
           shouldShowImage && imageLoaded ? "absolute opacity-0" : "flex"
-        } items-center justify-center w-full h-full`}
+        } items-center justify-center w-full h-full transition-opacity duration-200`}
       >
         {getInitials(username)}
       </span>
@@ -228,7 +227,7 @@ export default function UserProfilePage() {
       <>
         <Header logoText="Kozeo" />
         <div
-          className={`min-h-screen relative z-10 flex flex-row ${
+          className={`min-h-screen relative z-10 flex flex-row transition-colors duration-300 ${
             theme === "dark"
               ? "bg-[radial-gradient(circle_at_center,_rgba(17,17,17,0.8),_rgba(0,0,0,0.6))] text-white"
               : "bg-gradient-to-br from-slate-50 via-gray-50 to-stone-50 text-gray-900"
@@ -239,7 +238,7 @@ export default function UserProfilePage() {
             <main className="flex-1 p-6 overflow-y-auto">
               <div className="flex justify-center items-center py-20">
                 <div
-                  className={`${
+                  className={`transition-colors duration-300 ${
                     theme === "dark" ? "text-gray-400" : "text-gray-600"
                   }`}
                 >
@@ -258,7 +257,7 @@ export default function UserProfilePage() {
       <>
         <Header logoText="Kozeo" />
         <div
-          className={`min-h-screen relative z-10 flex flex-row ${
+          className={`min-h-screen relative z-10 flex flex-row transition-colors duration-300 ${
             theme === "dark"
               ? "bg-[radial-gradient(circle_at_center,_rgba(17,17,17,0.8),_rgba(0,0,0,0.6))] text-white"
               : "bg-gradient-to-br from-slate-50 via-gray-50 to-stone-50 text-gray-900"
@@ -296,7 +295,7 @@ export default function UserProfilePage() {
         </>
       )}
       <div
-        className={`min-h-screen relative z-10 flex flex-row ${
+        className={`min-h-screen relative z-10 flex flex-row transition-colors duration-300 ${
           theme === "dark"
             ? "bg-[radial-gradient(circle_at_center,_rgba(17,17,17,0.8),_rgba(0,0,0,0.6))] text-white"
             : "bg-gradient-to-br from-slate-50 via-gray-50 to-stone-50 text-gray-900"
@@ -309,7 +308,7 @@ export default function UserProfilePage() {
             {/* Profile Header */}
             <div className="mb-8">
               <h2
-                className={`text-2xl font-bold mb-6 ${
+                className={`text-2xl font-bold mb-6 transition-colors duration-300 ${
                   theme === "dark" ? "text-white" : "text-gray-900"
                 }`}
               >
@@ -318,10 +317,10 @@ export default function UserProfilePage() {
 
               {/* Profile Card */}
               <div
-                className={`relative flex flex-col justify-between rounded-lg p-6 shadow-md mb-6 ${
+                className={`relative flex flex-col justify-between rounded-lg p-6 shadow-md mb-6 transition-all duration-300 ${
                   theme === "dark"
-                    ? "bg-gradient-to-br from-[#111] to-[#1a1a1a]"
-                    : "bg-white/90 border border-gray-200 shadow-lg"
+                    ? "bg-gradient-to-br from-[#111] to-[#1a1a1a] hover:bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.1),_rgba(168,85,247,0.1))]"
+                    : "bg-white/90 hover:bg-white border border-gray-200 shadow-lg hover:shadow-xl"
                 }`}
               >
                 <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6 mb-6">
@@ -337,7 +336,7 @@ export default function UserProfilePage() {
                     <div className="flex flex-col lg:flex-row items-center lg:items-center justify-center sm:justify-start gap-2 mb-2">
                       <div className="flex items-center gap-2">
                         <h3
-                          className={`text-xl lg:text-2xl font-semibold ${
+                          className={`text-xl lg:text-2xl font-semibold transition-colors duration-300 ${
                             theme === "dark" ? "text-white" : "text-gray-900"
                           }`}
                         >
@@ -345,16 +344,15 @@ export default function UserProfilePage() {
                           {profile.username})
                         </h3>
                         {canViewSensitiveInfo && (
-                          <ProfessionalButton
+                          <button
                             onClick={() =>
                               router.push(`/profile/${username}/edit`)
                             }
-                            variant="primary"
-                            size="sm"
-                            className="ml-2 text-xs"
+                            className="ml-2 px-2 py-1 text-xs bg-cyan-600 hover:bg-cyan-700 text-white rounded transition"
+                            type="button"
                           >
                             Edit
-                          </ProfessionalButton>
+                          </button>
                         )}
                       </div>
                       {/* Achievements beside username for lg+ screens */}
@@ -370,7 +368,7 @@ export default function UserProfilePage() {
                                 <img
                                   src={achievement.icon}
                                   alt={achievement.title}
-                                  className="w-8 h-8 rounded-lg object-cover"
+                                  className="w-8 h-8 rounded-lg  hover:border-cyan-500 transition-colors object-cover"
                                 />
                               </div>
                             ))}
@@ -378,7 +376,7 @@ export default function UserProfilePage() {
                         )}
                     </div>
                     <p
-                      className={`text-sm mb-3 leading-relaxed ${
+                      className={`text-sm mb-3 leading-relaxed transition-colors duration-300 ${
                         theme === "dark" ? "text-gray-300" : "text-gray-600"
                       }`}
                     >
@@ -386,7 +384,7 @@ export default function UserProfilePage() {
                     </p>
                     <div className="flex flex-wrap justify-center sm:justify-start items-center gap-2 lg:gap-4">
                       <span
-                        className={`px-2 py-0.5 text-xs rounded-md text-emerald-400 ${
+                        className={`px-2 py-0.5 text-xs rounded-md text-emerald-400 transition-colors duration-300 ${
                           theme === "dark"
                             ? "bg-neutral-800 border border-neutral-600"
                             : "bg-emerald-50 border border-emerald-200"
@@ -395,7 +393,7 @@ export default function UserProfilePage() {
                         Active
                       </span>
                       <span
-                        className={`text-xs ${
+                        className={`text-xs transition-colors duration-300 ${
                           theme === "dark" ? "text-gray-500" : "text-gray-400"
                         }`}
                       >
@@ -411,7 +409,7 @@ export default function UserProfilePage() {
                             href={link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-cyan-700 underline"
+                            className="text-xs text-cyan-700 underline hover:text-cyan-300 transition"
                           >
                             {link
                               .replace(/^https?:\/\//, "")
@@ -434,7 +432,7 @@ export default function UserProfilePage() {
                         <img
                           src={achievement.icon}
                           alt={achievement.title}
-                          className="w-12 h-12 rounded-lg object-cover"
+                          className="w-12 h-12 rounded-lg  hover:border-cyan-500 transition-colors object-cover"
                         />
                       </div>
                     ))}
@@ -459,14 +457,12 @@ export default function UserProfilePage() {
               <div className="mb-6 p-4 bg-amber-900 bg-opacity-30 border border-amber-700 rounded-lg">
                 <p className="text-sm text-amber-300">
                   <FiUsers className="inline mr-2" />
-                  <ProfessionalButton
+                  <button
                     onClick={() => router.push("/login")}
-                    variant="neutral"
-                    size="sm"
-                    className="underline hover:text-amber-100 transition text-sm inline-block bg-transparent border-none shadow-none p-0"
+                    className="underline hover:text-amber-100 transition"
                   >
                     Login
-                  </ProfessionalButton>{" "}
+                  </button>{" "}
                   to view more details and interact with this profile.
                 </p>
               </div>
@@ -506,17 +502,9 @@ export default function UserProfilePage() {
                         }`,
                         label: "Wallet Balance",
                         extra: (
-                          <ProfessionalButton
-                            onClick={() => {
-                              // Add withdraw functionality here
-                              console.log("Withdraw clicked");
-                            }}
-                            variant="primary"
-                            size="sm"
-                            className="text-sm font-semibold"
-                          >
+                          <button className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition text-sm font-semibold">
                             Withdraw
-                          </ProfessionalButton>
+                          </button>
                         ),
                         color: "text-emerald-400",
                       },
@@ -525,10 +513,10 @@ export default function UserProfilePage() {
               ].map((item, idx) => (
                 <div
                   key={idx}
-                  className={`flex-1 relative flex flex-col md:flex-row items-center justify-center rounded-lg p-5 shadow-md ${
+                  className={`flex-1 relative flex flex-col md:flex-row items-center justify-center rounded-lg p-5 shadow-md transition-all duration-300 ${
                     theme === "dark"
-                      ? "bg-gradient-to-br from-[#111] to-[#1a1a1a]"
-                      : "bg-white/90 border border-gray-200 shadow-lg"
+                      ? "bg-gradient-to-br from-[#111] to-[#1a1a1a] hover:bg-[radial-gradient(circle_at_center,_rgba(34,211,238,0.1),_rgba(168,85,247,0.1))]"
+                      : "bg-white/90 hover:bg-white border border-gray-200 shadow-lg hover:shadow-xl"
                   }`}
                 >
                   <div className="text-center">
@@ -538,7 +526,7 @@ export default function UserProfilePage() {
                       {item.count} {item.icon}
                     </div>
                     <div
-                      className={`text-sm mb-1 ${
+                      className={`text-sm mb-1 transition-colors duration-300 ${
                         theme === "dark" ? "text-gray-300" : "text-gray-600"
                       }`}
                     >
@@ -552,14 +540,14 @@ export default function UserProfilePage() {
 
             {/* Gigs Hosted Section */}
             <div
-              className={`relative flex flex-col justify-between rounded-lg p-4 lg:p-6 shadow-md mb-6 ${
+              className={`relative flex flex-col justify-between rounded-lg p-4 lg:p-6 shadow-md mb-6 transition-all duration-300 ${
                 theme === "dark"
-                  ? "bg-gradient-to-br from-[#111] to-[#1a1a1a]"
-                  : "bg-white/90 border border-gray-200 shadow-lg"
+                  ? "bg-gradient-to-br from-[#111] to-[#1a1a1a] hover:bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.1),_rgba(168,85,247,0.1))]"
+                  : "bg-white/90 hover:bg-white border border-gray-200 shadow-lg hover:shadow-xl"
               }`}
             >
               <h3
-                className={`text-lg font-semibold mb-4 flex items-center gap-2 ${
+                className={`text-lg font-semibold mb-4 flex items-center gap-2 transition-colors duration-300 ${
                   theme === "dark" ? "text-white" : "text-gray-900"
                 }`}
               >
@@ -570,13 +558,13 @@ export default function UserProfilePage() {
                 {profile.gigsHosted.map((gig, index) => (
                   <div
                     key={index}
-                    className={`border-l-1 border-cyan-700 pl-4 py-3 bg-opacity-10 rounded-r-lg ${
+                    className={`border-l-1 border-cyan-700 pl-4 py-3 bg-opacity-10 rounded-r-lg transition-colors duration-300 ${
                       theme === "dark" ? "" : "bg-cyan-50"
                     }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                       <h4
-                        className={`font-medium ${
+                        className={`font-medium transition-colors duration-300 ${
                           theme === "dark" ? "text-white" : "text-gray-900"
                         }`}
                       >
@@ -601,14 +589,14 @@ export default function UserProfilePage() {
                       </div>
                     </div>
                     <p
-                      className={`text-sm mb-2 ${
+                      className={`text-sm mb-2 transition-colors duration-300 ${
                         theme === "dark" ? "text-gray-300" : "text-gray-600"
                       }`}
                     >
                       {gig.description}
                     </p>
                     <div
-                      className={`text-xs ${
+                      className={`text-xs transition-colors duration-300 ${
                         theme === "dark" ? "text-gray-400" : "text-gray-500"
                       }`}
                     >
@@ -649,14 +637,14 @@ export default function UserProfilePage() {
 
             {/* Collaborations Section */}
             <div
-              className={`relative flex flex-col justify-between rounded-lg p-4 lg:p-6 shadow-md mb-6 ${
+              className={`relative flex flex-col justify-between rounded-lg p-4 lg:p-6 shadow-md mb-6 transition-all duration-300 ${
                 theme === "dark"
-                  ? "bg-gradient-to-br from-[#111] to-[#1a1a1a]"
-                  : "bg-white/90 border border-gray-200 shadow-lg"
+                  ? "bg-gradient-to-br from-[#111] to-[#1a1a1a] hover:bg-[radial-gradient(circle_at_top_left,_rgba(168,85,247,0.1),_rgba(34,211,238,0.1))]"
+                  : "bg-white/90 hover:bg-white border border-gray-200 shadow-lg hover:shadow-xl"
               }`}
             >
               <h3
-                className={`text-lg font-semibold mb-4 flex items-center gap-2 ${
+                className={`text-lg font-semibold mb-4 flex items-center gap-2 transition-colors duration-300 ${
                   theme === "dark" ? "text-white" : "text-gray-900"
                 }`}
               >
@@ -668,13 +656,13 @@ export default function UserProfilePage() {
                   (gig: any, index: number) => (
                     <div
                       key={index}
-                      className={`border-l-1 border-purple-700 pl-4 py-3 bg-opacity-10 rounded-r-lg ${
+                      className={`border-l-1 border-purple-700 pl-4 py-3 bg-opacity-10 rounded-r-lg transition-colors duration-300 ${
                         theme === "dark" ? "" : "bg-purple-50"
                       }`}
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                         <h4
-                          className={`font-medium ${
+                          className={`font-medium transition-colors duration-300 ${
                             theme === "dark" ? "text-white" : "text-gray-900"
                           }`}
                         >
@@ -699,14 +687,14 @@ export default function UserProfilePage() {
                         </div>
                       </div>
                       <p
-                        className={`text-sm mb-2 ${
+                        className={`text-sm mb-2 transition-colors duration-300 ${
                           theme === "dark" ? "text-gray-300" : "text-gray-600"
                         }`}
                       >
                         {gig.description}
                       </p>
                       <div
-                        className={`text-xs ${
+                        className={`text-xs transition-colors duration-300 ${
                           theme === "dark" ? "text-gray-400" : "text-gray-500"
                         }`}
                       >
@@ -717,21 +705,21 @@ export default function UserProfilePage() {
                       </div>
                       {gig.reviews && gig.reviews.length > 0 && (
                         <div
-                          className={`mt-3 p-3 border rounded-lg bg-opacity-50 ${
+                          className={`mt-3 p-3 border rounded-lg bg-opacity-50 transition-colors duration-300 ${
                             theme === "dark"
                               ? "bg-neutral-900 border-neutral-700"
                               : "bg-gray-50 border-gray-200"
                           }`}
                         >
                           <div
-                            className={`text-sm font-medium mb-1 ${
+                            className={`text-sm font-medium mb-1 transition-colors duration-300 ${
                               theme === "dark" ? "text-white" : "text-gray-900"
                             }`}
                           >
                             "{gig.reviews[0].title}"
                           </div>
                           <div
-                            className={`text-xs mb-1 ${
+                            className={`text-xs mb-1 transition-colors duration-300 ${
                               theme === "dark"
                                 ? "text-gray-300"
                                 : "text-gray-600"

@@ -136,7 +136,8 @@ export default function Sidebar() {
             )}
           </div>
 
-          <div className="relative group">
+          {/* Collapse Button - hidden on mobile devices */}
+          <div className="relative group hidden sm:block">
             <button
               onClick={() => setCollapsed(!collapsed)}
               className={`flex items-center gap-3 w-full px-4 py-2 rounded-md transition-colors ${

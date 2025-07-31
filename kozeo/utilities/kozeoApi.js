@@ -840,6 +840,26 @@ export const searchGigs = async (searchTerm) => {
   return result.searchGigs;
 };
 
+
+/** Search Users */
+export const searchUsers = async (searchTerm) => {
+  const searchQuery = `
+    query searchUsers($searchTerm: String!) {
+      searchUsers(username: $searchTerm) {
+        username
+        profile_Picture
+        bio
+        rating
+        gigCollaboratedCount
+        gigHostedCount
+      }
+    }
+  `;
+
+  const result = await query(searchQuery, { searchTerm });
+  return result.searchUsers;
+};
+
 /**
  * Get user's gig statistics
  * @param {string} userId - User ID
