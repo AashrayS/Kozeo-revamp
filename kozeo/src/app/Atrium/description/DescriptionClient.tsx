@@ -111,7 +111,7 @@ export default function DescriptionClient() {
   // Setup WebSocket connection
   useEffect(() => {
     if (gigId) {
-      const socket = io("ws://localhost:3001", {
+      const socket = io(process.env.NEXT_PUBLIC_WEBSOCKET_URL, {
         query: { gigID: gigId },
       });
 

@@ -335,7 +335,7 @@ export async function fetchUserProfile({ id, username, email }) {
               id
               title
               description
-              rating
+              rating            
               author {
                 username
                 first_name
@@ -1621,4 +1621,56 @@ export const verifyOtp = async (email, otp) => {
     variables,
   });
   return data.verifyOtp;
+};
+
+// ============================================================================
+// PAYMENT APIS
+// ============================================================================
+
+/**
+ * Create a Razorpay order for payment processing
+ * @param {number} amount - Amount in the smallest currency unit (paise for INR)
+ * @param {string} currency - Currency code (default: "INR")
+ * @param {Object} notes - Additional notes for the order
+ * @returns {Promise<Object>} Razorpay order details
+ */
+export const createRazorpayOrder = async (
+  amount,
+  currency = "INR",
+  notes = {}
+) => {
+  const query = `
+    mutation CreateRazorpayOrder($input: CreateRazorpayOrderInput!) {
+      createRazorpayOrder(input: $input) {
+        success
+        message
+        orderId
+        amount
+        currency
+       
+      }
+    }
+  `;
+
+  const variables = {
+    input: {
+      amount: parseFloat(amount),
+      currency,
+      notes,
+    },
+  };
+
+  // Get JWT token from localStorage for authentication
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("kozeo_auth_token")
+      : null;
+
+  const data = await callApi({
+    query,
+    variables,
+    token,
+  });
+
+  return data.createRazorpayOrder;
 };

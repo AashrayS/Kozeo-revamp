@@ -59,7 +59,7 @@ export default function GigLobbyPage({
     console.log("Setting up WebSocket connection for gig:", gigId);
 
     // Connect to WebSocket for incoming requests IMMEDIATELY
-    const socket = io("ws://localhost:3001", {
+    const socket = io(process.env.NEXT_PUBLIC_WEBSOCKET_URL, {
       query: { gigID: gigId },
     });
     socketRef.current = socket;

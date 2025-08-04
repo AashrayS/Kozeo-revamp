@@ -5,7 +5,7 @@
 //   process.env.NEXT_PUBLIC_WEBSOCKET_URL ||
 //   "wss://kozeo-ws-production.up.railway.app";
 //dev endpoint
-export const WEBSOCKET_URL =  "ws://localhost:3001";
+export const WEBSOCKET_URL =  "wss://kozeo-ws-production.up.railway.app";
 
 // GraphQL API endpoint
 export const GRAPHQL_URL =

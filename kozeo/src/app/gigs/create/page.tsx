@@ -17,7 +17,7 @@ export default function CreateGigPage() {
     looking_For: "",
     description: "",
     skills: [] as string[],
-    currency: "USD",
+    currency: "INR",
     amount: "",
   });
   const [newSkill, setNewSkill] = useState("");
@@ -111,7 +111,7 @@ export default function CreateGigPage() {
         looking_For: "",
         description: "",
         skills: [],
-        currency: "USD",
+        currency: "INR",
         amount: "",
       });
 
@@ -257,7 +257,7 @@ export default function CreateGigPage() {
                 >
                   <option value="USD">USD</option>
                   <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
+                  <option value="INR">INR</option>
                 </select>
                 <input
                   name="amount"

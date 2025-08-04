@@ -193,6 +193,8 @@ export default function UserProfilePage() {
   const [tempSelectedSkills, setTempSelectedSkills] = useState<string[]>([]);
   const [showSkillsFilter, setShowSkillsFilter] = useState(false);
   const [skillSearchQuery, setSkillSearchQuery] = useState("");
+  const [showAllHostedGigs, setShowAllHostedGigs] = useState(false);
+  const [showAllCollaboratedGigs, setShowAllCollaboratedGigs] = useState(false);
 
   // Get current user data for authentication checks
   const { user: currentUser, isAuthenticated: userLoggedIn } = useUser();
@@ -349,6 +351,14 @@ export default function UserProfilePage() {
     }
   };
 
+  const toggleHostedGigs = () => {
+    setShowAllHostedGigs((prev) => !prev);
+  };
+
+  const toggleCollaboratedGigs = () => {
+    setShowAllCollaboratedGigs((prev) => !prev);
+  };
+
   // Filter hosted gigs based on selected skills
   const filteredHostedGigs = useMemo(() => {
     if (selectedSkills.length === 0) return profile?.gigsHosted || [];
@@ -366,6 +376,19 @@ export default function UserProfilePage() {
       selectedSkills.some((skill) => gig.skills && gig.skills.includes(skill))
     );
   }, [profile?.gigsCollaborated, selectedSkills]);
+
+  // Display arrays that limit to 5 gigs when collapsed
+  const displayedHostedGigs = useMemo(() => {
+    return showAllHostedGigs
+      ? filteredHostedGigs
+      : filteredHostedGigs.slice(0, 5);
+  }, [filteredHostedGigs, showAllHostedGigs]);
+
+  const displayedCollaboratedGigs = useMemo(() => {
+    return showAllCollaboratedGigs
+      ? filteredCollaboratedGigs
+      : filteredCollaboratedGigs.slice(0, 5);
+  }, [filteredCollaboratedGigs, showAllCollaboratedGigs]);
 
   if (loading) {
     return (
@@ -447,7 +470,7 @@ export default function UserProfilePage() {
         <Sidebar />
         <div className="flex-1 flex flex-col lg:flex-row p-0 sm:p-8 gap-0 lg:gap-8   justify-center items-start">
           {/* Main Content */}
-          <main className="flex-1 flex flex-col  gap-8 items-stretch justify-center w-full max-w-6xl pr-10 mx-auto py-8">
+          <main className="flex-1 flex flex-col  gap-8 items-stretch justify-center w-full max-w-8xl pr-10 mx-auto py-8">
             {/* Profile Header */}
             <section
               className={`rounded-2xl sm:rounded-3xl p-6 md:p-8 border-0 relative drop-shadow-glow backdrop-blur-md overflow-hidden theme-transition ${
@@ -719,6 +742,28 @@ export default function UserProfilePage() {
               </div>
             </section>
 
+            {/* Load More / Show Less button for Collaborated Gigs */}
+            {filteredCollaboratedGigs.length > 5 && (
+              <div className="mt-6 flex justify-center">
+                <button
+                  onClick={toggleCollaboratedGigs}
+                  className={`px-6 py-3 text-sm font-medium rounded-lg border transition-all duration-200 ${
+                    theme === "light"
+                      ? "bg-white/60 border-gray-200/50 text-purple-600 hover:bg-purple-50 hover:border-purple-300"
+                      : "bg-neutral-800/50 border-neutral-700/50 text-purple-400 hover:bg-purple-950/30 hover:border-purple-600/50"
+                  }`}
+                >
+                  {showAllCollaboratedGigs
+                    ? `Show Less (${
+                        filteredCollaboratedGigs.length - 5
+                      } hidden)`
+                    : `Load More Gigs (${
+                        filteredCollaboratedGigs.length - 5
+                      } more)`}
+                </button>
+              </div>
+            )}
+
             {/* Gigs Hosted Section */}
             <section
               className={`rounded-2xl sm:rounded-3xl p-6 md:p-8 border-0 relative drop-shadow-glow backdrop-blur-md overflow-hidden theme-transition ${
@@ -749,7 +794,7 @@ export default function UserProfilePage() {
                 )}
               </h3>
               <div className="space-y-6">
-                {filteredHostedGigs.map((gig, index) => (
+                {displayedHostedGigs.map((gig, index) => (
                   <div
                     key={index}
                     className={`p-4 md:p-6 rounded-xl border backdrop-blur-sm theme-transition ${
@@ -856,6 +901,26 @@ export default function UserProfilePage() {
                   </div>
                 ))}
               </div>
+
+              {/* Load More / Show Less button for Hosted Gigs */}
+              {filteredHostedGigs.length > 5 && (
+                <div className="mt-6 flex justify-center">
+                  <button
+                    onClick={toggleHostedGigs}
+                    className={`px-6 py-3 text-sm font-medium rounded-lg border transition-all duration-200 ${
+                      theme === "light"
+                        ? "bg-white/60 border-gray-200/50 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-300"
+                        : "bg-neutral-800/50 border-neutral-700/50 text-cyan-400 hover:bg-cyan-950/30 hover:border-cyan-600/50"
+                    }`}
+                  >
+                    {showAllHostedGigs
+                      ? `Show Less (${filteredHostedGigs.length - 5} hidden)`
+                      : `Load More Gigs (${
+                          filteredHostedGigs.length - 5
+                        } more)`}
+                  </button>
+                </div>
+              )}
             </section>
 
             {/* Collaborations Section */}
@@ -888,7 +953,7 @@ export default function UserProfilePage() {
                 )}
               </h3>
               <div className="space-y-6">
-                {filteredCollaboratedGigs.map((gig: any, index: number) => (
+                {displayedCollaboratedGigs.map((gig: any, index: number) => (
                   <div
                     key={index}
                     className={`p-4 md:p-6 rounded-xl border backdrop-blur-sm theme-transition ${
@@ -1024,7 +1089,7 @@ export default function UserProfilePage() {
           {allSkills.length > 0 && (
             <>
               {/* Desktop Filter Sidebar */}
-              <aside className="hidden lg:block w-80 xl:w-96 absolute right-10 py-8">
+              <aside className="hidden lg:block w-80 xl:w-96  right-10 py-8">
                 <div className="sticky top-8">
                   <section
                     className={`rounded-2xl sm:rounded-3xl p-6 border-0 relative drop-shadow-glow backdrop-blur-md overflow-hidden theme-transition ${

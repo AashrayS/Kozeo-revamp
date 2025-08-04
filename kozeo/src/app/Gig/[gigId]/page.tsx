@@ -20,12 +20,20 @@ import {
   getGigById,
   getGigChats,
   sendGigMessage,
+  createRazorpayOrder,
 } from "../../../../utilities/kozeoApi";
 import { useUser } from "../../../../store/hooks";
 import { useTheme } from "../../../contexts/ThemeContext";
 
 import { io } from "socket.io-client";
 import { WEBSOCKET_URL } from "@/config";
+
+// Declare Razorpay for TypeScript
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 interface Props {
   params: {
@@ -1282,6 +1290,57 @@ export default function GigPage({
     setShowPaymentModal(false);
   };
 
+  // Helper function for handling successful Razorpay payments
+  const handlePaymentSuccess = async (response: any) => {
+    try {
+      // Here you would typically verify the payment on your backend
+      console.log("Payment successful:", response);
+
+      // Send a payment success message to chat
+      const paymentSuccessMessage = {
+        gig: gigId,
+        content: paymentAmount,
+        messageType: "payment",
+        attachments: [
+          {
+            description: "accepted",
+            paymentId: response.razorpay_payment_id,
+            orderId: response.razorpay_order_id,
+            signature: response.razorpay_signature,
+          },
+        ],
+      };
+
+      // Send message via API
+      await sendGigMessage(paymentSuccessMessage);
+
+      // Update local messages to show payment completed
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: getCurrentUserEmail(),
+          senderEmail: getCurrentUserEmail(),
+          time: new Date().toLocaleTimeString(),
+          message: paymentAmount,
+          type: "payment-accepted",
+          amount: parseFloat(paymentAmount),
+          paymentId: response.razorpay_payment_id,
+          id: Date.now().toString(),
+          timestamp: new Date().toISOString(),
+          messageType: "payment",
+          attachments: [{ description: "accepted" }],
+        },
+      ]);
+
+      alert("Payment completed successfully!");
+    } catch (error) {
+      console.error("Error handling payment success:", error);
+      alert(
+        "Payment was successful but there was an error updating the records."
+      );
+    }
+  };
+
   const sendGigRequest = (request: { name: string; message: string }) => {
     if (!socketRef.current) return;
     socketRef.current.emit("gig-request", {
@@ -1290,30 +1349,169 @@ export default function GigPage({
     });
   };
 
-  const handlePaymentResponse = (
+  const handlePaymentResponse = async (
     paymentId: string,
     status: "completed" | "declined"
   ) => {
-    // Update local message status
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.paymentId === paymentId ? { ...msg, status } : msg
-      )
-    );
+    try {
+      // If accepting payment, initiate Razorpay payment
+      if (status === "completed") {
+        // Find the original payment request message to get the amount
+        const paymentRequestMsg = messages.find(
+          (msg) =>
+            (msg.id === paymentId || msg.paymentId === paymentId) &&
+            msg.type === "payment-request"
+        );
 
-    // Send response to other user
-    socketRef.current?.emit("payment-response", {
-      paymentId,
-      status,
-      gigId,
-    });
+        if (!paymentRequestMsg) {
+          alert("Payment request not found");
+          return;
+        }
 
-    // Show feedback to user
-    if (status === "completed") {
-      console.log("Payment completed successfully");
-      // Could add a toast notification here
-    } else {
-      console.log("Payment declined");
+        const amount = parseFloat(
+          paymentRequestMsg.amount || paymentRequestMsg.message
+        );
+        const amountInSmallestUnit = Math.round(amount * 100);
+
+        // Create Razorpay order for payment acceptance
+        const orderResponse = await createRazorpayOrder(
+          amountInSmallestUnit,
+          gig?.currency === "INR" ? "INR" : "USD",
+          {
+            gigId: gigId,
+            originalRequestId: paymentId,
+            paymentType: "acceptance",
+            description: `Payment acceptance for gig: ${gig?.title}`,
+          }
+        );
+
+        if ((orderResponse as any).success) {
+          const options = {
+            key:
+              process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_your_key_id",
+            amount: amountInSmallestUnit,
+            currency: gig?.currency === "INR" ? "INR" : "USD",
+            name: "Kozeo",
+            description: `Payment for gig: ${gig?.title}`,
+            order_id: (orderResponse as any).orderId,
+            handler: function (response: any) {
+              handlePaymentAcceptanceSuccess(response, paymentId);
+            },
+            prefill: {
+              name: user?.first_name + " " + user?.last_name || "",
+              email: getCurrentUserEmail(),
+            },
+            theme: {
+              color: "#10B981",
+            },
+          };
+
+          if (!(window as any).Razorpay) {
+            const script = document.createElement("script");
+            script.src = "https://checkout.razorpay.com/v1/checkout.js";
+            script.onload = () => {
+              const rzp = new (window as any).Razorpay(options);
+              rzp.open();
+            };
+            document.body.appendChild(script);
+          } else {
+            const rzp = new (window as any).Razorpay(options);
+            rzp.open();
+          }
+        } else {
+          alert(
+            (orderResponse as any).message || "Failed to create payment order"
+          );
+        }
+      } else {
+        // Handle payment rejection
+        const rejectionMessage = {
+          gig: gigId,
+          content: "Payment request declined",
+          messageType: "payment",
+          attachments: [
+            {
+              description: "rejected",
+              originalRequestId: paymentId,
+            },
+          ],
+        };
+
+        await sendGigMessage(rejectionMessage);
+
+        // Update local message status
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.paymentId === paymentId
+              ? { ...msg, type: "payment-rejected" }
+              : msg
+          )
+        );
+
+        // Send response to other user via socket
+        socketRef.current?.emit("payment-response", {
+          paymentId,
+          status,
+          gigId,
+        });
+
+        alert("Payment request declined");
+      }
+    } catch (error) {
+      console.error("Error handling payment response:", error);
+      alert("Failed to process payment response. Please try again.");
+    }
+  };
+
+  // Helper function for handling successful Razorpay payment acceptance
+  const handlePaymentAcceptanceSuccess = async (
+    response: any,
+    originalRequestId: string
+  ) => {
+    try {
+      console.log("Payment acceptance successful:", response);
+
+      // Send payment accepted message to chat
+      const paymentAcceptedMessage = {
+        gig: gigId,
+        content: "Payment completed successfully",
+        messageType: "payment",
+        attachments: [
+          {
+            description: "accepted",
+            paymentId: response.razorpay_payment_id,
+            orderId: response.razorpay_order_id,
+            signature: response.razorpay_signature,
+            originalRequestId: originalRequestId,
+          },
+        ],
+      };
+
+      await sendGigMessage(paymentAcceptedMessage);
+
+      // Update local message status
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.paymentId === originalRequestId
+            ? { ...msg, type: "payment-accepted" }
+            : msg
+        )
+      );
+
+      // Send response to other user via socket
+      socketRef.current?.emit("payment-response", {
+        paymentId: originalRequestId,
+        status: "completed",
+        gigId,
+        razorpayData: response,
+      });
+
+      alert("Payment completed successfully!");
+    } catch (error) {
+      console.error("Error handling payment acceptance success:", error);
+      alert(
+        "Payment was successful but there was an error updating the records."
+      );
     }
   };
 
