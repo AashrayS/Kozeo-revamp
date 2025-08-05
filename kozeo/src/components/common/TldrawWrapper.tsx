@@ -3,7 +3,7 @@
 import { Tldraw } from "@tldraw/tldraw";
 import "@tldraw/tldraw/tldraw.css";
 import { useEffect } from "react";
-import { useSyncDemo } from "../../../lib/useSyncDemo"
+import { useSyncDemo } from "../../../lib/useSyncDemo";
 import { defaultShapeUtils } from "@tldraw/tldraw";
 
 declare global {
@@ -27,12 +27,27 @@ function ThemeSetter() {
 interface TldrawWrapperProps {
   gigId: string;
   height?: string;
+  disableInput?: boolean;
 }
 
-export default function TldrawWrapper({ gigId, height = "100%" }: TldrawWrapperProps) {
+export default function TldrawWrapper({
+  gigId,
+  height = "100%",
+  disableInput = false,
+}: TldrawWrapperProps) {
   const { store } = useSyncDemo({
-  roomId: gigId, // ✅ no shapeUtils here!
-});
+    roomId: gigId, // ✅ no shapeUtils here!
+  });
+
+  // Disable input by setting readonly mode on the editor
+  useEffect(() => {
+    if (window.tldraw?.useEditor) {
+      const editor = window.tldraw.useEditor();
+      if (editor && typeof editor.setIsReadonly === "function") {
+        editor.setIsReadonly(!!disableInput);
+      }
+    }
+  }, [disableInput]);
 
   return (
     <div

@@ -15,6 +15,8 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { use } from "react";
 import { useRouter } from "next/navigation";
 import TldrawWrapper from "@/components/common/TldrawWrapper";
+  // State to control Tldraw input
+
 import EmojiPicker from "emoji-picker-react";
 import {
   getGigById,
@@ -93,6 +95,7 @@ export default function GigPage({
 
   const screenShareRef = useRef<HTMLVideoElement>(null);
   const [isScreenShareActive, setIsScreenShareActive] = useState(false);
+    const [tldrawInputDisabled, setTldrawInputDisabled] = useState(false);
 
   const screenShareSenderRef = useRef<RTCPeerConnection | null>(null);
   const screenReceiverRef = useRef<RTCPeerConnection | null>(null);
@@ -740,7 +743,7 @@ export default function GigPage({
           time: new Date().toLocaleTimeString(),
           message:
             paymentData.description ||
-            `Payment request for $${paymentData.amount}`,
+            `Payment request for ${paymentData.amount} ${gig.currency}`,
           type: "payment-request",
           amount: paymentData.amount,
           paymentId: paymentData.paymentId,
@@ -1371,7 +1374,7 @@ export default function GigPage({
         const amount = parseFloat(
           paymentRequestMsg.amount || paymentRequestMsg.message
         );
-        const amountInSmallestUnit = Math.round(amount * 100);
+        const amountInSmallestUnit =amount;
 
         // Create Razorpay order for payment acceptance
         const orderResponse = await createRazorpayOrder(
@@ -1390,7 +1393,7 @@ export default function GigPage({
             key:
               process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_your_key_id",
             amount: amountInSmallestUnit,
-            currency: gig?.currency === "INR" ? "INR" : "USD",
+            currency: gig?.currency === "INR" ? "INR" : " ",
             name: "Kozeo",
             description: `Payment for gig: ${gig?.title}`,
             order_id: (orderResponse as any).orderId,
@@ -1406,17 +1409,25 @@ export default function GigPage({
             },
           };
 
+          // Disable Tldraw input before opening Razorpay
+          setTldrawInputDisabled(true);
+          const openRazorpay = () => {
+            const rzp = new (window as any).Razorpay({
+              ...options,
+              modal: {
+                ...options.modal,
+                ondismiss: () => setTldrawInputDisabled(false),
+              },
+            });
+            rzp.open();
+          };
           if (!(window as any).Razorpay) {
             const script = document.createElement("script");
             script.src = "https://checkout.razorpay.com/v1/checkout.js";
-            script.onload = () => {
-              const rzp = new (window as any).Razorpay(options);
-              rzp.open();
-            };
+            script.onload = openRazorpay;
             document.body.appendChild(script);
           } else {
-            const rzp = new (window as any).Razorpay(options);
-            rzp.open();
+            openRazorpay();
           }
         } else {
           alert(
@@ -2126,7 +2137,7 @@ export default function GigPage({
               {!showMobileChat && (
                 <div className="md:hidden flex-1 overflow-hidden flex flex-col">
                   <div className="flex-1 overflow-hidden flex flex-col">
-                    <TldrawWrapper gigId={gigId} />
+                  <TldrawWrapper gigId={gigId} disableInput={tldrawInputDisabled} />
                   </div>
                 </div>
               )}
@@ -2220,16 +2231,15 @@ export default function GigPage({
                             </span>
                           </div>
                           <div className="text-base md:text-lg font-bold mb-1 text-white">
-                            ${msg.amount || msg.message}
+                            {gig.currency} {msg.amount || msg.message}
                           </div>
                           <div className="text-neutral-300 text-xs mb-2">
                             {msg.type === "payment-accepted"
                               ? "Payment has been accepted and processed"
                               : msg.type === "payment-rejected"
                               ? "Payment request was declined"
-                              : `Payment request for $${
-                                  msg.amount || msg.message
-                                }`}
+                              : `Payment request for ${msg.amount || msg.message} ${msg.currency || ""}`
+                          }
                           </div>
                           {/* Show action buttons only for pending payment requests to other party */}
                           {msg.type === "payment-request" && (
@@ -2473,7 +2483,7 @@ export default function GigPage({
 
                 {/* Bottom - Tldraw Area */}
                 <div className="flex-1 overflow-hidden flex flex-col">
-                  <TldrawWrapper gigId={gigId} />{" "}
+                  <TldrawWrapper gigId={gigId} disableInput={tldrawInputDisabled} />
                 </div>
               </div>
 
