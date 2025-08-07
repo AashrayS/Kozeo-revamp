@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo } from "react";
 import type { KeyboardEvent } from "react";
 import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
+import TransactionModal from "@/components/common/TransactionModal";
 import {
   FiStar,
   FiCalendar,
@@ -14,8 +15,12 @@ import {
   FiFilter,
   FiX,
   FiSearch,
+  FiEye,
 } from "react-icons/fi";
-import { getUserByUsername } from "../../../../utilities/kozeoApi";
+import {
+  getUserByUsername,
+  getUserWallet,
+} from "../../../../utilities/kozeoApi";
 import { useUser } from "../../../../store/hooks";
 import { isAuthenticated } from "../../../../utilities/api";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -196,6 +201,12 @@ export default function UserProfilePage() {
   const [showAllHostedGigs, setShowAllHostedGigs] = useState(false);
   const [showAllCollaboratedGigs, setShowAllCollaboratedGigs] = useState(false);
 
+  // Wallet-related state
+  const [walletData, setWalletData] = useState<any>(null);
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [walletCurrency, setWalletCurrency] = useState<string>("INR"); // Default to INR
+
   // Get current user data for authentication checks
   const { user: currentUser, isAuthenticated: userLoggedIn } = useUser();
 
@@ -237,6 +248,33 @@ export default function UserProfilePage() {
       fetchProfile();
     }
   }, [username]);
+
+  // Fetch wallet data if user can view sensitive information
+  useEffect(() => {
+    const fetchWalletData = async () => {
+      if (!canViewSensitiveInfo || !profile?.id) return;
+
+      try {
+        setWalletLoading(true);
+        // Use INR as default currency for initial API call
+        const wallet = await getUserWallet(profile.id, "INR");
+        setWalletData(wallet);
+
+        // Update the wallet currency state with the actual currency from API
+        if ((wallet as any)?.currency) {
+          setWalletCurrency((wallet as any).currency);
+          console.log("Wallet currency updated to:", (wallet as any).currency);
+        }
+      } catch (err: any) {
+        console.error("Error fetching wallet data:", err);
+        // Don't show error for wallet, just log it
+      } finally {
+        setWalletLoading(false);
+      }
+    };
+
+    fetchWalletData();
+  }, [canViewSensitiveInfo, profile?.id]);
 
   // Initialize temp selected skills when profile loads
   useEffect(() => {
@@ -449,8 +487,181 @@ export default function UserProfilePage() {
   }
 
   // Calculate stats from available data
-  const totalEarnings = profile.wallet?.amount || 0;
+  const totalEarnings = walletData?.amount || profile.wallet?.amount || 0;
   const avgRating = profile.rating || 0;
+
+  // Function to get currency symbol
+  const getCurrencySymbol = (currency: string) => {
+    const currencySymbols: { [key: string]: string } = {
+      USD: "$",
+      EUR: "€",
+      GBP: "£",
+      JPY: "¥",
+      INR: "₹",
+      CAD: "C$",
+      AUD: "A$",
+      CHF: "CHF",
+      CNY: "¥",
+      SEK: "kr",
+      NOK: "kr",
+      MXN: "$",
+      BRL: "R$",
+      RUB: "₽",
+      KRW: "₩",
+      SGD: "S$",
+      HKD: "HK$",
+      NZD: "NZ$",
+      TRY: "₺",
+      ZAR: "R",
+      PLN: "zł",
+      CZK: "Kč",
+      HUF: "Ft",
+      ILS: "₪",
+      CLP: "$",
+      PHP: "₱",
+      AED: "د.إ",
+      SAR: "﷼",
+      THB: "฿",
+      MYR: "RM",
+      IDR: "Rp",
+      VND: "₫",
+      EGP: "£",
+      MAD: "د.م.",
+      NGN: "₦",
+      KES: "KSh",
+      GHS: "GH₵",
+      UGX: "USh",
+      TZS: "TSh",
+      ZMW: "ZK",
+      BWP: "P",
+      MWK: "MK",
+      RWF: "RF",
+      ETB: "Br",
+      DZD: "د.ج",
+      TND: "د.ت",
+      LYD: "ل.د",
+      SDG: "ج.س.",
+      SSP: "£",
+      SOS: "S",
+      DJF: "Fdj",
+      ERN: "Nfk",
+      MRU: "UM",
+      CVE: "$",
+      SLL: "Le",
+      LRD: "L$",
+      GNF: "FG",
+      SEN: "F",
+      GMD: "D",
+      GWP: "P",
+      XOF: "F",
+      XAF: "F",
+      KMF: "CF",
+      MGA: "Ar",
+      MUR: "₨",
+      SCR: "₨",
+      MVR: ".ރ",
+      NPR: "₨",
+      BTN: "Nu.",
+      LKR: "₨",
+      BDT: "৳",
+      MMK: "K",
+      LAK: "₭",
+      KHR: "៛",
+      BND: "B$",
+      TWD: "NT$",
+      MNT: "₮",
+      KZT: "₸",
+      UZS: "лв",
+      KGS: "лв",
+      TJS: "SM",
+      TMT: "T",
+      AFN: "؋",
+      PKR: "₨",
+      IRR: "﷼",
+      IQD: "ع.د",
+      SYP: "£",
+      LBP: "ل.ل",
+      JOD: "د.ا",
+      KWD: "د.ك",
+      BHD: ".د.ب",
+      QAR: "ر.ق",
+      OMR: "ر.ع.",
+      YER: "﷼",
+      GEL: "₾",
+      AMD: "֏",
+      AZN: "₼",
+      BAM: "KM",
+      BGN: "лв",
+      HRK: "kn",
+      RSD: "дин",
+      MKD: "ден",
+      MDL: "L",
+      RON: "lei",
+      UAH: "₴",
+      BYN: "Br",
+      LTL: "Lt",
+      LVL: "Ls",
+      EEK: "kr",
+      ISK: "kr",
+      DKK: "kr",
+      CRC: "₡",
+      GTQ: "Q",
+      HNL: "L",
+      NIO: "C$",
+      PAB: "B/.",
+      PEN: "S/.",
+      PYG: "Gs",
+      UYU: "$U",
+      VES: "Bs",
+      BOB: "$b",
+      COP: "$",
+      ECU: "$",
+      GYD: "$",
+      SRD: "$",
+      TTD: "TT$",
+      BBD: "Bds$",
+      BMD: "$",
+      BSD: "$",
+      BZD: "BZ$",
+      KYD: "$",
+      JMD: "J$",
+      AWG: "ƒ",
+      ANG: "ƒ",
+      SVC: "$",
+      DOP: "RD$",
+      HTG: "G",
+      CUP: "₱",
+      CUC: "$",
+      XCD: "$",
+      FJD: "$",
+      PGK: "K",
+      SBD: "$",
+      TOP: "T$",
+      VUV: "VT",
+      WST: "WS$",
+      XPF: "₣",
+      NCR: "₣",
+      AOA: "Kz",
+      CDF: "FC",
+      // XAF: "FCFA",
+      // XOF: "CFA",
+      BIF: "FBu",
+      // KMF: "CF",
+      // MGA: "Ar",
+      // MUR: "₨",
+      // MWK: "MK",
+      MZN: "MT",
+      // RWF: "R₣",
+      // SCR: "₨",
+      STN: "Db",
+      SZL: "E",
+      // TZS: "TSh",
+      // UGX: "USh",
+      // ZMW: "ZK",
+      ZWL: "Z$",
+    };
+    return currencySymbols[currency.toUpperCase()] || currency;
+  };
 
   return (
     <>
@@ -661,81 +872,346 @@ export default function UserProfilePage() {
             <section
               className={`rounded-2xl sm:rounded-3xl p-6 md:p-8 border-0 relative drop-shadow-glow backdrop-blur-md overflow-hidden theme-transition ${
                 theme === "light"
-                  ? "bg-white/90 border-gray-200"
-                  : "bg-neutral-900/70 border-neutral-800"
+                  ? "bg-white/95 border-gray-200"
+                  : "bg-neutral-900/80 border-neutral-800"
               }`}
             >
-              <h3
-                className={`text-2xl font-light tracking-tight mb-6 ${
-                  theme === "light" ? "text-gray-900" : "text-white"
-                }`}
-              >
-                Profile Statistics
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Section Header */}
+              <div className="mb-8">
+                <h3
+                  className={`text-2xl font-light tracking-tight mb-2 ${
+                    theme === "light" ? "text-gray-900" : "text-white"
+                  }`}
+                >
+                  Performance Overview
+                </h3>
+                <p
+                  className={`text-sm ${
+                    theme === "light" ? "text-gray-500" : "text-gray-400"
+                  }`}
+                >
+                  Key metrics and achievements
+                </p>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 {[
                   {
                     count: profile.gigsHosted.length,
                     label: "Gigs Hosted",
                     color: "text-cyan-400",
+                    bgGradient:
+                      theme === "light"
+                        ? "from-cyan-50 via-blue-50 to-indigo-50"
+                        : "from-cyan-950/50 via-blue-950/50 to-indigo-950/50",
+                    borderGradient:
+                      theme === "light"
+                        ? "from-cyan-200 to-blue-200"
+                        : "from-cyan-800/50 to-blue-800/50",
+                    iconBg:
+                      theme === "light"
+                        ? "bg-gradient-to-br from-cyan-100 to-blue-100"
+                        : "bg-gradient-to-br from-cyan-900/50 to-blue-900/50",
+                    icon: <FiUsers className="text-lg text-cyan-400" />,
+                    shadowColor: "hover:shadow-cyan-200/50",
                   },
                   {
                     count: avgRating.toFixed(1),
                     label: "Average Rating",
+                    color: "text-yellow-400",
+                    bgGradient:
+                      theme === "light"
+                        ? "from-yellow-50 via-orange-50 to-amber-50"
+                        : "from-yellow-950/50 via-orange-950/50 to-amber-950/50",
+                    borderGradient:
+                      theme === "light"
+                        ? "from-yellow-200 to-orange-200"
+                        : "from-yellow-800/50 to-orange-800/50",
+                    iconBg:
+                      theme === "light"
+                        ? "bg-gradient-to-br from-yellow-100 to-orange-100"
+                        : "bg-gradient-to-br from-yellow-900/50 to-orange-900/50",
                     icon: (
                       <FiStar
-                        className="text-yellow-400 text-lg"
+                        className="text-lg text-yellow-400"
                         fill="currentColor"
                       />
                     ),
-                    color: "text-yellow-400",
+                    suffix: avgRating > 0 ? "/5.0" : "",
+                    shadowColor: "hover:shadow-yellow-200/50",
                   },
                   {
                     count: profile.gigsCollaborated?.length || 0,
                     label: "Collaborations",
                     color: "text-purple-400",
+                    bgGradient:
+                      theme === "light"
+                        ? "from-purple-50 via-violet-50 to-indigo-50"
+                        : "from-purple-950/50 via-violet-950/50 to-indigo-950/50",
+                    borderGradient:
+                      theme === "light"
+                        ? "from-purple-200 to-violet-200"
+                        : "from-purple-800/50 to-violet-800/50",
+                    iconBg:
+                      theme === "light"
+                        ? "bg-gradient-to-br from-purple-100 to-violet-100"
+                        : "bg-gradient-to-br from-purple-900/50 to-violet-900/50 ",
+                    icon: <FiUsers className="text-lg text-purple-400" />,
+                    shadowColor: "hover:shadow-purple-200/50",
                   },
 
                   // Only show wallet info if user can view sensitive information
                   ...(canViewSensitiveInfo
                     ? [
                         {
-                          count: `${totalEarnings}`,
-                          label: `Wallet Balance (${
-                            profile.wallet?.currency || "USD"
-                          })`,
-                          extra: (
-                            <button className="mt-3 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all duration-200 text-sm font-medium">
-                              Withdraw
-                            </button>
-                          ),
+                          count: walletLoading
+                            ? "..."
+                            : `${getCurrencySymbol(
+                                walletCurrency
+                              )}${totalEarnings}`,
+                          label: "Wallet",
                           color: "text-emerald-400",
+                          bgGradient:
+                            theme === "light"
+                              ? "from-emerald-50 via-green-50 to-teal-50"
+                              : "from-emerald-950/50 via-green-950/50 to-teal-950/50",
+                          borderGradient:
+                            theme === "light"
+                              ? "from-emerald-200 to-green-200"
+                              : "from-emerald-800/50 to-green-800/50",
+                          iconBg:
+                            theme === "light"
+                              ? "bg-gradient-to-br from-emerald-100 to-green-100"
+                              : "bg-gradient-to-br from-emerald-900/50 to-green-900/50",
+                          icon: (
+                            <FiDollarSign className="text-lg text-emerald-400" />
+                          ),
+                          isWallet: true,
+                          shadowColor: "hover:shadow-emerald-200/50",
                         },
                       ]
                     : []),
                 ].map((item, idx) => (
                   <div
                     key={idx}
-                    className={`p-6 rounded-xl border backdrop-blur-sm theme-transition ${
+                    className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${
+                      item.bgGradient
+                    } border-0 bg-clip-padding theme-transition cursor-pointer ${
                       theme === "light"
-                        ? "bg-white/60 border-gray-200/50 hover:bg-white/80"
-                        : "bg-neutral-800/30 border-neutral-700/50 hover:bg-neutral-800/50"
+                        ? "shadow-sm hover:shadow-md backdrop-blur-sm"
+                        : "shadow-sm hover:shadow-lg backdrop-blur-sm"
                     }`}
+                    style={{
+                      backgroundImage:
+                        theme === "light"
+                          ? `linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 100%), linear-gradient(to bottom right, var(--tw-gradient-stops))`
+                          : `linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%), linear-gradient(to bottom right, var(--tw-gradient-stops))`,
+                      transform: "perspective(1000px)",
+                      transition:
+                        "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+                      border:
+                        theme === "light"
+                          ? "1px solid rgba(229, 231, 235, 0.6)"
+                          : "1px solid rgba(55, 65, 81, 0.4)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform =
+                        "perspective(1000px) rotateX(2deg) rotateY(-2deg) translateY(-8px) scale(1.02)";
+                      e.currentTarget.style.boxShadow =
+                        theme === "light"
+                          ? `0 12px 25px -8px ${
+                              item.shadowColor
+                                ?.replace("hover:", "")
+                                .replace("/50", "/20") || "rgba(0,0,0,0.08)"
+                            }, 0 0 0 1px rgba(255,255,255,0.05)`
+                          : "0 12px 25px -8px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.03)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform =
+                        "perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px) scale(1)";
+                      e.currentTarget.style.boxShadow =
+                        theme === "light"
+                          ? "0 4px 12px -3px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03)"
+                          : "0 4px 12px -3px rgba(0, 0, 0, 0.15), 0 2px 4px -2px rgba(0, 0, 0, 0.1)";
+                    }}
                   >
-                    <div className="text-center">
+                    {/* Professional Gradient Border with Glow */}
+                    <div
+                      className={`absolute inset-0 rounded-2xl p-[1px] bg-gradient-to-r ${item.borderGradient} opacity-0 group-hover:opacity-100 transition-all duration-500`}
+                      style={{
+                        background: `linear-gradient(135deg, ${
+                          item.borderGradient.includes("cyan")
+                            ? "rgba(6, 182, 212, 0.3)"
+                            : item.borderGradient.includes("yellow")
+                            ? "rgba(245, 158, 11, 0.3)"
+                            : item.borderGradient.includes("purple")
+                            ? "rgba(147, 51, 234, 0.3)"
+                            : "rgba(16, 185, 129, 0.3)"
+                        } 0%, transparent 100%)`,
+                        filter: "blur(0.5px)",
+                      }}
+                    >
                       <div
-                        className={`text-3xl font-light mb-2 flex items-center justify-center gap-2 ${item.color}`}
-                      >
-                        {item.count} {item.icon}
-                      </div>
+                        className={`w-full h-full rounded-2xl bg-gradient-to-br ${item.bgGradient}`}
+                      ></div>
+                    </div>
+
+                    {/* Subtle Shimmer Effect on Hover */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                       <div
-                        className={`text-sm font-medium theme-transition ${
-                          theme === "light" ? "text-gray-600" : "text-gray-300"
-                        }`}
-                      >
-                        {item.label}
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                        style={{
+                          transform: "translateX(-100%)",
+                          animation: "shimmer 2s ease-in-out infinite",
+                        }}
+                      ></div>
+                    </div>
+
+                    {/* Enhanced Pattern Overlay */}
+                    <div className="absolute inset-0 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity duration-500">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.8),transparent_70%)]"></div>
+                      <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,transparent_0deg,rgba(255,255,255,0.1)_60deg,transparent_120deg)]"></div>
+                    </div>
+
+                    {/* Content with Enhanced Typography */}
+                    <div className="relative p-5 group-hover:translate-y-[-2px] transition-transform duration-400">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div
+                            className={`text-2xl md:text-3xl font-bold tracking-tight ${item.color} mb-1 flex items-baseline gap-1 group-hover:scale-105 transition-transform duration-300`}
+                            style={{
+                              textShadow:
+                                theme === "dark"
+                                  ? "0 0 20px currentColor"
+                                  : "none",
+                            }}
+                          >
+                            {item.count}
+                            {item.suffix && (
+                              <span
+                                className={`text-sm font-normal transition-colors duration-300 ${
+                                  theme === "light"
+                                    ? "text-gray-400 group-hover:text-gray-500"
+                                    : "text-gray-500 group-hover:text-gray-400"
+                                }`}
+                              >
+                                {item.suffix}
+                              </span>
+                            )}
+                          </div>
+                          <h4
+                            className={`text-xs font-semibold tracking-wide uppercase theme-transition group-hover:opacity-80 ${
+                              theme === "light"
+                                ? "text-gray-600"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            {item.label}
+                          </h4>
+                        </div>
+                        <div
+                          className={`p-3 rounded-xl ${item.iconBg} backdrop-blur-sm shadow-sm group-hover:shadow-md group-hover:scale-110 group-hover:rotate-3 transition-all duration-400`}
+                          style={{
+                            boxShadow:
+                              theme === "light"
+                                ? "0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.4)"
+                                : "0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.08)",
+                          }}
+                        >
+                          <div className="group-hover:drop-shadow-lg transition-all duration-300">
+                            {item.icon}
+                          </div>
+                        </div>
                       </div>
-                      {item.extra && <div className="mt-3">{item.extra}</div>}
+
+                      {/* Enhanced Wallet Actions */}
+                      {item.isWallet && (
+                        <div className="space-y-3 group-hover:translate-y-[-1px] transition-transform duration-300">
+                          <button
+                            className="group/btn w-full relative overflow-hidden px-4 py-3 bg-gradient-to-r from-emerald-600 via-emerald-600 to-green-600 hover:from-emerald-700 hover:via-emerald-700 hover:to-green-700 text-white rounded-xl transition-all duration-400 text-sm font-semibold shadow-lg hover:shadow-emerald-500/40 transform hover:scale-[1.02] hover:translate-y-[-2px] active:scale-[0.98] active:translate-y-[0px] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2 focus:ring-offset-transparent"
+                            style={{
+                              background:
+                                theme === "light"
+                                  ? "linear-gradient(135deg, #059669 0%, #10b981 50%, #047857 100%)"
+                                  : "linear-gradient(135deg, #059669 0%, #10b981 50%, #047857 100%)",
+                              boxShadow:
+                                "0 4px 15px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
+                            }}
+                          >
+                            {/* Button Shimmer Effect */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300 transform -translate-x-full group-hover/btn:translate-x-full group-hover/btn:duration-700"></div>
+
+                            {/* Button Content */}
+                            <div className="relative flex items-center justify-center gap-2">
+                              <svg
+                                className="w-4 h-4 transition-transform duration-300 group-hover/btn:scale-110"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                                />
+                              </svg>
+                              <span className="tracking-wide">
+                                Withdraw Funds
+                              </span>
+                            </div>
+
+                            {/* Professional Border Highlight */}
+                            <div className="absolute inset-0 rounded-xl border border-white/20 group-hover/btn:border-white/30 transition-colors duration-300"></div>
+                          </button>
+
+                          <button
+                            onClick={() => setShowTransactionModal(true)}
+                            className="group/btn w-full relative overflow-hidden px-4 py-3 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-700 hover:via-blue-700 hover:to-blue-800 text-white rounded-xl transition-all duration-400 text-sm font-semibold shadow-lg hover:shadow-cyan-500/40 transform hover:scale-[1.02] hover:translate-y-[-2px] active:scale-[0.98] active:translate-y-[0px] focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:ring-offset-2 focus:ring-offset-transparent"
+                            style={{
+                              background:
+                                theme === "light"
+                                  ? "linear-gradient(135deg, #0891b2 0%, #1d4ed8 50%, #1e40af 100%)"
+                                  : "linear-gradient(135deg, #0891b2 0%, #1d4ed8 50%, #1e40af 100%)",
+                              boxShadow:
+                                "0 4px 15px rgba(59, 130, 246, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
+                            }}
+                          >
+                            {/* Button Shimmer Effect */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover/btn:opacity-100 transition-opacity duration-300 transform -translate-x-full group-hover/btn:translate-x-full group-hover/btn:duration-700"></div>
+
+                            {/* Button Content */}
+                            <div className="relative flex items-center justify-center gap-2">
+                              <FiEye className="text-sm transition-transform duration-300 group-hover/btn:scale-110" />
+                              <span className="tracking-wide">
+                                View Transactions
+                              </span>
+                            </div>
+
+                            {/* Professional Border Highlight */}
+                            <div className="absolute inset-0 rounded-xl border border-white/20 group-hover/btn:border-white/30 transition-colors duration-300"></div>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Professional Glow Effect */}
+                    <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-none">
+                      <div
+                        className={`absolute inset-[-2px] rounded-2xl blur-md`}
+                        style={{
+                          background: `linear-gradient(135deg, ${
+                            item.borderGradient.includes("cyan")
+                              ? "rgba(6, 182, 212, 0.15)"
+                              : item.borderGradient.includes("yellow")
+                              ? "rgba(245, 158, 11, 0.15)"
+                              : item.borderGradient.includes("purple")
+                              ? "rgba(147, 51, 234, 0.15)"
+                              : "rgba(16, 185, 129, 0.15)"
+                          }, transparent)`,
+                        }}
+                      />
                     </div>
                   </div>
                 ))}
@@ -1568,6 +2044,14 @@ export default function UserProfilePage() {
           )}
         </div>
       </div>
+
+      {/* Transaction Modal */}
+      <TransactionModal
+        isOpen={showTransactionModal}
+        onClose={() => setShowTransactionModal(false)}
+        walletData={walletData}
+        currency={walletCurrency}
+      />
     </>
   );
 }

@@ -1846,3 +1846,175 @@ export const updateAttachmentDescription = async (
     throw error;
   }
 };
+
+// ============================================================================
+// WALLET API FUNCTIONS
+// ============================================================================
+
+/**
+ * Get user wallet details and transactions
+ * @param {string} userId - User ID (optional, uses current user if not provided)
+ * @returns {Promise<Object>} Wallet data with transactions
+ */
+export const getUserWallet = async (userId, currency = "INR") => {
+  const query = `
+    query GetUserWallet($userId: ID!, $currency: String) {
+      userWallet(userId: $userId, currency: $currency) {
+        userId
+        currency
+        amount
+        withdrawalTransactions {
+          id
+          user {
+            id
+            username
+            first_name
+            last_name
+            profile_Picture
+          }
+          walletId
+          baseAmount
+          date
+          transactionNumber
+          transactionCharges
+          commission
+          total
+          status
+          createdAt
+          updatedAt
+        }
+        gigTransactions {
+          id
+          sender {
+            id
+            username
+            first_name
+            last_name
+            profile_Picture
+          }
+          receiver {
+            id
+            username
+            first_name
+            last_name
+            profile_Picture
+          }
+          baseAmount
+          gigId
+          gigTitle
+          date
+          transactionNumber
+          transactionCharges
+          commission
+          total
+          status
+          createdAt
+          updatedAt
+        }
+      }
+    }
+  `;
+
+  const variables = { userId, currency };
+
+  // Get JWT token from localStorage for authentication
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("kozeo_auth_token")
+      : null;
+
+  try {
+    const data = await callApi({
+      query,
+      variables,
+      token,
+    });
+
+    return data.userWallet;
+  } catch (error) {
+    console.error("Error fetching user wallet:", error);
+    throw error;
+  }
+};
+
+// Additional function to get all user wallets
+export const getUserWallets = async (userId) => {
+  const query = `
+    query GetUserWallets($userId: ID!) {
+      userWallets(userId: $userId) {
+        userId
+        currency
+        amount
+        withdrawalTransactions {
+          id
+          user {
+            id
+            username
+            first_name
+            last_name
+            profile_Picture
+          }
+          walletId
+          baseAmount
+          date
+          transactionNumber
+          transactionCharges
+          commission
+          total
+          status
+          createdAt
+          updatedAt
+        }
+        gigTransactions {
+          id
+          sender {
+            id
+            username
+            first_name
+            last_name
+            profile_Picture
+          }
+          receiver {
+            id
+            username
+            first_name
+            last_name
+            profile_Picture
+          }
+          baseAmount
+          gigId
+          gigTitle
+          date
+          transactionNumber
+          transactionCharges
+          commission
+          total
+          status
+          createdAt
+          updatedAt
+        }
+      }
+    }
+  `;
+
+  const variables = { userId, currency };
+
+  // Get JWT token from localStorage for authentication
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("kozeo_auth_token")
+      : null;
+
+  try {
+    const data = await callApi({
+      query,
+      variables,
+      token,
+    });
+
+    return data.userWallet;
+  } catch (error) {
+    console.error("Error fetching user wallet:", error);
+    throw error;
+  }
+};
