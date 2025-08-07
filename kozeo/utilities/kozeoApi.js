@@ -1674,3 +1674,175 @@ export const createRazorpayOrder = async (
 
   return data.createRazorpayOrder;
 };
+
+/**
+ * Verify Razorpay payment after successful payment
+ * @param {string} razorpay_payment_id - Payment ID from Razorpay
+ * @param {string} razorpay_order_id - Order ID from Razorpay
+ * @param {string} razorpay_signature - Signature from Razorpay
+ * @returns {Promise<Object>} Payment verification result
+ */
+export const verifyRazorpayPayment = async (
+  razorpay_payment_id,
+  razorpay_order_id,
+  razorpay_signature
+) => {
+  const query = `
+    mutation VerifyRazorpayPayment($input: VerifyRazorpayPaymentInput!) {
+      verifyRazorpayPayment(input: $input) {
+        success
+        verified
+        message
+        payment_id
+        order_id
+      }
+    }
+  `;
+
+  const variables = {
+    input: {
+      razorpay_payment_id,
+      razorpay_order_id,
+      razorpay_signature,
+    },
+  };
+
+  // Get JWT token from localStorage for authentication
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("kozeo_auth_token")
+      : null;
+
+  const data = await callApi({
+    query,
+    variables,
+    token,
+  });
+
+  return data.verifyRazorpayPayment;
+};
+
+/**
+ * Create a gig transaction after successful payment verification
+ * @param {string} gigId - ID of the gig for payment
+ * @param {number} baseAmount - Base amount for the transaction
+ * @param {string} currency - Currency code (default: "INR")
+ * @returns {Promise<Object>} Transaction creation result
+ */
+export const createGigTransaction = async (
+  gigId,
+  baseAmount,
+  transaction,
+  currency = "INR"
+) => {
+  const query = `
+    mutation CreateGigTransaction($input: CreateGigTransactionInput!) {
+      createGigTransaction(input: $input) {
+        success
+        message
+        transaction {
+          id
+          baseAmount
+          transactionCharges
+          status
+          transactionNumber
+          createdAt
+          updatedAt
+        }
+        updatedGig {
+          id
+          paidTillNow
+          amount
+        }
+        receiverWallet {
+          id
+          updatedAt
+        }
+      }
+    }
+  `;
+
+  const variables = {
+    input: {
+      gigId,
+      baseAmount: parseFloat(baseAmount),
+      transactionNumber: transaction,
+      currency,
+    },
+  };
+
+  // Get JWT token from localStorage for authentication
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("kozeo_auth_token")
+      : null;
+
+  try {
+    const data = await callApi({
+      query,
+      variables,
+      token,
+    });
+
+    return data.createGigTransaction;
+  } catch (error) {
+    console.error("Error creating gig transaction:", error);
+    throw error;
+  }
+};
+
+/**
+ * Update attachment description/status for a message
+ * @param {string} messageId - ID of the message containing the attachment
+ * @param {string} description - Payment status: "request-made", "accepted", or "rejected"
+ * @param {number} attachmentIndex - Index of the attachment to update (default: 0)
+ * @returns {Promise<Object>} Updated message result
+ */
+export const updateAttachmentDescription = async (
+  messageId,
+  description,
+  attachmentIndex = 0
+) => {
+  const query = `
+    mutation UpdateAttachmentDescription($input: UpdateAttachmentDescriptionInput!) {
+      updateAttachmentDescription(input: $input) {
+        id
+        content
+        messageType
+        timestamp
+        sender
+        isRead
+        attachments {
+          description
+        }
+      }
+    }
+  `;
+
+  const variables = {
+    input: {
+      messageId,
+      description,
+      attachmentIndex,
+    },
+  };
+
+  // Get JWT token from localStorage for authentication
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("kozeo_auth_token")
+      : null;
+
+  try {
+    const data = await callApi({
+      query,
+      variables,
+      token,
+    });
+
+    return data.updateAttachmentDescription;
+  } catch (error) {
+    console.error("Error updating attachment description:", error);
+    throw error;
+  }
+};

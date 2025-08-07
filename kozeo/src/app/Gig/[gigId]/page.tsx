@@ -15,14 +15,15 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { use } from "react";
 import { useRouter } from "next/navigation";
 import TldrawWrapper from "@/components/common/TldrawWrapper";
-  // State to control Tldraw input
-
 import EmojiPicker from "emoji-picker-react";
 import {
   getGigById,
   getGigChats,
   sendGigMessage,
   createRazorpayOrder,
+  verifyRazorpayPayment,
+  createGigTransaction,
+  updateAttachmentDescription,
 } from "../../../../utilities/kozeoApi";
 import { useUser } from "../../../../store/hooks";
 import { useTheme } from "../../../contexts/ThemeContext";
@@ -95,7 +96,6 @@ export default function GigPage({
 
   const screenShareRef = useRef<HTMLVideoElement>(null);
   const [isScreenShareActive, setIsScreenShareActive] = useState(false);
-    const [tldrawInputDisabled, setTldrawInputDisabled] = useState(false);
 
   const screenShareSenderRef = useRef<RTCPeerConnection | null>(null);
   const screenReceiverRef = useRef<RTCPeerConnection | null>(null);
@@ -105,6 +105,13 @@ export default function GigPage({
   const emojiRef = useRef(null);
   const socketRef = useRef<Socket | null>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+
+  // State to control Tldraw input
+  const [tldrawInputDisabled, setTldrawInputDisabled] = useState(false);
+
+  // Payment processing state
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentProgress, setPaymentProgress] = useState(0);
 
   useEffect(() => {
     const fetchGig = async () => {
@@ -344,7 +351,7 @@ export default function GigPage({
   };
 
   const getCurrentUserEmail = () => {
-    console.log("Getting current user email:", email, user);
+    // console.log("Getting current user email:", email, user);
     return email || user?.email || "unknown@example.com";
   };
 
@@ -743,10 +750,10 @@ export default function GigPage({
           time: new Date().toLocaleTimeString(),
           message:
             paymentData.description ||
-            `Payment request for ${paymentData.amount} ${gig.currency}`,
+            `Payment request for ${gig.currency} ${paymentData.amount}`,
           type: "payment-request",
           amount: paymentData.amount,
-          paymentId: paymentData.paymentId,
+          id: paymentData.paymentId,
           status: "pending",
         },
       ]);
@@ -756,8 +763,15 @@ export default function GigPage({
       console.log("Payment response received:", responseData);
       setMessages((prev) =>
         prev.map((msg) =>
-          msg.paymentId === responseData.paymentId
-            ? { ...msg, status: responseData.status }
+          msg.id === responseData.messageId
+            ? {
+                ...msg,
+                status: responseData.status,
+                type:
+                  responseData.status === "completed"
+                    ? "payment-accepted"
+                    : "payment-rejected",
+              }
             : msg
         )
       );
@@ -1192,7 +1206,7 @@ export default function GigPage({
       return "unknown@example.com";
     };
 
-    const paymentDescription = `Payment request for ${gig.currency} ${paymentAmount}`;
+    const paymentDescription = `Payment request for ${gig.currency}  ${paymentAmount}`;
     const paymentId = Date.now().toString();
 
     try {
@@ -1236,7 +1250,6 @@ export default function GigPage({
           message: paymentAmount, // Use amount as message content to match API format
           type: "payment-request", // Use consistent type
           amount: paymentData.amount,
-          paymentId: paymentData.paymentId,
           id: sentMessage?.id || paymentId,
           timestamp: sentMessage?.timestamp || new Date().toISOString(),
           messageType: "payment",
@@ -1274,7 +1287,6 @@ export default function GigPage({
           message: paymentAmount, // Use amount as message content to match API format
           type: "payment-request", // Use consistent type
           amount: fallbackPaymentData.amount,
-          paymentId: fallbackPaymentData.paymentId,
           id: paymentId,
           timestamp: new Date().toISOString(),
           messageType: "payment",
@@ -1296,10 +1308,45 @@ export default function GigPage({
   // Helper function for handling successful Razorpay payments
   const handlePaymentSuccess = async (response: any) => {
     try {
-      // Here you would typically verify the payment on your backend
       console.log("Payment successful:", response);
 
-      // Send a payment success message to chat
+      // Start payment processing with progress tracking
+      setIsProcessingPayment(true);
+      setPaymentProgress(20);
+
+      // Step 1: Verify payment with backend
+      setPaymentProgress(40);
+      const verificationResult = (await verifyRazorpayPayment(
+        response.razorpay_payment_id,
+        response.razorpay_order_id,
+        response.razorpay_signature
+      )) as any;
+
+      if (!verificationResult.success || !verificationResult.verified) {
+        throw new Error(
+          verificationResult.message || "Payment verification failed"
+        );
+      }
+
+      setPaymentProgress(60);
+
+      // Step 2: Create gig transaction
+      setPaymentProgress(70);
+      const transactionResult = (await createGigTransaction(
+        gigId,
+        parseFloat(paymentAmount),
+        gig?.currency || "INR"
+      )) as any;
+
+      if (!transactionResult.success) {
+        throw new Error(
+          transactionResult.message || "Failed to create gig transaction"
+        );
+      }
+
+      console.log("Gig transaction created:", transactionResult);
+
+      // Step 3: Send a payment success message to chat (simplified attachments)
       const paymentSuccessMessage = {
         gig: gigId,
         content: paymentAmount,
@@ -1307,17 +1354,16 @@ export default function GigPage({
         attachments: [
           {
             description: "accepted",
-            paymentId: response.razorpay_payment_id,
-            orderId: response.razorpay_order_id,
-            signature: response.razorpay_signature,
           },
         ],
       };
 
-      // Send message via API
+      setPaymentProgress(80);
       await sendGigMessage(paymentSuccessMessage);
 
-      // Update local messages to show payment completed
+      setPaymentProgress(90);
+
+      // Step 4: Update local messages to show payment completed
       setMessages((prev) => [
         ...prev,
         {
@@ -1327,7 +1373,6 @@ export default function GigPage({
           message: paymentAmount,
           type: "payment-accepted",
           amount: parseFloat(paymentAmount),
-          paymentId: response.razorpay_payment_id,
           id: Date.now().toString(),
           timestamp: new Date().toISOString(),
           messageType: "payment",
@@ -1335,11 +1380,25 @@ export default function GigPage({
         },
       ]);
 
-      alert("Payment completed successfully!");
-    } catch (error) {
+      setPaymentProgress(100);
+
+      // Re-enable Tldraw input
+      setTldrawInputDisabled(false);
+
+      // Complete processing
+      setTimeout(() => {
+        setIsProcessingPayment(false);
+        setPaymentProgress(0);
+        alert("Payment completed successfully!");
+      }, 500);
+    } catch (error: any) {
       console.error("Error handling payment success:", error);
+      setIsProcessingPayment(false);
+      setPaymentProgress(0);
+      setTldrawInputDisabled(false);
       alert(
-        "Payment was successful but there was an error updating the records."
+        error?.message ||
+          "Payment was successful but there was an error updating the records."
       );
     }
   };
@@ -1353,7 +1412,7 @@ export default function GigPage({
   };
 
   const handlePaymentResponse = async (
-    paymentId: string,
+    messageId: string,
     status: "completed" | "declined"
   ) => {
     try {
@@ -1361,9 +1420,7 @@ export default function GigPage({
       if (status === "completed") {
         // Find the original payment request message to get the amount
         const paymentRequestMsg = messages.find(
-          (msg) =>
-            (msg.id === paymentId || msg.paymentId === paymentId) &&
-            msg.type === "payment-request"
+          (msg) => msg.id === messageId && msg.type === "payment-request"
         );
 
         if (!paymentRequestMsg) {
@@ -1374,7 +1431,7 @@ export default function GigPage({
         const amount = parseFloat(
           paymentRequestMsg.amount || paymentRequestMsg.message
         );
-        const amountInSmallestUnit =amount;
+        const amountInSmallestUnit = Math.round(amount);
 
         // Create Razorpay order for payment acceptance
         const orderResponse = await createRazorpayOrder(
@@ -1382,7 +1439,7 @@ export default function GigPage({
           gig?.currency === "INR" ? "INR" : "USD",
           {
             gigId: gigId,
-            originalRequestId: paymentId,
+            originalRequestId: messageId,
             paymentType: "acceptance",
             description: `Payment acceptance for gig: ${gig?.title}`,
           }
@@ -1393,12 +1450,18 @@ export default function GigPage({
             key:
               process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_your_key_id",
             amount: amountInSmallestUnit,
-            currency: gig?.currency === "INR" ? "INR" : " ",
+            currency: gig?.currency === "INR" ? "INR" : "USD",
             name: "Kozeo",
             description: `Payment for gig: ${gig?.title}`,
             order_id: (orderResponse as any).orderId,
             handler: function (response: any) {
-              handlePaymentAcceptanceSuccess(response, paymentId);
+              handlePaymentAcceptanceSuccess(response, messageId);
+            },
+            modal: {
+              ondismiss: function () {
+                // Re-enable Tldraw input if modal is dismissed
+                setTldrawInputDisabled(false);
+              },
             },
             prefill: {
               name: user?.first_name + " " + user?.last_name || "",
@@ -1411,16 +1474,12 @@ export default function GigPage({
 
           // Disable Tldraw input before opening Razorpay
           setTldrawInputDisabled(true);
+
           const openRazorpay = () => {
-            const rzp = new (window as any).Razorpay({
-              ...options,
-              modal: {
-                ...options.modal,
-                ondismiss: () => setTldrawInputDisabled(false),
-              },
-            });
+            const rzp = new (window as any).Razorpay(options);
             rzp.open();
           };
+
           if (!(window as any).Razorpay) {
             const script = document.createElement("script");
             script.src = "https://checkout.razorpay.com/v1/checkout.js";
@@ -1443,25 +1502,41 @@ export default function GigPage({
           attachments: [
             {
               description: "rejected",
-              originalRequestId: paymentId,
+              originalRequestId: messageId,
             },
           ],
         };
 
-        await sendGigMessage(rejectionMessage);
+        // await sendGigMessage(rejectionMessage);
+
+        // Find the original payment request message to get its message ID
+        const originalPaymentRequestMsg = messages.find(
+          (msg) => msg.id === messageId && msg.type === "payment-request"
+        );
+
+        // Update attachment description to "rejected" using the message ID
+        if (originalPaymentRequestMsg?.id) {
+          try {
+            await updateAttachmentDescription(
+              originalPaymentRequestMsg.id,
+              "rejected"
+            );
+            console.log("Payment attachment status updated to rejected");
+          } catch (error) {
+            console.error("Error updating attachment description:", error);
+          }
+        }
 
         // Update local message status
         setMessages((prev) =>
           prev.map((msg) =>
-            msg.paymentId === paymentId
-              ? { ...msg, type: "payment-rejected" }
-              : msg
+            msg.id === messageId ? { ...msg, type: "payment-rejected" } : msg
           )
         );
 
         // Send response to other user via socket
         socketRef.current?.emit("payment-response", {
-          paymentId,
+          messageId: messageId,
           status,
           gigId,
         });
@@ -1482,7 +1557,52 @@ export default function GigPage({
     try {
       console.log("Payment acceptance successful:", response);
 
-      // Send payment accepted message to chat
+      // Start payment processing with progress tracking
+      setIsProcessingPayment(true);
+      setPaymentProgress(20);
+
+      // Step 1: Verify payment with backend
+      setPaymentProgress(40);
+      const verificationResult = (await verifyRazorpayPayment(
+        response.razorpay_payment_id,
+        response.razorpay_order_id,
+        response.razorpay_signature
+      )) as any;
+
+      if (!verificationResult.success || !verificationResult.verified) {
+        throw new Error(
+          verificationResult.message || "Payment verification failed"
+        );
+      }
+
+      setPaymentProgress(60);
+
+      // Get the amount from the original payment request
+      const originalPaymentMsg = messages.find(
+        (msg) => msg.id === originalRequestId && msg.type === "payment-request"
+      );
+      const originalAmount = originalPaymentMsg
+        ? parseFloat(originalPaymentMsg.amount || originalPaymentMsg.message)
+        : 0;
+
+      // Step 2: Create gig transaction
+      setPaymentProgress(70);
+      const transactionResult = (await createGigTransaction(
+        gigId,
+        originalAmount,
+        verificationResult.payment_id,
+        gig?.currency || "INR"
+      )) as any;
+
+      if (!transactionResult.success) {
+        throw new Error(
+          transactionResult.message || "Failed to create gig transaction"
+        );
+      }
+
+      console.log("Gig transaction created:", transactionResult);
+
+      // Step 3: Send payment accepted message to chat (simplified attachments)
       const paymentAcceptedMessage = {
         gig: gigId,
         content: "Payment completed successfully",
@@ -1490,38 +1610,69 @@ export default function GigPage({
         attachments: [
           {
             description: "accepted",
-            paymentId: response.razorpay_payment_id,
-            orderId: response.razorpay_order_id,
-            signature: response.razorpay_signature,
             originalRequestId: originalRequestId,
           },
         ],
       };
 
-      await sendGigMessage(paymentAcceptedMessage);
+      setPaymentProgress(80);
+      // await sendGigMessage(paymentAcceptedMessage);
 
-      // Update local message status
+      // Find the original payment request message to get its message ID
+      const originalPaymentMessage = messages.find(
+        (msg) => msg.id === originalRequestId && msg.type === "payment-request"
+      );
+
+      // Update attachment description to "accepted" using the message ID
+      if (originalPaymentMessage?.id) {
+        try {
+          await updateAttachmentDescription(
+            originalPaymentMessage.id,
+            "accepted"
+          );
+          console.log("Payment attachment status updated to accepted");
+        } catch (error) {
+          console.error("Error updating attachment description:", error);
+        }
+      }
+
+      setPaymentProgress(90);
+
+      // Step 4: Update local message status
       setMessages((prev) =>
         prev.map((msg) =>
-          msg.paymentId === originalRequestId
+          msg.id === originalRequestId
             ? { ...msg, type: "payment-accepted" }
             : msg
         )
       );
 
-      // Send response to other user via socket
+      // Step 4: Send response to other user via socket (no Razorpay details)
       socketRef.current?.emit("payment-response", {
-        paymentId: originalRequestId,
+        messageId: originalRequestId,
         status: "completed",
         gigId,
-        razorpayData: response,
       });
 
-      alert("Payment completed successfully!");
-    } catch (error) {
+      setPaymentProgress(100);
+
+      // Re-enable Tldraw input
+      setTldrawInputDisabled(false);
+
+      // Complete processing
+      setTimeout(() => {
+        setIsProcessingPayment(false);
+        setPaymentProgress(0);
+        alert("Payment completed successfully!");
+      }, 500);
+    } catch (error: any) {
       console.error("Error handling payment acceptance success:", error);
+      setIsProcessingPayment(false);
+      setPaymentProgress(0);
+      setTldrawInputDisabled(false);
       alert(
-        "Payment was successful but there was an error updating the records."
+        error?.message ||
+          "Payment was successful but there was an error updating the records."
       );
     }
   };
@@ -1787,7 +1938,7 @@ export default function GigPage({
                           </p>
                           <p className="text-base font-semibold text-neutral-300">
                             {gig.currency}{" "}
-                            {(gig.amount - (gig.paidAmount || 0)).toFixed(2)}
+                            {(gig.amount - (gig.paidTillNow || 0)).toFixed(2)}
                           </p>
                         </div>
                       </div>
@@ -1800,7 +1951,7 @@ export default function GigPage({
                           </span>
                           <span className="text-xs text-blue-300/90 font-medium">
                             {Math.round(
-                              ((gig.paidAmount || 0) / gig.amount) * 100
+                              ((gig.paidTillNow || 0) / gig.amount) * 100
                             )}
                             %
                           </span>
@@ -1810,7 +1961,7 @@ export default function GigPage({
                             className="bg-gradient-to-r from-blue-400 to-green-400 h-1.5 rounded-full transition-all duration-300"
                             style={{
                               width: `${Math.min(
-                                ((gig.paidAmount || 0) / gig.amount) * 100,
+                                ((gig.paidTillNow || 0) / gig.amount) * 100,
                                 100
                               )}%`,
                             }}
@@ -1917,7 +2068,7 @@ export default function GigPage({
                                 ? "Payment has been accepted and processed"
                                 : msg.type === "payment-rejected"
                                 ? "Payment request was declined"
-                                : `Payment request for $${
+                                : `Payment request for ${gig.currency} ${
                                     msg.amount || msg.message
                                   }`}
                             </div>
@@ -1940,7 +2091,7 @@ export default function GigPage({
                                     <button
                                       onClick={() =>
                                         handlePaymentResponse(
-                                          msg.paymentId || msg.id,
+                                          msg.id,
                                           "completed"
                                         )
                                       }
@@ -1951,7 +2102,7 @@ export default function GigPage({
                                     <button
                                       onClick={() =>
                                         handlePaymentResponse(
-                                          msg.paymentId || msg.id,
+                                          msg.id,
                                           "declined"
                                         )
                                       }
@@ -2137,7 +2288,7 @@ export default function GigPage({
               {!showMobileChat && (
                 <div className="md:hidden flex-1 overflow-hidden flex flex-col">
                   <div className="flex-1 overflow-hidden flex flex-col">
-                  <TldrawWrapper gigId={gigId} disableInput={tldrawInputDisabled} />
+                    <TldrawWrapper gigId={gigId} />
                   </div>
                 </div>
               )}
@@ -2238,8 +2389,9 @@ export default function GigPage({
                               ? "Payment has been accepted and processed"
                               : msg.type === "payment-rejected"
                               ? "Payment request was declined"
-                              : `Payment request for ${msg.amount || msg.message} ${msg.currency || ""}`
-                          }
+                              : `Payment request for ${gig.currency} ${
+                                  msg.amount || msg.message
+                                }`}
                           </div>
                           {/* Show action buttons only for pending payment requests to other party */}
                           {msg.type === "payment-request" && (
@@ -2259,10 +2411,7 @@ export default function GigPage({
                                 <div className="flex flex-col sm:flex-row gap-2 mt-2">
                                   <button
                                     onClick={() =>
-                                      handlePaymentResponse(
-                                        msg.paymentId || msg.id,
-                                        "completed"
-                                      )
+                                      handlePaymentResponse(msg.id, "completed")
                                     }
                                     className="px-2 md:px-3 py-1 rounded bg-green-600/80 hover:bg-green-500 text-white text-xs font-semibold transition-colors"
                                   >
@@ -2270,10 +2419,7 @@ export default function GigPage({
                                   </button>
                                   <button
                                     onClick={() =>
-                                      handlePaymentResponse(
-                                        msg.paymentId || msg.id,
-                                        "declined"
-                                      )
+                                      handlePaymentResponse(msg.id, "declined")
                                     }
                                     className="px-2 md:px-3 py-1 rounded bg-neutral-600 hover:bg-neutral-500 text-white text-xs font-semibold transition-colors"
                                   >
@@ -2483,7 +2629,7 @@ export default function GigPage({
 
                 {/* Bottom - Tldraw Area */}
                 <div className="flex-1 overflow-hidden flex flex-col">
-                  <TldrawWrapper gigId={gigId} disableInput={tldrawInputDisabled} />
+                  <TldrawWrapper gigId={gigId} />{" "}
                 </div>
               </div>
 
@@ -2600,7 +2746,7 @@ export default function GigPage({
                     <p className="text-xs text-neutral-500 mb-1">Available</p>
                     <p className="text-base font-semibold text-neutral-200">
                       {gig.currency}{" "}
-                      {(gig.amount - (gig.paidAmount || 0)).toFixed(2)}
+                      {(gig.amount - (gig.paidTillNow || 0)).toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -2611,7 +2757,7 @@ export default function GigPage({
                       Payment Progress
                     </span>
                     <span className="text-xs text-green-300/90 font-medium">
-                      {Math.round(((gig.paidAmount || 0) / gig.amount) * 100)}%
+                      {Math.round(((gig.paidTillNow || 0) / gig.amount) * 100)}%
                     </span>
                   </div>
                   <div className="w-full bg-neutral-700/60 rounded-full h-1.5">
@@ -2619,7 +2765,7 @@ export default function GigPage({
                       className="bg-gradient-to-r from-blue-400 to-green-400 h-1.5 rounded-full transition-all duration-300"
                       style={{
                         width: `${Math.min(
-                          ((gig.paidAmount || 0) / gig.amount) * 100,
+                          ((gig.paidTillNow || 0) / gig.amount) * 100,
                           100
                         )}%`,
                       }}
@@ -2644,7 +2790,7 @@ export default function GigPage({
                   onChange={(e) => setPaymentAmount(e.target.value)}
                   placeholder="0.00"
                   min="0"
-                  max={gig ? gig.amount - (gig.paidAmount || 0) : undefined}
+                  max={gig ? gig.amount - (gig.paidTillNow || 0) : undefined}
                   step="0.01"
                   className="w-full pl-16 pr-4 py-3 bg-neutral-900/50 border border-blue-500/30 rounded-lg text-white text-lg font-medium placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all"
                 />
@@ -2652,7 +2798,7 @@ export default function GigPage({
               {gig && (
                 <p className="text-xs text-neutral-500 mt-2">
                   Maximum available: {gig.currency}{" "}
-                  {(gig.amount - (gig.paidAmount || 0)).toFixed(2)}
+                  {(gig.amount - (gig.paidTillNow || 0)).toFixed(2)}
                 </p>
               )}
             </div>
@@ -2747,6 +2893,75 @@ export default function GigPage({
               >
                 Go to Review
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Processing Overlay */}
+      {isProcessingPayment && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-neutral-800 to-neutral-900 border border-green-500/20 rounded-lg p-8 max-w-md w-full mx-4">
+            <div className="text-center">
+              <div className="mb-6">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
+                  <svg
+                    className="w-8 h-8 text-green-400 animate-spin"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  Processing Payment
+                </h3>
+                <p className="text-gray-300 text-sm mb-6">
+                  Please wait while we verify and process your payment...
+                </p>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full bg-neutral-700 rounded-full h-3 mb-4">
+                <div
+                  className="bg-gradient-to-r from-green-500 to-green-400 h-3 rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${paymentProgress}%` }}
+                />
+              </div>
+
+              {/* Progress Text */}
+              <div className="text-sm text-neutral-400">
+                {paymentProgress <= 20 && "Initializing..."}
+                {paymentProgress > 20 &&
+                  paymentProgress <= 40 &&
+                  "Verifying payment..."}
+                {paymentProgress > 40 &&
+                  paymentProgress <= 60 &&
+                  "Payment verified!"}
+                {paymentProgress > 60 &&
+                  paymentProgress <= 80 &&
+                  "Updating records..."}
+                {paymentProgress > 80 &&
+                  paymentProgress <= 90 &&
+                  "Notifying participants..."}
+                {paymentProgress > 90 && "Almost done..."}
+              </div>
+
+              <div className="mt-4 text-xs text-neutral-500">
+                {paymentProgress}% Complete
+              </div>
             </div>
           </div>
         </div>

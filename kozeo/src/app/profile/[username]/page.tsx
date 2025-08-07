@@ -742,28 +742,6 @@ export default function UserProfilePage() {
               </div>
             </section>
 
-            {/* Load More / Show Less button for Collaborated Gigs */}
-            {filteredCollaboratedGigs.length > 5 && (
-              <div className="mt-6 flex justify-center">
-                <button
-                  onClick={toggleCollaboratedGigs}
-                  className={`px-6 py-3 text-sm font-medium rounded-lg border transition-all duration-200 ${
-                    theme === "light"
-                      ? "bg-white/60 border-gray-200/50 text-purple-600 hover:bg-purple-50 hover:border-purple-300"
-                      : "bg-neutral-800/50 border-neutral-700/50 text-purple-400 hover:bg-purple-950/30 hover:border-purple-600/50"
-                  }`}
-                >
-                  {showAllCollaboratedGigs
-                    ? `Show Less (${
-                        filteredCollaboratedGigs.length - 5
-                      } hidden)`
-                    : `Load More Gigs (${
-                        filteredCollaboratedGigs.length - 5
-                      } more)`}
-                </button>
-              </div>
-            )}
-
             {/* Gigs Hosted Section */}
             <section
               className={`rounded-2xl sm:rounded-3xl p-6 md:p-8 border-0 relative drop-shadow-glow backdrop-blur-md overflow-hidden theme-transition ${
@@ -1060,6 +1038,28 @@ export default function UserProfilePage() {
                   </div>
                 ))}
               </div>
+
+              {/* Load More / Show Less button for Collaborated Gigs */}
+              {filteredCollaboratedGigs.length > 5 && (
+                <div className="mt-6 flex justify-center">
+                  <button
+                    onClick={toggleCollaboratedGigs}
+                    className={`px-6 py-3 text-sm font-medium rounded-lg border transition-all duration-200 ${
+                      theme === "light"
+                        ? "bg-white/60 border-gray-200/50 text-purple-600 hover:bg-purple-50 hover:border-purple-300"
+                        : "bg-neutral-800/50 border-neutral-700/50 text-purple-400 hover:bg-purple-950/30 hover:border-purple-600/50"
+                    }`}
+                  >
+                    {showAllCollaboratedGigs
+                      ? `Show Less (${
+                          filteredCollaboratedGigs.length - 5
+                        } hidden)`
+                      : `Load More Gigs (${
+                          filteredCollaboratedGigs.length - 5
+                        } more)`}
+                  </button>
+                </div>
+              )}
             </section>
           </main>
 
