@@ -4,6 +4,7 @@ import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
 import ProfessionalButton from "@/components/common/ProfessionalButton";
 import RequestCard from "@/components/common/RequestCard";
+import { FiStar } from "react-icons/fi";
 import { io, Socket } from "socket.io-client";
 import {
   getGigById,
@@ -562,39 +563,39 @@ export default function GigLobbyPage({
     <>
       <Header logoText="Kozeo" />
       <div
-        className={`min-h-screen relative z-10 flex flex-row theme-transition ${
+        className={`min-h-screen relative z-10 flex theme-transition ${
           theme === "light"
             ? "bg-gradient-light text-gray-900"
             : "bg-gradient-dark text-white"
         }`}
       >
         <Sidebar />
-        <div className="flex-1 flex flex-col p-0 sm:p-8">
+        <div className="flex-1 flex flex-col overflow-hidden">
           {/* Glows */}
           <div className="fixed top-56 right-4 w-2 h-0 rounded-full opacity-90 bg-purple-500 shadow-[0_0_250px_100px_rgba(168,85,247,0.35)] pointer-events-none z-0" />
           <div className="fixed bottom-4 left-4 w-2 h-0 rounded-full opacity-90 bg-cyan-400 shadow-[0_0_250px_100px_rgba(34,211,238,0.35)] pointer-events-none z-0" />
 
-          <main className="flex-1 flex flex-col md:flex-row gap-8 items-stretch justify-center w-full  mx-auto py-8">
-            {/* Gig Info Container - Golden Ratio smaller section (38.2%) */}
+          <main className="flex-1 flex flex-col xl:flex-row gap-2 sm:gap-3 lg:gap-4 xl:gap-6 p-2 sm:p-3 lg:p-4 xl:p-6 min-h-0 overflow-hidden">
+            {/* Gig Info Container - Responsive section */}
             <section
-              className={`md:flex-[0.618] rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 min-w-[0] w-full border-0 relative drop-shadow-glow backdrop-blur-md overflow-hidden theme-transition ${
+              className={`xl:flex-[0.4] rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 xl:p-8 w-full border-0 relative drop-shadow-glow backdrop-blur-md overflow-hidden theme-transition min-h-0 ${
                 theme === "light"
                   ? "bg-white/90 border-gray-200"
                   : "bg-neutral-900/70 border-neutral-800"
               }`}
             >
               {/* Header */}
-              <div className="mb-8">
+              <div className="mb-4 sm:mb-6 lg:mb-8">
                 <h1
-                  className={`text-2xl sm:text-3xl md:text-4xl font-light tracking-tight mb-2 ${
+                  className={`text-lg sm:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-light tracking-tight mb-2 leading-tight ${
                     theme === "light" ? "text-gray-900" : "text-white"
                   }`}
                 >
                   {gig.title}
                 </h1>
-                <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+                <div className="flex flex-wrap items-center gap-1 sm:gap-2 lg:gap-3">
                   <span
-                    className={`text-sm sm:text-base font-medium ${
+                    className={`text-xs sm:text-sm lg:text-base font-medium ${
                       theme === "light" ? "text-gray-600" : "text-gray-400"
                     }`}
                   >
@@ -622,29 +623,46 @@ export default function GigLobbyPage({
               </div>
 
               {/* Project Value */}
-              <div className="mb-8">
-                <div
-                  className={`text-xl sm:text-2xl md:text-3xl font-semibold ${
-                    theme === "light" ? "text-gray-900" : "text-white"
-                  }`}
-                >
-                  {gig.currency} {gig.amount}
-                </div>
-                <div
-                  className={`text-sm sm:text-base ${
-                    theme === "light" ? "text-gray-500" : "text-gray-500"
-                  }`}
-                >
-                  Project value
-                </div>
+              <div className="mb-6 sm:mb-8">
+                {gig.amount === 0 ? (
+                  <div
+                    className={`inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                      theme === "dark"
+                        ? "bg-gradient-to-r from-purple-900/60 to-blue-900/60 text-purple-300 border border-purple-700/50"
+                        : "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200"
+                    }`}
+                  >
+                    <FiStar className="w-4 h-4 mr-2" />
+                    <span className="text-xs sm:text-sm">
+                      Skill Forge Gig - Learning & Collaboration
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <div
+                      className={`text-lg sm:text-xl lg:text-2xl xl:text-3xl font-semibold ${
+                        theme === "light" ? "text-gray-900" : "text-white"
+                      }`}
+                    >
+                      {gig.currency} {gig.amount}
+                    </div>
+                    <div
+                      className={`text-xs sm:text-sm lg:text-base ${
+                        theme === "light" ? "text-gray-500" : "text-gray-500"
+                      }`}
+                    >
+                      Project value
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Content Sections */}
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
                 {/* Description */}
                 <div>
                   <h3
-                    className={`text-sm sm:text-base font-medium mb-2 sm:mb-3 tracking-wide uppercase ${
+                    className={`text-xs sm:text-sm lg:text-base font-medium mb-2 sm:mb-3 tracking-wide uppercase ${
                       theme === "light" ? "text-gray-700" : "text-gray-300"
                     }`}
                   >
@@ -662,7 +680,7 @@ export default function GigLobbyPage({
                 {/* Looking For */}
                 <div>
                   <h3
-                    className={`text-sm sm:text-base font-medium mb-2 sm:mb-3 tracking-wide uppercase ${
+                    className={`text-xs sm:text-sm lg:text-base font-medium mb-2 sm:mb-3 tracking-wide uppercase ${
                       theme === "light" ? "text-gray-700" : "text-gray-300"
                     }`}
                   >
@@ -680,7 +698,7 @@ export default function GigLobbyPage({
                 {/* Skills */}
                 <div>
                   <h3
-                    className={`text-sm sm:text-base font-medium mb-2 sm:mb-3 tracking-wide uppercase ${
+                    className={`text-xs sm:text-sm lg:text-base font-medium mb-2 sm:mb-3 tracking-wide uppercase ${
                       theme === "light" ? "text-gray-700" : "text-gray-300"
                     }`}
                   >
@@ -834,23 +852,23 @@ export default function GigLobbyPage({
               )}
             </section>
 
-            {/* Incoming Requests Container - Golden Ratio larger section (61.8%) */}
+            {/* Incoming Requests Container - Responsive section */}
             <section
-              className={`md:flex-[1] rounded-2xl p-6 shadow-xl drop-shadow-glow backdrop-blur-md min-w-[300px] border theme-transition ${
+              className={`xl:flex-[0.6] rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 shadow-xl drop-shadow-glow backdrop-blur-md w-full border theme-transition min-h-0 flex flex-col ${
                 theme === "light"
                   ? "bg-white/90 border-gray-200"
                   : "bg-neutral-900/70 border-neutral-800"
               }`}
             >
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 lg:mb-6 gap-2 sm:gap-3 flex-shrink-0">
                 <h2
-                  className={`text-2xl font-light tracking-tight ${
+                  className={`text-lg sm:text-xl lg:text-2xl font-light tracking-tight ${
                     theme === "light" ? "text-gray-900" : "text-white"
                   }`}
                 >
                   Gig Requests
                 </h2>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-1 sm:gap-2">
                   {requests.filter((req) => req.status === "pending").length >
                     0 && (
                     <div
@@ -924,43 +942,48 @@ export default function GigLobbyPage({
                   )}
                 </div>
               </div>
-              {requests && requests.length > 0 ? (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                  {requests
-                    .sort((a, b) => {
-                      // Sort by status priority: pending first, then accepted, then rejected
-                      const statusOrder: { [key: string]: number } = {
-                        pending: 0,
-                        accepted: 1,
-                        rejected: 2,
-                      };
-                      const aStatus = a.status || "unknown";
-                      const bStatus = b.status || "unknown";
-                      return (
-                        (statusOrder[aStatus] || 3) -
-                        (statusOrder[bStatus] || 3)
-                      );
-                    })
-                    .map((req: any, idx: number) => (
-                      <RequestCard
-                        key={idx}
-                        request={req}
-                        index={idx}
-                        processingRequests={processingRequests}
-                        onAccept={handleAcceptRequest}
-                        onReject={handleRejectRequest}
-                      />
-                    ))}
-                </div>
-              ) : (
-                <div className="text-gray-400 text-center py-8">
-                  <div className="text-4xl mb-4">📥</div>
-                  <div>No requests yet.</div>
-                  <div className="text-sm mt-2">
-                    People interested in this gig will appear here.
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                {requests && requests.length > 0 ? (
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4 xl:gap-6 pb-4">
+                    {requests
+                      .sort((a, b) => {
+                        // Sort by status priority: pending first, then accepted, then rejected
+                        const statusOrder: { [key: string]: number } = {
+                          pending: 0,
+                          accepted: 1,
+                          rejected: 2,
+                        };
+                        const aStatus = a.status || "unknown";
+                        const bStatus = b.status || "unknown";
+                        return (
+                          (statusOrder[aStatus] || 3) -
+                          (statusOrder[bStatus] || 3)
+                        );
+                      })
+                      .map((req: any, idx: number) => (
+                        <div key={idx} className="w-full">
+                          <RequestCard
+                            request={req}
+                            index={idx}
+                            processingRequests={processingRequests}
+                            onAccept={handleAcceptRequest}
+                            onReject={handleRejectRequest}
+                          />
+                        </div>
+                      ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="text-gray-400 text-center py-8 flex-1 flex flex-col justify-center">
+                    <div className="text-2xl sm:text-3xl lg:text-4xl mb-4">
+                      📥
+                    </div>
+                    <div className="text-sm sm:text-base">No requests yet.</div>
+                    <div className="text-xs sm:text-sm mt-2 opacity-70">
+                      People interested in this gig will appear here.
+                    </div>
+                  </div>
+                )}
+              </div>
             </section>
           </main>
         </div>

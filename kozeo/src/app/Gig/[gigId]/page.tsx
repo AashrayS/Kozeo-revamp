@@ -1922,53 +1922,72 @@ export default function GigPage({
 
                   {/* Right Section - Payment Info */}
                   <div className="lg:min-w-[240px]">
-                    <div className="bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-md p-3  border-blue-500/20">
-                      <div className="grid grid-cols-2 gap-3 mb-2">
-                        <div>
-                          <p className="text-xs text-blue-300/80 uppercase tracking-wide mb-0.5">
-                            Total
-                          </p>
-                          <p className="text-base font-semibold text-white">
-                            {gig.currency} {gig.amount}
-                          </p>
+                    {gig.amount === 0 ? (
+                      <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-md p-3 border border-purple-500/30">
+                        <div
+                          className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                            theme === "dark"
+                              ? "bg-gradient-to-r from-purple-900/60 to-blue-900/60 text-purple-300 border border-purple-700/50"
+                              : "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200"
+                          }`}
+                        >
+                          <FiStar className="w-4 h-4 mr-2" />
+                          Skill Forge Gig - Learning & Collaboration
                         </div>
-                        <div>
-                          <p className="text-xs text-green-300/80 uppercase tracking-wide mb-0.5">
-                            Remaining
-                          </p>
-                          <p className="text-base font-semibold text-neutral-300">
-                            {gig.currency}{" "}
-                            {(gig.amount - (gig.paidTillNow || 0)).toFixed(2)}
-                          </p>
-                        </div>
+                        <p className="text-xs text-neutral-400 mt-2">
+                          This is a collaborative learning project with no
+                          monetary exchange.
+                        </p>
                       </div>
+                    ) : (
+                      <div className="bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-md p-3 border-blue-500/20">
+                        <div className="grid grid-cols-2 gap-3 mb-2">
+                          <div>
+                            <p className="text-xs text-blue-300/80 uppercase tracking-wide mb-0.5">
+                              Total
+                            </p>
+                            <p className="text-base font-semibold text-white">
+                              {gig.currency} {gig.amount}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-green-300/80 uppercase tracking-wide mb-0.5">
+                              Remaining
+                            </p>
+                            <p className="text-base font-semibold text-neutral-300">
+                              {gig.currency}{" "}
+                              {(gig.amount - (gig.paidTillNow || 0)).toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
 
-                      {/* Progress Bar */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs text-neutral-400">
-                            Progress
-                          </span>
-                          <span className="text-xs text-blue-300/90 font-medium">
-                            {Math.round(
-                              ((gig.paidTillNow || 0) / gig.amount) * 100
-                            )}
-                            %
-                          </span>
-                        </div>
-                        <div className="w-full bg-neutral-700/60 rounded-full h-1.5">
-                          <div
-                            className="bg-gradient-to-r from-blue-400 to-green-400 h-1.5 rounded-full transition-all duration-300"
-                            style={{
-                              width: `${Math.min(
-                                ((gig.paidTillNow || 0) / gig.amount) * 100,
-                                100
-                              )}%`,
-                            }}
-                          ></div>
+                        {/* Progress Bar */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-neutral-400">
+                              Progress
+                            </span>
+                            <span className="text-xs text-blue-300/90 font-medium">
+                              {Math.round(
+                                ((gig.paidTillNow || 0) / gig.amount) * 100
+                              )}
+                              %
+                            </span>
+                          </div>
+                          <div className="w-full bg-neutral-700/60 rounded-full h-1.5">
+                            <div
+                              className="bg-gradient-to-r from-blue-400 to-green-400 h-1.5 rounded-full transition-all duration-300"
+                              style={{
+                                width: `${Math.min(
+                                  ((gig.paidTillNow || 0) / gig.amount) * 100,
+                                  100
+                                )}%`,
+                              }}
+                            ></div>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -2512,17 +2531,20 @@ export default function GigPage({
                       <button
                         onClick={
                           getCurrentUserRole() === "host" ||
-                          gig?.status === "completed"
+                          gig?.status === "completed" ||
+                          gig?.amount === 0
                             ? undefined
                             : () => setShowPaymentModal(true)
                         }
                         disabled={
                           getCurrentUserRole() === "host" ||
-                          gig?.status === "completed"
+                          gig?.status === "completed" ||
+                          gig?.amount === 0
                         }
                         className={`text-lg md:text-xl p-1 transition-colors ${
                           getCurrentUserRole() === "host" ||
-                          gig?.status === "completed"
+                          gig?.status === "completed" ||
+                          gig?.amount === 0
                             ? "text-gray-600 cursor-not-allowed"
                             : "text-gray-400 hover:text-green-400 cursor-pointer"
                         }`}
@@ -2531,6 +2553,8 @@ export default function GigPage({
                             ? ""
                             : gig?.status === "completed"
                             ? "Gig completed - payment requests disabled"
+                            : gig?.amount === 0
+                            ? "Payment requests not available for Skill Forge gigs"
                             : "Request Payment"
                         }
                       >
@@ -2545,6 +2569,13 @@ export default function GigPage({
                         getCurrentUserRole() !== "host" && (
                           <div className="absolute bottom-full left-16 transform -translate-x-1/2 mb-2 px-2 py-1 bg-neutral-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
                             Gig completed - payment requests disabled
+                          </div>
+                        )}
+                      {gig?.amount === 0 &&
+                        getCurrentUserRole() !== "host" &&
+                        gig?.status !== "completed" && (
+                          <div className="absolute bottom-full left-16 transform -translate-x-1/2 mb-2 px-2 py-1 bg-neutral-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                            Payment requests not available for Skill Forge gigs
                           </div>
                         )}
                     </div>

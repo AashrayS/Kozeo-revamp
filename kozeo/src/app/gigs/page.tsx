@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
 import ProfessionalButton from "@/components/common/ProfessionalButton";
+import { FiStar } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getUserGigs } from "../../../utilities/kozeoApi";
@@ -421,9 +422,22 @@ export default function GigListPage() {
                           : "border-gray-200"
                       }`}
                     >
-                      <span className="text-sm font-semibold text-emerald-400">
-                        {gig.currency} {gig.amount}
-                      </span>
+                      {gig.amount === 0 ? (
+                        <div
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
+                            theme === "dark"
+                              ? "bg-gradient-to-r from-purple-900/60 to-blue-900/60 text-purple-300 border border-purple-700/50"
+                              : "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200"
+                          }`}
+                        >
+                          <FiStar className="w-3 h-3 mr-1" />
+                          Skill Forge
+                        </div>
+                      ) : (
+                        <span className="text-sm font-semibold text-emerald-400">
+                          {gig.currency} {gig.amount}
+                        </span>
+                      )}
                       <div className="flex items-center gap-2">
                         <span
                           className={`text-xs transition-colors duration-300 ${

@@ -447,20 +447,35 @@ export default function DescriptionClient() {
 
               {/* Project Value */}
               <div className="mb-8">
-                <div
-                  className={`text-xl sm:text-2xl md:text-3xl font-semibold ${
-                    theme === "light" ? "text-gray-900" : "text-white"
-                  }`}
-                >
-                  {gig.currency} {gig.amount}
-                </div>
-                <div
-                  className={`text-sm sm:text-base ${
-                    theme === "light" ? "text-gray-500" : "text-gray-500"
-                  }`}
-                >
-                  Project value
-                </div>
+                {gig.amount === 0 ? (
+                  <div
+                    className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                      theme === "dark"
+                        ? "bg-gradient-to-r from-purple-900/60 to-blue-900/60 text-purple-300 border border-purple-700/50"
+                        : "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200"
+                    }`}
+                  >
+                    <FiStar className="w-4 h-4 mr-2" />
+                    Skill Forge Gig - Learning & Collaboration
+                  </div>
+                ) : (
+                  <>
+                    <div
+                      className={`text-xl sm:text-2xl md:text-3xl font-semibold ${
+                        theme === "light" ? "text-gray-900" : "text-white"
+                      }`}
+                    >
+                      {gig.currency} {gig.amount}
+                    </div>
+                    <div
+                      className={`text-sm sm:text-base ${
+                        theme === "light" ? "text-gray-500" : "text-gray-500"
+                      }`}
+                    >
+                      Project value
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Content Sections */}

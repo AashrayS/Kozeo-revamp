@@ -380,9 +380,22 @@ export default function Home() {
                               : "border-neutral-800"
                           }`}
                         >
-                          <span className="text-sm font-semibold text-emerald-500">
-                            {gig.currency} {gig.amount}
-                          </span>
+                          {gig.amount === 0 ? (
+                            <div
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
+                                theme === "dark"
+                                  ? "bg-gradient-to-r from-purple-900/60 to-blue-900/60 text-purple-300 border border-purple-700/50"
+                                  : "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200"
+                              }`}
+                            >
+                              <FiStar className="w-3 h-3 mr-1" />
+                              Skill Forge
+                            </div>
+                          ) : (
+                            <span className="text-sm font-semibold text-emerald-500">
+                              {gig.currency} {gig.amount}
+                            </span>
+                          )}
                           <span
                             className={`text-xs ${
                               theme === "light"
