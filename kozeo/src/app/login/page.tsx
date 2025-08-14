@@ -15,7 +15,63 @@ import { setUser } from "../../../store/userSlice";
 import { useTheme } from "../../contexts/ThemeContext";
 import { PageLoader } from "../../components/common/PageLoader";
 import Image from "next/image";
-import kozeoLogo from "/src/assets/kozeoLogo.png";
+import Link from "next/link";
+
+// Navbar Component - Same as landing page but simplified for login
+const Navbar = () => {
+  return (
+    <header className="fixed top-0 inset-x-0 z-50 bg-black">
+      <nav
+        className="flex items-center justify-between px-4 sm:px-8 py-3 sm:py-6 relative"
+        aria-label="Global"
+      >
+        {/* Home Icon */}
+        <div className="flex items-center">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-white transition-all duration-300 hover:scale-110 hover:text-gray-300"
+            title="Go to Home"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-6 h-6 sm:w-7 sm:h-7"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
+              />
+            </svg>
+            <span className="hidden sm:inline text-sm font-medium">Home</span>
+          </Link>
+        </div>
+
+        {/* Center Logo */}
+        <div className="flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
+          <Link
+            href="/"
+            className="flex items-center gap-2 sm:gap-3 font-bold text-xl sm:text-2xl tracking-tight text-white transition-all duration-300 hover:scale-105"
+          >
+            <Image
+              src="/kozeoLogo.png"
+              alt="Kozeo Logo"
+              width={32}
+              height={32}
+              className="w-6 h-6 sm:w-8 sm:h-8"
+            />
+          </Link>
+        </div>
+
+        {/* Right side spacer for balance */}
+        <div className="w-6 sm:w-7"></div>
+      </nav>
+    </header>
+  );
+};
 
 type SignupData = {
   email: string;
@@ -95,8 +151,11 @@ export default function LoginSignupPage() {
         />
       )}
 
+      {/* Navbar Component */}
+      <Navbar />
+
       <div
-        className="flex w-full h-screen overflow-hidden md:flex-row transition-opacity duration-1000 relative bg-black"
+        className="flex w-full h-screen overflow-hidden md:flex-row transition-opacity duration-1000 relative bg-black pt-16 sm:pt-20"
         style={{
           fontFamily: currentTheme.fonts.base,
         }}
@@ -225,35 +284,24 @@ export default function LoginSignupPage() {
           </div>
         </div>
 
-        <div className="md:w-full w-full flex flex-col items-center justify-items-start md:justify-center p-6 md:p-10 text-center relative z-10 text-white">
+        <div className="md:w-full w-full flex flex-col items-center justify-center p-6 md:p-10 text-center relative z-10 text-white">
           {/* <p className="mb-4 md:mb-6 text-sm md:text-base" style={{}}>
             Get your hands dirty with real life projects
           </p> */}
-          <div className="w-full sm:w-[90%] md:w-1/4 h-full relative flex flex-col items-center justify-center px-6 py-10 overflow-hidden bg-transparent  rounded-2xl ">
-            {/* Kozeo Logo positioned directly above the form */}
-            <div className="flex items-center mb-16">
-              {/* Inline SVG logo for best theme compatibility */}
-              <svg
-                className="h-8 md:h-12 w-auto"
-                viewBox="0 0 625 147"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ maxWidth: 200 }}
-              >
-                <path
-                  d="M104.8 145H83.6L33 76.8L18.4 89.6V145H0.400001V2.19999H18.4V72.6C22.4 68.0667 26.4667 63.5333 30.6 59C34.7333 54.4667 38.8667 49.9333 43 45.4L81.6 2.19999H102.6L46 64.4L104.8 145ZM244.922 73.4C244.922 84.4667 243.522 94.5333 240.722 103.6C237.922 112.533 233.722 120.267 228.122 126.8C222.655 133.333 215.789 138.333 207.522 141.8C199.389 145.267 189.922 147 179.122 147C167.922 147 158.189 145.267 149.922 141.8C141.655 138.2 134.789 133.2 129.322 126.8C123.855 120.267 119.789 112.467 117.122 103.4C114.455 94.3333 113.122 84.2667 113.122 73.2C113.122 58.5333 115.522 45.7333 120.322 34.8C125.122 23.8667 132.389 15.3333 142.122 9.2C151.989 3.06666 164.389 -4.76837e-06 179.322 -4.76837e-06C193.589 -4.76837e-06 205.589 3.06666 215.322 9.2C225.055 15.2 232.389 23.7333 237.322 34.8C242.389 45.7333 244.922 58.6 244.922 73.4ZM132.122 73.4C132.122 85.4 133.789 95.7333 137.122 104.4C140.455 113.067 145.589 119.733 152.522 124.4C159.589 129.067 168.455 131.4 179.122 131.4C189.922 131.4 198.722 129.067 205.522 124.4C212.455 119.733 217.589 113.067 220.922 104.4C224.255 95.7333 225.922 85.4 225.922 73.4C225.922 55.4 222.189 41.3333 214.722 31.2C207.255 20.9333 195.455 15.8 179.322 15.8C168.522 15.8 159.589 18.1333 152.522 22.8C145.589 27.3333 140.455 33.9333 137.122 42.6C133.789 51.1333 132.122 61.4 132.122 73.4ZM361.819 145H262.819V131.4L338.019 18.2H265.219V2.19999H359.819V15.8L284.619 129H361.819V145ZM468.872 145H389.072V2.19999H468.872V18H407.072V62.6H465.272V78.2H407.072V129.2H468.872V145ZM624.805 73.4C624.805 84.4667 623.405 94.5333 620.605 103.6C617.805 112.533 613.605 120.267 608.005 126.8C602.538 133.333 595.671 138.333 587.405 141.8C579.271 145.267 569.805 147 559.005 147C547.805 147 538.071 145.267 529.805 141.8C521.538 138.2 514.671 133.2 509.205 126.8C503.738 120.267 499.671 112.467 497.005 103.4C494.338 94.3333 493.005 84.2667 493.005 73.2C493.005 58.5333 495.405 45.7333 500.205 34.8C505.005 23.8667 512.271 15.3333 522.005 9.2C531.871 3.06666 544.271 -4.76837e-06 559.205 -4.76837e-06C573.471 -4.76837e-06 585.471 3.06666 595.205 9.2C604.938 15.2 612.271 23.7333 617.205 34.8C622.271 45.7333 624.805 58.6 624.805 73.4ZM512.005 73.4C512.005 85.4 513.671 95.7333 517.005 104.4C520.338 113.067 525.471 119.733 532.405 124.4C539.471 129.067 548.338 131.4 559.005 131.4C569.805 131.4 578.605 129.067 585.405 124.4C592.338 119.733 597.471 113.067 600.805 104.4C604.138 95.7333 605.805 85.4 605.805 73.4C605.805 55.4 602.071 41.3333 594.605 31.2C587.138 20.9333 575.338 15.8 559.205 15.8C548.405 15.8 539.471 18.1333 532.405 22.8C525.471 27.3333 520.338 33.9333 517.005 42.6C513.671 51.1333 512.005 61.4 512.005 73.4Z"
-                  fill="#fff"
-                />
-              </svg>
-              <Image
-                src={kozeoLogo}
-                alt="Kozeo Logo"
-                width={36}
-                height={36}
-                className="h-24 w-24 md:h-24 md:w-24 flex-shrink-0 object-contain ml-2"
-              />
-            </div>
 
+          {/* Kozeo Logo positioned right above the container */}
+          <div className="mb-8 md:mb-12">
+            <Image
+              src="/logofial.svg"
+              alt="Kozeo Full Logo"
+              width={625}
+              height={147}
+              className="w-72 sm:w-80 md:w-96 lg:w-[400px] xl:w-[450px] 2xl:w-[500px] h-auto brightness-0 invert max-w-[90vw] -ml-14"
+              priority
+            />
+          </div>
+
+          <div className="w-full sm:w-[90%] md:w-1/4 h-full relative flex flex-col items-center justify-center px-6 py-10 overflow-hidden bg-transparent  rounded-2xl ">
             <div className="flex mb-6">
               <button
                 onClick={() => setShowLogin(true)}
