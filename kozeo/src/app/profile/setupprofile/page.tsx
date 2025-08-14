@@ -140,14 +140,11 @@ export default function ProfileSetupPage() {
 
   if (loading) {
     return (
-      <>
-        <Header logoText="Kozeo" />
-        <div className="min-h-screen relative z-10 flex bg-[radial-gradient(circle_at_center,_rgba(17,17,17,0.8),_rgba(0,0,0,0.6))] text-white">
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-gray-400">Loading...</div>
-          </div>
-        </div>
-      </>
+      <PageLoader
+        duration={1500}
+        onComplete={() => {}}
+        useSlideAnimation={false}
+      />
     );
   }
 

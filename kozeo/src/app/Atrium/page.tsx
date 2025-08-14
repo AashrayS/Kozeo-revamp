@@ -14,6 +14,7 @@ import {
 import { isAuthenticated } from "../../../utilities/api";
 import { useTheme } from "../../contexts/ThemeContext";
 import ProfessionalButton from "@/components/common/ProfessionalButton";
+import { PageLoader } from "@/components/common/PageLoader";
 export default function Home() {
   const router = useRouter();
   const { theme } = useTheme();
@@ -252,15 +253,11 @@ export default function Home() {
 
             {/* Loading State */}
             {loading && (
-              <div className="flex justify-center items-center py-20">
-                <div
-                  className={
-                    theme === "light" ? "text-gray-600" : "text-gray-400"
-                  }
-                >
-                  Loading gigs...
-                </div>
-              </div>
+              <PageLoader
+                duration={1000}
+                onComplete={() => {}}
+                useSlideAnimation={false}
+              />
             )}
 
             {/* Error State */}

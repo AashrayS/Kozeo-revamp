@@ -2,6 +2,7 @@
 
 import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
+import { PageLoader } from "@/components/common/PageLoader";
 import { FiStar, FiVideo, FiPhone } from "react-icons/fi";
 import {
   FaMicrophone,
@@ -1679,22 +1680,7 @@ export default function GigPage({
 
   // Loading state
   if (gigLoading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header logoText="Kozeo" />
-        <div className="relative z-10 flex flex-1 flex-row bg-[radial-gradient(circle_at_center,_rgba(17,17,17,0.8),_rgba(0,0,0,0.6))] text-white">
-          <Sidebar />
-          <main className="flex-1 p-10 flex justify-center items-center">
-            <div className="text-center">
-              <div className="text-xl text-gray-400 mb-4">
-                Loading gig workspace...
-              </div>
-              <div className="text-sm text-gray-500">Gig ID: {gigId}</div>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   // Error state

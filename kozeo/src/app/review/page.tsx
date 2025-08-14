@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
+import { PageLoader } from "@/components/common/PageLoader";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FaStar } from "react-icons/fa";
 import { useTheme } from "@/contexts/ThemeContext";

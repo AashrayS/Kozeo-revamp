@@ -52,32 +52,18 @@ export const PageLoader = ({
   return (
     <div
       className={`fixed inset-0 z-[9999] bg-black flex items-center justify-center overflow-hidden ${
-        useSlideAnimation 
-          ? `transition-transform duration-1000 ease-in-out ${shouldSlideUp ? "transform -translate-y-full" : ""}`
-          : `transition-opacity duration-500 ${isVisible ? "opacity-100" : "opacity-0"}`
+        useSlideAnimation
+          ? `transition-transform duration-1000 ease-in-out ${
+              shouldSlideUp ? "transform -translate-y-full" : ""
+            }`
+          : `transition-opacity duration-500 ${
+              isVisible ? "opacity-100" : "opacity-0"
+            }`
       }`}
     >
       {/* Loading Screen Glow Effects */}
       <div className="fixed top-1/4 right-1/4 w-2 h-0 rounded-full opacity-60 bg-purple-400 shadow-[0_0_200px_80px_rgba(168,85,247,0.2)] pointer-events-none z-0" />
       <div className="fixed bottom-1/4 left-1/4 w-2 h-0 rounded-full opacity-60 bg-cyan-300 shadow-[0_0_200px_80px_rgba(34,211,238,0.2)] pointer-events-none z-0" />
-
-      {/* Background Stars for Loading Screen */}
-      <div className="absolute inset-0">
-        {Array.from({ length: 30 }, (_, i) => (
-          <div
-            key={i}
-            className="absolute bg-white rounded-full animate-pulse"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              width: `${Math.random() * 2 + 1}px`,
-              height: `${Math.random() * 2 + 1}px`,
-              opacity: Math.random() * 0.6 + 0.2,
-              animationDelay: `${Math.random() * 3}s`,
-            }}
-          />
-        ))}
-      </div>
 
       {/* Logo Container */}
       <div className="relative z-10 flex flex-col items-center">

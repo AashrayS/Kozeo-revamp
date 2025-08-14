@@ -208,7 +208,7 @@ export default function LoginSignupPage() {
           {/* Animated Lines */}
           <div className="absolute inset-0">
             {/* Horizontal Lines */}
-            <div
+            {/* <div
               className="absolute top-1/4 left-1/4 w-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-30 max-w-md"
               style={{
                 animation: "slideRight 4s infinite linear",
@@ -221,7 +221,7 @@ export default function LoginSignupPage() {
                 animation: "slideLeft 5s infinite linear",
                 animationDelay: "2s",
               }}
-            ></div>
+            ></div> */}
           </div>
         </div>
 

@@ -4,6 +4,7 @@ import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
 import ProfessionalButton from "@/components/common/ProfessionalButton";
 import RequestCard from "@/components/common/RequestCard";
+import { PageLoader } from "@/components/common/PageLoader";
 import { FiStar } from "react-icons/fi";
 import { io, Socket } from "socket.io-client";
 import {
@@ -466,38 +467,7 @@ export default function GigLobbyPage({
   };
 
   if (loading) {
-    return (
-      <div
-        className={`min-h-screen flex flex-col items-center justify-center theme-transition ${
-          theme === "light"
-            ? "bg-gradient-light text-gray-900"
-            : "bg-gradient-dark text-white"
-        }`}
-      >
-        <div className="text-xl mb-4">Loading gig...</div>
-        <div
-          className={`text-sm ${
-            theme === "light" ? "text-gray-600" : "text-gray-400"
-          }`}
-        >
-          WebSocket:{" "}
-          <span
-            className={`font-semibold ${
-              wsConnected ? "text-green-500" : "text-red-500"
-            }`}
-          >
-            {wsConnected ? "Connected" : "Connecting..."}
-          </span>
-        </div>
-        <div
-          className={`text-xs mt-2 ${
-            theme === "light" ? "text-gray-500" : "text-gray-500"
-          }`}
-        >
-          Gig ID: {gigId}
-        </div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (error) {

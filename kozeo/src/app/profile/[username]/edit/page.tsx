@@ -8,6 +8,7 @@ import InputField from "../../../../components/common/InputField";
 import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
 import ProfessionalButton from "@/components/common/ProfessionalButton";
+import { PageLoader } from "@/components/common/PageLoader";
 import { FaCamera, FaUpload, FaTimes, FaLock, FaUnlock } from "react-icons/fa";
 import {
   getUserByUsername,
@@ -295,9 +296,7 @@ export default function EditProfilePage() {
           <main className="flex-1 p-6 overflow-y-auto">
             <div className="w-full max-w-3xl mx-auto">
               {loadingProfile ? (
-                <div className="flex justify-center items-center py-20">
-                  <div className="text-white">Loading profile data...</div>
-                </div>
+                <PageLoader />
               ) : (
                 <form
                   onSubmit={handleSubmit}

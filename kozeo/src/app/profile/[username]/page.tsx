@@ -8,6 +8,7 @@ import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
 import TransactionModal from "@/components/common/TransactionModal";
 import WithdrawalModal from "@/components/common/WithdrawalModal";
+import { PageLoader } from "@/components/common/PageLoader";
 import {
   FiStar,
   FiCalendar,
@@ -757,26 +758,7 @@ export default function UserProfilePage() {
           {/* Main Content */}
           <main className="flex-1 flex flex-col gap-8 items-stretch justify-center w-full max-w-8xl px-4 sm:px-6 lg:pr-10 mx-auto py-8">
             {/* Loading State */}
-            {loading && (
-              <section
-                className={`rounded-2xl sm:rounded-3xl p-6 md:p-8 border-0 relative drop-shadow-glow backdrop-blur-md overflow-hidden theme-transition ${
-                  theme === "light"
-                    ? "bg-white/90 border-gray-200"
-                    : "bg-neutral-900/70 border-neutral-800"
-                }`}
-              >
-                <div className="flex flex-col items-center justify-center py-12">
-                  <div className="w-8 h-8 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin mb-4"></div>
-                  <p
-                    className={`text-lg ${
-                      theme === "light" ? "text-gray-600" : "text-gray-400"
-                    }`}
-                  >
-                    Loading profile...
-                  </p>
-                </div>
-              </section>
-            )}
+            {loading && <PageLoader />}
 
             {/* Error State */}
             {error && !loading && (

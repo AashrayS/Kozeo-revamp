@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
 import ProfessionalButton from "@/components/common/ProfessionalButton";
+import { PageLoader } from "@/components/common/PageLoader";
 import { FiStar } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -89,28 +90,7 @@ export default function GigListPage() {
   };
 
   if (loading || isNavigating) {
-    return (
-      <div
-        className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
-          theme === "dark"
-            ? "bg-[radial-gradient(circle_at_center,_rgba(17,17,17,0.8),_rgba(0,0,0,0.6))] text-white"
-            : "bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 text-gray-900"
-        }`}
-      >
-        <div className="text-center">
-          <div className="text-xl mb-2">
-            {loading ? "Loading gigs..." : "Navigating..."}
-          </div>
-          <div
-            className={`text-sm ${
-              theme === "dark" ? "text-gray-400" : "text-gray-600"
-            }`}
-          >
-            Please wait...
-          </div>
-        </div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (error) {

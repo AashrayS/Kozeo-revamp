@@ -2,6 +2,7 @@
 import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
 import ProfessionalButton from "@/components/common/ProfessionalButton";
+import { PageLoader } from "@/components/common/PageLoader";
 import { FiStar, FiUser } from "react-icons/fi";
 import { FaStar } from "react-icons/fa";
 import { useState, useEffect, useRef } from "react";
@@ -302,29 +303,7 @@ export default function DescriptionClient() {
   };
 
   if (loading) {
-    return (
-      <>
-        <Header logoText="Kozeo" />
-        <div
-          className={`min-h-screen relative z-10 flex flex-row transition-colors duration-300 ${
-            theme === "dark"
-              ? "bg-[radial-gradient(circle_at_center,_rgba(17,17,17,0.8),_rgba(0,0,0,0.6))] text-white"
-              : "bg-gradient-to-br from-slate-50 via-gray-50 to-stone-50 text-gray-900"
-          }`}
-        >
-          <Sidebar />
-          <main className="flex-1 p-10 flex justify-center items-center">
-            <div
-              className={`transition-colors duration-300 ${
-                theme === "dark" ? "text-gray-400" : "text-gray-600"
-              }`}
-            >
-              Loading gig details...
-            </div>
-          </main>
-        </div>
-      </>
-    );
+    return <PageLoader />;
   }
 
   if (error) {
@@ -837,12 +816,15 @@ export default function DescriptionClient() {
 
               {hostLoading ? (
                 <div className="flex items-center justify-center py-20">
-                  <div
-                    className={`text-base ${
-                      theme === "light" ? "text-gray-500" : "text-gray-400"
-                    }`}
-                  >
-                    Loading host profile...
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                    <div
+                      className={`text-base ${
+                        theme === "light" ? "text-gray-500" : "text-gray-400"
+                      }`}
+                    >
+                      Loading host profile...
+                    </div>
                   </div>
                 </div>
               ) : (
