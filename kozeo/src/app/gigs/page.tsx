@@ -109,7 +109,7 @@ export default function GigListPage() {
             <main className="flex-1 p-8 flex items-center justify-center">
               <div className="text-center">
                 <div className="text-xl text-red-400 mb-2">
-                  Error loading gigs
+                  Error loading projects
                 </div>
                 <div
                   className={`text-sm ${
@@ -160,7 +160,7 @@ export default function GigListPage() {
                   theme === "dark" ? "text-white" : "text-gray-900"
                 }`}
               >
-                My Gigs ({filteredGigs.length})
+                My Projects ({filteredGigs.length})
               </h1>
 
               {/* Filter buttons */}
@@ -221,17 +221,17 @@ export default function GigListPage() {
               >
                 <div className="text-xl mb-2">
                   {filter === "all"
-                    ? "No gigs yet"
+                    ? "No projects yet"
                     : filter === "hosted"
-                    ? "No hosted gigs"
-                    : "No collaborating gigs"}
+                    ? "No hosted projects"
+                    : "No collaborating projects"}
                 </div>
                 <div className="text-sm">
                   {filter === "all"
-                    ? "You haven't hosted or joined any gigs yet."
+                    ? "You haven't hosted or joined any projects yet."
                     : filter === "hosted"
-                    ? "You haven't hosted any gigs yet."
-                    : "You aren't collaborating on any gigs yet."}
+                    ? "You haven't hosted any projects yet."
+                    : "You aren't collaborating on any projects yet."}
                 </div>
                 {filter === "all" && (
                   <div className="mt-4 space-x-4">

@@ -182,11 +182,11 @@ export default function CreateGigPage() {
         amount: form.isSkillForge ? 0 : parseFloat(form.amount),
       };
 
-      console.log("Creating gig with data:", gigData);
+      console.log("Creating project with data:", gigData);
       const newGig = await createGig(gigData);
-      console.log("Gig created successfully:", newGig);
+      console.log("Project created successfully:", newGig);
 
-      setSuccess("Gig created successfully!");
+      setSuccess("Project created successfully!");
 
       // Reset form
       setForm({
@@ -199,13 +199,13 @@ export default function CreateGigPage() {
         isSkillForge: false,
       });
 
-      // Redirect to the specific gig's lobby page with the gig ID
+      // Redirect to the specific project's lobby page with the project ID
       setTimeout(() => {
         router.push(`/gigs/${(newGig as any).id}/lobby`);
       }, 2000);
     } catch (error: any) {
-      console.error("Error creating gig:", error);
-      setError(error?.message || "Failed to create gig. Please try again.");
+      console.error("Error creating project:", error);
+      setError(error?.message || "Failed to create project. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -923,7 +923,7 @@ export default function CreateGigPage() {
                   >
                     {form.isSkillForge
                       ? "Launch Skill Forge Project"
-                      : "Create Professional Gig"}
+                      : "Create Professional Project"}
                   </ProfessionalButton>
                 </div>
               </form>

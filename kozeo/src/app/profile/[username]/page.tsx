@@ -536,7 +536,7 @@ export default function UserProfilePage() {
                           : "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
                       }`}
                     >
-                      Browse Gigs 🎯
+                      Browse Projects
                     </button>
                   </div>
                   {/* <div className="mt-8">
@@ -1072,7 +1072,7 @@ export default function UserProfilePage() {
                     {[
                       {
                         count: profile.gigsHosted.length,
-                        label: "Gigs Hosted",
+                        label: "Projects Hosted",
                         color: "text-cyan-400",
                         bgGradient:
                           theme === "light"
@@ -1394,7 +1394,7 @@ export default function UserProfilePage() {
                     }`}
                   >
                     <FiUsers className="text-cyan-400" />
-                    Gigs Hosted ({filteredHostedGigs.length}
+                    Projects Hosted ({filteredHostedGigs.length}
                     {selectedSkills.length > 0
                       ? ` of ${profile.gigsHosted.length}`
                       : ""}
@@ -1541,7 +1541,7 @@ export default function UserProfilePage() {
                           ? `Show Less (${
                               filteredHostedGigs.length - 5
                             } hidden)`
-                          : `Load More Gigs (${
+                          : `Load More Projects (${
                               filteredHostedGigs.length - 5
                             } more)`}
                       </button>
@@ -1714,7 +1714,7 @@ export default function UserProfilePage() {
                           ? `Show Less (${
                               filteredCollaboratedGigs.length - 5
                             } hidden)`
-                          : `Load More Gigs (${
+                          : `Load More Projects (${
                               filteredCollaboratedGigs.length - 5
                             } more)`}
                       </button>

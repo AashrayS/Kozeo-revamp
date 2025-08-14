@@ -41,7 +41,7 @@ export default function DescriptionClient() {
   useEffect(() => {
     const fetchGig = async () => {
       if (!gigId) {
-        setError("No gig ID provided");
+        setError("No project ID provided");
         setLoading(false);
         return;
       }
@@ -49,15 +49,15 @@ export default function DescriptionClient() {
       try {
         setLoading(true);
         setError("");
-        console.log("Fetching gig with ID:", gigId);
+        console.log("Fetching project with ID:", gigId);
 
         const gigData = await getGigById(gigId);
 
         if (gigData) {
           setGig(gigData);
-          console.log("Gig data fetched:", gigData);
+          console.log("Project data fetched:", gigData);
 
-          // Check if current user has already sent a request to this gig
+          // Check if current user has already sent a request to this project
           if (user && (gigData as any).activeRequest) {
             const userRequest = (gigData as any).activeRequest.find(
               (req: any) =>

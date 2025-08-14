@@ -35,7 +35,7 @@ export default function Sidebar() {
     { name: "Home", icon: FiHome, path: "/Atrium" },
     { name: "Profile", icon: FiUser, path: `/profile/${profileUsername}` },
     { name: "Store", icon: FiShoppingBag, path: "/store" },
-    { name: "My Gigs", icon: FiBriefcase, path: "/gigs" }, // Update to go to gig list
+    { name: "My Projects", icon: FiBriefcase, path: "/gigs" }, // Update to go to gig list
     {
       name: "Discussion Rooms",
       icon: FiMessageSquare,

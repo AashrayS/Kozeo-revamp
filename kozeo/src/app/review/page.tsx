@@ -52,7 +52,7 @@ export default function ReviewPage() {
 
         if (!gigId || !receiverUsername) {
           setError(
-            "Missing gig ID or receiver information. Please access this page from a completed gig."
+            "Missing project ID or receiver information. Please access this page from a completed project."
           );
           // Don't return immediately - let user see the error and potentially navigate away
           return;
@@ -61,7 +61,7 @@ export default function ReviewPage() {
         // Fetch gig details
         const gig = await getGigById(gigId);
         if (!gig) {
-          setError("Gig not found");
+          setError("Project not found");
           return;
         }
 
@@ -71,8 +71,8 @@ export default function ReviewPage() {
           const userIsGuest = user.id === (gig as any).guest.id;
 
           if (!userIsHost && !userIsGuest) {
-            setError("You are not authorized to review this gig");
-            setTimeout(() => router.push("/gigs"), 3000);
+            setError("You are not authorized to review this project");
+            setTimeout(() => router.push("/projects"), 3000);
             return;
           }
 
@@ -82,8 +82,8 @@ export default function ReviewPage() {
         setGigInfo(gig as GigInfo);
         setRevieweeUsername(receiverUsername);
       } catch (err) {
-        console.error("Error fetching gig info:", err);
-        setError("Failed to load gig information");
+        console.error("Error fetching project info:", err);
+        setError("Failed to load project information");
       }
     };
 
@@ -114,7 +114,7 @@ export default function ReviewPage() {
     }
 
     if (!user || !gigInfo) {
-      setError("Missing user or gig information");
+      setError("Missing user or project information");
       return;
     }
 
@@ -133,14 +133,14 @@ export default function ReviewPage() {
 
       await createReview(reviewData);
 
-      // If user is the host, complete the gig after successful review
+      // If user is the host, complete the project after successful review
       if (isHost) {
         try {
           await completeGig(gigInfo.id);
-          console.log("Gig completed successfully");
+          console.log("Project completed successfully");
         } catch (completeError) {
-          console.error("Failed to complete gig:", completeError);
-          // Don't fail the whole process if completing gig fails
+          console.error("Failed to complete project:", completeError);
+          // Don't fail the whole process if completing project fails
         }
       }
 
@@ -148,7 +148,7 @@ export default function ReviewPage() {
 
       // Redirect after 3 seconds
       setTimeout(() => {
-        router.push("/gigs");
+        router.push("/projects");
       }, 3000);
     } catch (err: any) {
       console.error("Error submitting review:", err);
@@ -193,8 +193,8 @@ export default function ReviewPage() {
                   }`}
                 >
                   Thank you for your feedback.{" "}
-                  {isHost && "The gig has been marked as completed. "}You'll be
-                  redirected to the gigs page shortly.
+                  {isHost && "The project has been marked as completed. "}You'll be
+                  redirected to the projects page shortly.
                 </p>
                 <div className="flex gap-2">
                   <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
@@ -251,7 +251,7 @@ export default function ReviewPage() {
                 Review Your Collaboration
               </h1>
 
-              {/* Gig Info */}
+              {/* Project Info */}
               {gigInfo && (
                 <div
                   className={`border rounded-xl p-4 sm:p-6 transition-all duration-300 ${
@@ -265,7 +265,7 @@ export default function ReviewPage() {
                       theme === "dark" ? "text-white" : "text-gray-900"
                     }`}
                   >
-                    Gig Details
+                    Project Details
                   </h2>
                   <div className="space-y-2 text-sm">
                     <div>
@@ -316,20 +316,20 @@ export default function ReviewPage() {
               {error && (
                 <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
                   <p className="text-red-500 text-sm mb-2">{error}</p>
-                  {error.includes("Missing gig ID or receiver information") && (
+                  {error.includes("Missing gigs ID or receiver information") && (
                     <div className="text-xs text-gray-500">
                       <p>To leave a review, you need to:</p>
                       <ul className="list-disc list-inside mt-1 space-y-1">
-                        <li>Complete a gig collaboration</li>
+                        <li>Complete a project collaboration</li>
                         <li>
-                          Access the review page from the gig completion flow
+                          Access the review page from the project completion flow
                         </li>
                       </ul>
                       <button
-                        onClick={() => router.push("/gigs")}
+                        onClick={() => router.push("/projects")}
                         className="mt-2 text-blue-500 hover:text-blue-600 underline"
                       >
-                        Go to Gigs Page
+                        Go to Projects Page
                       </button>
                     </div>
                   )}

@@ -71,8 +71,8 @@ export default function Home() {
         );
         setGigs(activeGigs);
       } catch (error: any) {
-        console.error("Error fetching gigs:", error);
-        setError("Failed to load gigs");
+        console.error("Error fetching projects:", error);
+        setError("Failed to load projects");
       } finally {
         setLoading(false);
       }
@@ -98,7 +98,7 @@ export default function Home() {
           );
           setGigs(activeGigs);
         } catch (error: any) {
-          console.error("Error fetching gigs:", error);
+          console.error("Error fetching projects:", error);
         }
         return;
       }
@@ -111,8 +111,8 @@ export default function Home() {
         );
         setGigs(activeSearchResults);
       } catch (error: any) {
-        console.error("Error searching gigs:", error);
-        setError("Failed to search gigs");
+        console.error("Error searching projects:", error);
+        setError("Failed to search projects");
       }
     } else {
       // Users search
@@ -175,7 +175,7 @@ export default function Home() {
                 </button>
               </div>
 
-              {/* Toggle Button for Gigs/Users - responsive shrink and grow */}
+              {/* Toggle Button for Projects/Users - responsive shrink and grow */}
               <div className="relative inline-flex items-center w-full sm:w-auto">
                 <div
                   className={`relative flex items-center rounded-lg p-1 transition-all duration-200 w-full sm:w-auto ${
@@ -197,7 +197,7 @@ export default function Home() {
                     style={{ left: 0, right: 0 }}
                   />
 
-                  {/* Gigs Option */}
+                  {/* Projects Option */}
                   <button
                     onClick={() => setViewMode("gigs")}
                     className={`relative z-10 flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex-1 focus:outline-none min-w-0 ${
@@ -211,7 +211,7 @@ export default function Home() {
                     }`}
                     style={{ minWidth: 0 }}
                   >
-                    Gigs
+                    Projects
                   </button>
 
                   {/* Users Option */}
@@ -233,7 +233,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Create Gig Button - full width on mobile */}
+              {/* Create Project Button - full width on mobile */}
               <div className="w-full sm:w-auto flex-shrink-0">
                 <ProfessionalButton
                   onClick={() => router.push("/gigs/create")}
@@ -241,7 +241,7 @@ export default function Home() {
                   size="md"
                   className="w-full sm:w-auto !bg-white !text-gray-900 !border-gray-300 hover:!bg-gray-50 hover:!border-gray-400 !shadow-md"
                 >
-                  Create Gig
+                  Create Project
                 </ProfessionalButton>
               </div>
             </div>

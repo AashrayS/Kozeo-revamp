@@ -141,7 +141,7 @@ export default function GigPage({
           // Start periodic chat sync
           // startChatSync();
         } else {
-          setGigError("Gig not found");
+          setGigError("Project not found");
         }
       } catch (err: any) {
         console.error("Error fetching gig details:", err);
@@ -1692,7 +1692,9 @@ export default function GigPage({
           <Sidebar />
           <main className="flex-1 p-10 flex justify-center items-center">
             <div className="text-center">
-              <div className="text-xl text-red-400 mb-4">Error loading gig</div>
+              <div className="text-xl text-red-400 mb-4">
+                Error loading project
+              </div>
               <div className="text-gray-400 mb-4">{gigError}</div>
               <button
                 onClick={() => router.push("/Atrium")}
@@ -1707,7 +1709,7 @@ export default function GigPage({
     );
   }
 
-  // Gig not found
+  // Project not found
   if (!gig) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -1716,7 +1718,9 @@ export default function GigPage({
           <Sidebar />
           <main className="flex-1 p-10 flex justify-center items-center">
             <div className="text-center">
-              <div className="text-xl text-gray-400 mb-4">Gig not found</div>
+              <div className="text-xl text-gray-400 mb-4">
+                Project not found
+              </div>
               <button
                 onClick={() => router.push("/Atrium")}
                 className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded transition"
