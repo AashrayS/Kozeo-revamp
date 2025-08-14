@@ -26,33 +26,38 @@ body {
    font-family: 'Roboto', sans-serif;
 }
 
+/* Custom animation classes */
+.animate-twinkle {
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+.animate-twinkle-slow {
+  animation: twinkleSlow 4s ease-in-out infinite;
+}
+
+.animate-twinkle-fast {
+  animation: twinkleFast 2s ease-in-out infinite;
+}
+
 /* Landing Page Animations */
 @keyframes slideRight {
   0% {
-    width: 0%;
-    left: 0;
-  }
-  50% {
-    width: 100%;
-    left: 0;
+    width: 20%;
+    left: -20%;
   }
   100% {
-    width: 0%;
+    width: 20%;
     left: 100%;
   }
 }
 
 @keyframes slideLeft {
   0% {
-    width: 0%;
-    right: 0;
-  }
-  50% {
-    width: 100%;
-    right: 0;
+    width: 20%;
+    right: -20%;
   }
   100% {
-    width: 0%;
+    width: 20%;
     right: 100%;
   }
 }
@@ -73,8 +78,35 @@ body {
     transform: scale(1);
   }
   50% {
-    opacity: 0.8;
+    opacity: 1;
     transform: scale(1.2);
+  }
+}
+
+/* Additional twinkling variations */
+@keyframes twinkleSlow {
+  0%, 100% {
+    opacity: 0.1;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.3);
+  }
+}
+
+@keyframes twinkleFast {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  25% {
+    opacity: 0.9;
+    transform: scale(1.1);
+  }
+  75% {
+    opacity: 0.6;
+    transform: scale(1.05);
   }
 }
 
