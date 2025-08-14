@@ -11,6 +11,7 @@ import {
   FiStar,
   FiCheck,
 } from "react-icons/fi";
+import { PageLoader } from "../components/common/PageLoader";
 
 // Custom hook for scroll animations
 const useScrollAnimation = (threshold = 0.1) => {
@@ -99,7 +100,19 @@ const Navbar = () => {
               height={32}
               className="w-6 h-6 sm:w-8 sm:h-8"
             />
-            Kozeo
+            <svg
+              width="100"
+              height="24"
+              viewBox="0 0 625 147"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 sm:h-6 w-auto"
+            >
+              <path
+                d="M104.8 145H83.6L33 76.8L18.4 89.6V145H0.400001V2.19999H18.4V72.6C22.4 68.0667 26.4667 63.5333 30.6 59C34.7333 54.4667 38.8667 49.9333 43 45.4L81.6 2.19999H102.6L46 64.4L104.8 145ZM244.922 73.4C244.922 84.4667 243.522 94.5333 240.722 103.6C237.922 112.533 233.722 120.267 228.122 126.8C222.655 133.333 215.789 138.333 207.522 141.8C199.389 145.267 189.922 147 179.122 147C167.922 147 158.189 145.267 149.922 141.8C141.655 138.2 134.789 133.2 129.322 126.8C123.855 120.267 119.789 112.467 117.122 103.4C114.455 94.3333 113.122 84.2667 113.122 73.2C113.122 58.5333 115.522 45.7333 120.322 34.8C125.122 23.8667 132.389 15.3333 142.122 9.2C151.989 3.06666 164.389 -4.76837e-06 179.322 -4.76837e-06C193.589 -4.76837e-06 205.589 3.06666 215.322 9.2C225.055 15.2 232.389 23.7333 237.322 34.8C242.389 45.7333 244.922 58.6 244.922 73.4ZM132.122 73.4C132.122 85.4 133.789 95.7333 137.122 104.4C140.455 113.067 145.589 119.733 152.522 124.4C159.589 129.067 168.455 131.4 179.122 131.4C189.922 131.4 198.722 129.067 205.522 124.4C212.455 119.733 217.589 113.067 220.922 104.4C224.255 95.7333 225.922 85.4 225.922 73.4C225.922 55.4 222.189 41.3333 214.722 31.2C207.255 20.9333 195.455 15.8 179.322 15.8C168.522 15.8 159.589 18.1333 152.522 22.8C145.589 27.3333 140.455 33.9333 137.122 42.6C133.789 51.1333 132.122 61.4 132.122 73.4ZM361.819 145H262.819V131.4L338.019 18.2H265.219V2.19999H359.819V15.8L284.619 129H361.819V145ZM468.872 145H389.072V2.19999H468.872V18H407.072V62.6H465.272V78.2H407.072V129.2H468.872V145ZM624.805 73.4C624.805 84.4667 623.405 94.5333 620.605 103.6C617.805 112.533 613.605 120.267 608.005 126.8C602.538 133.333 595.671 138.333 587.405 141.8C579.271 145.267 569.805 147 559.005 147C547.805 147 538.071 145.267 529.805 141.8C521.538 138.2 514.671 133.2 509.205 126.8C503.738 120.267 499.671 112.467 497.005 103.4C494.338 94.3333 493.005 84.2667 493.005 73.2C493.005 58.5333 495.405 45.7333 500.205 34.8C505.005 23.8667 512.271 15.3333 522.005 9.2C531.871 3.06666 544.271 -4.76837e-06 559.205 -4.76837e-06C573.471 -4.76837e-06 585.471 3.06666 595.205 9.2C604.938 15.2 612.271 23.7333 617.205 34.8C622.271 45.7333 624.805 58.6 624.805 73.4ZM512.005 73.4C512.005 85.4 513.671 95.7333 517.005 104.4C520.338 113.067 525.471 119.733 532.405 124.4C539.471 129.067 548.338 131.4 559.005 131.4C569.805 131.4 578.605 129.067 585.405 124.4C592.338 119.733 597.471 113.067 600.805 104.4C604.138 95.7333 605.805 85.4 605.805 73.4C605.805 55.4 602.071 41.3333 594.605 31.2C587.138 20.9333 575.338 15.8 559.205 15.8C548.405 15.8 539.471 18.1333 532.405 22.8C525.471 27.3333 520.338 33.9333 517.005 42.6C513.671 51.1333 512.005 61.4 512.005 73.4Z"
+                fill={isOnDarkBackground ? "white" : "black"}
+              />
+            </svg>
           </Link>
         </div>
 
@@ -134,12 +147,87 @@ const Navbar = () => {
 const Hero = () => {
   return (
     <section className="h-screen relative overflow-hidden bg-black">
+      {/* Glow Effects */}
+      <div className="fixed top-1/4 right-8 w-2 h-0 rounded-full opacity-90 bg-purple-500 shadow-[0_0_250px_100px_rgba(168,85,247,0.35)] pointer-events-none z-0" />
+      <div className="fixed bottom-1/4 left-8 w-2 h-0 rounded-full opacity-90 bg-cyan-400 shadow-[0_0_250px_100px_rgba(34,211,238,0.35)] pointer-events-none z-0" />
+      <div className="fixed top-2/3 right-1/3 w-2 h-0 rounded-full opacity-70 bg-emerald-400 shadow-[0_0_200px_80px_rgba(52,211,153,0.25)] pointer-events-none z-0" />
+
       {/* Animated Background */}
       <div className="absolute inset-0">
         {/* Static visible stars for immediate feedback */}
         <div className="absolute top-20 left-20 w-2 h-2 bg-white rounded-full opacity-80 animate-pulse"></div>
         <div className="absolute top-40 right-32 w-1 h-1 bg-white rounded-full opacity-60 animate-pulse"></div>
         <div className="absolute top-60 left-1/3 w-1 h-1 bg-white rounded-full opacity-70 animate-pulse"></div>
+
+        {/* Twinkling Stars */}
+        <div className="absolute inset-0">
+          {/* Large Stars */}
+          <div className="absolute top-20 left-20 w-1 h-1 bg-white rounded-full animate-pulse opacity-80"></div>
+          <div
+            className="absolute top-40 right-32 w-1 h-1 bg-white rounded-full animate-pulse opacity-60"
+            style={{ animationDelay: "0.5s" }}
+          ></div>
+          <div
+            className="absolute top-60 left-1/3 w-1 h-1 bg-white rounded-full animate-pulse opacity-70"
+            style={{ animationDelay: "1s" }}
+          ></div>
+          <div
+            className="absolute bottom-40 right-20 w-1 h-1 bg-white rounded-full animate-pulse opacity-90"
+            style={{ animationDelay: "1.5s" }}
+          ></div>
+          <div
+            className="absolute bottom-60 left-1/4 w-1 h-1 bg-white rounded-full animate-pulse opacity-75"
+            style={{ animationDelay: "2s" }}
+          ></div>
+          <div
+            className="absolute top-1/3 right-1/4 w-1 h-1 bg-white rounded-full animate-pulse opacity-85"
+            style={{ animationDelay: "2.5s" }}
+          ></div>
+
+          {/* Medium Stars */}
+          <div
+            className="absolute top-32 right-40 w-0.5 h-0.5 bg-white rounded-full animate-pulse opacity-60"
+            style={{ animationDelay: "0.3s" }}
+          ></div>
+          <div
+            className="absolute top-52 left-16 w-0.5 h-0.5 bg-white rounded-full animate-pulse opacity-50"
+            style={{ animationDelay: "0.8s" }}
+          ></div>
+          <div
+            className="absolute bottom-32 left-1/2 w-0.5 h-0.5 bg-white rounded-full animate-pulse opacity-70"
+            style={{ animationDelay: "1.3s" }}
+          ></div>
+          <div
+            className="absolute bottom-20 right-1/3 w-0.5 h-0.5 bg-white rounded-full animate-pulse opacity-55"
+            style={{ animationDelay: "1.8s" }}
+          ></div>
+          <div
+            className="absolute top-1/2 left-8 w-0.5 h-0.5 bg-white rounded-full animate-pulse opacity-65"
+            style={{ animationDelay: "2.3s" }}
+          ></div>
+
+          {/* Small Stars */}
+          <div
+            className="absolute top-24 left-1/2 w-px h-px bg-white opacity-40 animate-pulse"
+            style={{ animationDelay: "0.2s" }}
+          ></div>
+          <div
+            className="absolute top-48 right-16 w-px h-px bg-white opacity-30 animate-pulse"
+            style={{ animationDelay: "0.7s" }}
+          ></div>
+          <div
+            className="absolute bottom-48 left-40 w-px h-px bg-white opacity-45 animate-pulse"
+            style={{ animationDelay: "1.2s" }}
+          ></div>
+          <div
+            className="absolute bottom-24 right-1/2 w-px h-px bg-white opacity-35 animate-pulse"
+            style={{ animationDelay: "1.7s" }}
+          ></div>
+          <div
+            className="absolute top-2/3 right-8 w-px h-px bg-white opacity-40 animate-pulse"
+            style={{ animationDelay: "2.2s" }}
+          ></div>
+        </div>
 
         {/* Moving Stars */}
         <div className="absolute inset-0 overflow-hidden">
@@ -161,11 +249,59 @@ const Hero = () => {
             />
           ))}
         </div>
+
+        {/* Animated Lines */}
+        <div className="absolute inset-0">
+          {/* Horizontal Lines */}
+          <div
+            className="absolute top-1/4 left-1/4 w-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-30 max-w-md"
+            style={{
+              animation: "slideRight 4s infinite linear",
+              animationDelay: "0s",
+            }}
+          ></div>
+          <div
+            className="absolute top-3/4 right-1/4 w-0 h-px bg-gradient-to-l from-transparent via-white to-transparent opacity-25 max-w-md"
+            style={{
+              animation: "slideLeft 5s infinite linear",
+              animationDelay: "2s",
+            }}
+          ></div>
+
+          {/* Diagonal Lines */}
+          {/* <div className="absolute top-1/3 left-0 w-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-20 rotate-12" 
+               style={{
+                 animation: 'slideRight 6s infinite linear',
+                 animationDelay: '1s'
+               }}></div>
+          <div className="absolute bottom-1/3 right-0 w-0 h-px bg-gradient-to-l from-transparent via-white to-transparent opacity-15 -rotate-12" 
+               style={{
+                 animation: 'slideLeft 7s infinite linear',
+                 animationDelay: '3s'
+               }}></div> */}
+        </div>
       </div>
 
       {/* Content */}
       <div className="relative h-full flex items-center justify-center sm:items-end sm:justify-start pb-8 sm:pb-16 md:pb-24 px-3 sm:pl-8 sm:pr-8 md:pl-16 lg:pl-24 z-10">
         <div className="max-w-full sm:max-w-2xl text-center sm:text-left">
+          {/* Kozeo Full Logo */}
+          <div className="mb-6 sm:mb-8 md:mb-10 flex justify-center sm:justify-start">
+            <svg
+              width="400"
+              height="94"
+              viewBox="0 0 625 147"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-64 sm:w-80 md:w-96 lg:w-[400px] h-auto"
+            >
+              <path
+                d="M104.8 145H83.6L33 76.8L18.4 89.6V145H0.400001V2.19999H18.4V72.6C22.4 68.0667 26.4667 63.5333 30.6 59C34.7333 54.4667 38.8667 49.9333 43 45.4L81.6 2.19999H102.6L46 64.4L104.8 145ZM244.922 73.4C244.922 84.4667 243.522 94.5333 240.722 103.6C237.922 112.533 233.722 120.267 228.122 126.8C222.655 133.333 215.789 138.333 207.522 141.8C199.389 145.267 189.922 147 179.122 147C167.922 147 158.189 145.267 149.922 141.8C141.655 138.2 134.789 133.2 129.322 126.8C123.855 120.267 119.789 112.467 117.122 103.4C114.455 94.3333 113.122 84.2667 113.122 73.2C113.122 58.5333 115.522 45.7333 120.322 34.8C125.122 23.8667 132.389 15.3333 142.122 9.2C151.989 3.06666 164.389 -4.76837e-06 179.322 -4.76837e-06C193.589 -4.76837e-06 205.589 3.06666 215.322 9.2C225.055 15.2 232.389 23.7333 237.322 34.8C242.389 45.7333 244.922 58.6 244.922 73.4ZM132.122 73.4C132.122 85.4 133.789 95.7333 137.122 104.4C140.455 113.067 145.589 119.733 152.522 124.4C159.589 129.067 168.455 131.4 179.122 131.4C189.922 131.4 198.722 129.067 205.522 124.4C212.455 119.733 217.589 113.067 220.922 104.4C224.255 95.7333 225.922 85.4 225.922 73.4C225.922 55.4 222.189 41.3333 214.722 31.2C207.255 20.9333 195.455 15.8 179.322 15.8C168.522 15.8 159.589 18.1333 152.522 22.8C145.589 27.3333 140.455 33.9333 137.122 42.6C133.789 51.1333 132.122 61.4 132.122 73.4ZM361.819 145H262.819V131.4L338.019 18.2H265.219V2.19999H359.819V15.8L284.619 129H361.819V145ZM468.872 145H389.072V2.19999H468.872V18H407.072V62.6H465.272V78.2H407.072V129.2H468.872V145ZM624.805 73.4C624.805 84.4667 623.405 94.5333 620.605 103.6C617.805 112.533 613.605 120.267 608.005 126.8C602.538 133.333 595.671 138.333 587.405 141.8C579.271 145.267 569.805 147 559.005 147C547.805 147 538.071 145.267 529.805 141.8C521.538 138.2 514.671 133.2 509.205 126.8C503.738 120.267 499.671 112.467 497.005 103.4C494.338 94.3333 493.005 84.2667 493.005 73.2C493.005 58.5333 495.405 45.7333 500.205 34.8C505.005 23.8667 512.271 15.3333 522.005 9.2C531.871 3.06666 544.271 -4.76837e-06 559.205 -4.76837e-06C573.471 -4.76837e-06 585.471 3.06666 595.205 9.2C604.938 15.2 612.271 23.7333 617.205 34.8C622.271 45.7333 624.805 58.6 624.805 73.4ZM512.005 73.4C512.005 85.4 513.671 95.7333 517.005 104.4C520.338 113.067 525.471 119.733 532.405 124.4C539.471 129.067 548.338 131.4 559.005 131.4C569.805 131.4 578.605 129.067 585.405 124.4C592.338 119.733 597.471 113.067 600.805 104.4C604.138 95.7333 605.805 85.4 605.805 73.4C605.805 55.4 602.071 41.3333 594.605 31.2C587.138 20.9333 575.338 15.8 559.205 15.8C548.405 15.8 539.471 18.1333 532.405 22.8C525.471 27.3333 520.338 33.9333 517.005 42.6C513.671 51.1333 512.005 61.4 512.005 73.4Z"
+                fill="white"
+              />
+            </svg>
+          </div>
+
           <h1 className="text-3xl leading-tight sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-normal sm:leading-tight text-white mb-4 sm:mb-6 md:mb-8">
             Ignore The Noise,
             <br />
@@ -178,13 +314,13 @@ const Hero = () => {
           <div className="flex flex-row gap-3 sm:gap-3 md:gap-4 items-center justify-center sm:justify-start">
             <Link
               href="/Atrium"
-              className="bg-white text-black px-4 py-3 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-full text-sm sm:text-sm md:text-base lg:text-lg font-medium hover:bg-gray-100 transition-all duration-300 hover:scale-105 shadow-lg flex-1 sm:flex-none max-w-[140px] sm:max-w-none"
+              className="bg-white text-black px-4 py-3 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-full text-sm sm:text-sm md:text-base lg:text-lg font-medium hover:bg-gray-100 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] flex-1 sm:flex-none max-w-[140px] sm:max-w-none"
             >
               Start Building
             </Link>
             <Link
               href="/gigs/create"
-              className="border border-white text-white px-4 py-3 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-full text-sm sm:text-sm md:text-base lg:text-lg font-medium hover:bg-white hover:text-black transition-all duration-300 hover:scale-105 flex-1 sm:flex-none max-w-[120px] sm:max-w-none"
+              className="border border-white text-white px-4 py-3 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-full text-sm sm:text-sm md:text-base lg:text-lg font-medium hover:bg-white hover:text-black transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] flex-1 sm:flex-none max-w-[120px] sm:max-w-none"
             >
               Post Project
             </Link>
@@ -197,6 +333,7 @@ const Hero = () => {
 
 export default function Home() {
   const { isVisible } = useScrollAnimation();
+  const [isLoading, setIsLoading] = useState(true);
 
   const orgLd = {
     "@context": "https://schema.org",
@@ -209,7 +346,19 @@ export default function Home() {
 
   return (
     <>
-      <div>
+      {isLoading && (
+        <PageLoader
+          duration={2500}
+          onComplete={() => setIsLoading(false)}
+          useSlideAnimation={true}
+        />
+      )}
+
+      <div
+        className={`transition-opacity duration-1000 ${
+          isLoading ? "opacity-0" : "opacity-100"
+        }`}
+      >
         <Navbar />
         <main>
           <div
@@ -379,13 +528,13 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 justify-center items-center">
                 <Link
                   href="/Atrium"
-                  className="bg-white text-black px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-medium hover:bg-gray-100 transition-colors w-fit"
+                  className="bg-white text-black px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-medium hover:bg-gray-100 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] w-fit"
                 >
                   Start Building Your Profile
                 </Link>
                 <Link
                   href="/gigs/create"
-                  className="border border-white text-white px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-medium hover:bg-white hover:text-black transition-colors w-fit"
+                  className="border border-white text-white px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-medium hover:bg-white hover:text-black transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] w-fit"
                 >
                   Post a Project
                 </Link>
@@ -411,7 +560,8 @@ export default function Home() {
               </div>
 
               <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
+                {/* Desktop Table View */}
+                <div className="hidden md:grid grid-cols-3 gap-0">
                   <div className="p-6 font-semibold text-gray-500 bg-gray-50">
                     Feature
                   </div>
@@ -447,6 +597,44 @@ export default function Home() {
                     ✓
                   </div>
                   <div className="p-6 border-t text-center text-red-500">✗</div>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden p-4 space-y-4">
+                  {[
+                    "Profile-First Approach",
+                    "Resume-Enhancing Work",
+                    "No Upfront Cost for Posters",
+                    "Proof of Domain Expertise",
+                  ].map((feature, index) => (
+                    <div key={index} className="bg-gray-50 rounded-lg p-4">
+                      <h3 className="font-semibold text-gray-900 mb-3">
+                        {feature}
+                      </h3>
+                      <div className="flex justify-between items-center">
+                        <div className="flex flex-col items-center flex-1">
+                          <span className="text-sm font-medium text-gray-600 mb-1">
+                            Kozeo
+                          </span>
+                          <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+                            <span className="text-white font-bold text-lg">
+                              ✓
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-center flex-1">
+                          <span className="text-sm font-medium text-gray-600 mb-1">
+                            Traditional
+                          </span>
+                          <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                            <span className="text-white font-bold text-lg">
+                              ✗
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

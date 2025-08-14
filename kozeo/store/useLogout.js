@@ -22,7 +22,7 @@ export const useLogout = () => {
     // Optional: redirect to login
     if (typeof window !== "undefined") {
       console.log("Redirecting to login page");
-      window.location.href = "/login";
+      window.location.href = "/";
     }
   };
 
