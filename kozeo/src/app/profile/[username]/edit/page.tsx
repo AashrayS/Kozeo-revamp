@@ -34,7 +34,7 @@ export default function EditProfilePage() {
     first_name: "",
     last_name: "",
     phone: "",
-    country_code: "",
+    country_Code: "+91", // Default to India
     bio: "",
     resume: "",
     links: [{ website: "", url: "" }],
@@ -82,7 +82,7 @@ export default function EditProfilePage() {
             first_name: profileData.first_name || "",
             last_name: profileData.last_name || "",
             phone: profileData.phone || "",
-            country_code: profileData.country_Code || "",
+            country_Code: profileData.country_Code || "+91", // Default to India if no country code exists
             bio: profileData.bio || "",
             resume: profileData.resume || "",
             links:
@@ -165,7 +165,7 @@ export default function EditProfilePage() {
         first_name: form.first_name,
         last_name: form.last_name,
         phone: form.phone,
-        country_code: form.country_code,
+        country_Code: form.country_Code,
         bio: form.bio,
         resume: form.resume,
         links: form.links.filter((link) => link.url).map((link) => link.url),
@@ -450,9 +450,9 @@ export default function EditProfilePage() {
                         style={baseInputStyle(currentTheme)}
                       />
                       <select
-                        value={form.country_code}
+                        value={form.country_Code}
                         onChange={(e) =>
-                          setForm({ ...form, country_code: e.target.value })
+                          setForm({ ...form, country_Code: e.target.value })
                         }
                         className="p-3 rounded-md border"
                         style={baseInputStyle(currentTheme)}
