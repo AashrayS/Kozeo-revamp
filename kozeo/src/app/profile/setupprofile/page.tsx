@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import Header from "../../../components/common/Header";
 import { useRouter } from "next/navigation";
 import {
@@ -9,12 +9,18 @@ import {
 } from "../../../../utilities/kozeoApi";
 import { isAuthenticated } from "../../../../utilities/api";
 import { FiPlus, FiX } from "react-icons/fi";
+import { FaCamera, FaUpload, FaTimes } from "react-icons/fa";
 import { useTheme } from "@/contexts/ThemeContext";
 import { PageLoader } from "../../../components/common/PageLoader";
+import {
+  uploadImageToS3,
+  validateImageFile,
+} from "../../../../utilities/helper.js";
 
 export default function ProfileSetupPage() {
   const router = useRouter();
   const { theme } = useTheme();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -22,6 +28,13 @@ export default function ProfileSetupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [uploadProgress, setUploadProgress] = useState<string>("");
+
+  // Profile image states
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  const [isProfileImageUpdated, setIsProfileImageUpdated] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const [form, setForm] = useState({
     first_name: "",
@@ -57,6 +70,11 @@ export default function ProfileSetupPage() {
           resume: (user as any).resume || "",
           links: (user as any).links || [],
         });
+
+        // Set existing profile image if available
+        if ((user as any).profile_Picture) {
+          setProfileImage((user as any).profile_Picture);
+        }
       } catch (error) {
         console.error("Error loading user:", error);
         setError("Failed to load user data");
@@ -95,10 +113,74 @@ export default function ProfileSetupPage() {
     }));
   };
 
+  // Image upload handlers
+  const handleImageUpload = (file: File) => {
+    if (!file) {
+      setError("Please select a valid file");
+      return;
+    }
+
+    // Validate the image file using our helper function
+    const validation = validateImageFile(file, {
+      maxSize: 5 * 1024 * 1024, // 5MB
+      allowedTypes: [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+      ],
+    }) as { isValid: boolean; errors: string[] };
+
+    if (!validation.isValid) {
+      setError(`Upload failed: ${validation.errors.join(", ")}`);
+      return;
+    }
+
+    // Store the file object for later S3 upload
+    setProfileImageFile(file);
+    setIsProfileImageUpdated(true);
+
+    // Create preview for UI
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setProfileImage(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
+    setUploadProgress("");
 
     if (!currentUser) {
       setError("User data not loaded");
@@ -114,12 +196,43 @@ export default function ProfileSetupPage() {
     setIsSubmitting(true);
 
     try {
+      let profilePictureUrl = form.profile_Picture;
+
+      // If profile picture has been updated, upload to S3 first
+      if (isProfileImageUpdated && profileImageFile) {
+        try {
+          setUploadProgress("Uploading profile picture...");
+          console.log("Uploading profile picture to S3...");
+          profilePictureUrl = await uploadImageToS3(
+            profileImageFile,
+            "profile-pictures"
+          );
+          console.log(
+            "Profile picture uploaded successfully:",
+            profilePictureUrl
+          );
+          setUploadProgress("Profile picture uploaded successfully!");
+        } catch (uploadError) {
+          console.error("S3 upload failed:", uploadError);
+          setError(
+            `Failed to upload profile picture: ${
+              (uploadError as Error).message
+            }`
+          );
+          setIsSubmitting(false);
+          setUploadProgress("");
+          return;
+        }
+      }
+
+      setUploadProgress("Updating profile...");
+
       const updateData = {
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
         bio: form.bio.trim(),
         phone: form.phone.trim(),
-        profile_Picture: form.profile_Picture.trim(),
+        profile_Picture: profilePictureUrl,
         resume: form.resume.trim(),
         links: form.links,
       };
@@ -127,12 +240,18 @@ export default function ProfileSetupPage() {
       await updateUserProfile((currentUser as any).id, updateData);
       setSuccess("Profile updated successfully!");
 
+      // Reset the update flags
+      setIsProfileImageUpdated(false);
+      setProfileImageFile(null);
+      setUploadProgress("");
+
       // Redirect to profile page after a short delay
       setTimeout(() => {
         router.push(`/profile/${(currentUser as any).username}`);
       }, 2000);
     } catch (error: any) {
       setError(error?.message || "Failed to update profile. Please try again.");
+      setUploadProgress("");
     } finally {
       setIsSubmitting(false);
     }
@@ -283,23 +402,99 @@ export default function ProfileSetupPage() {
                   />
                 </div>
 
-                {/* Profile Picture URL */}
+                {/* Profile Picture Section */}
                 <div className="mb-6">
-                  <label
-                    htmlFor="profile_Picture"
-                    className="block text-sm font-medium mb-2"
-                  >
-                    Profile Picture URL
+                  <label className="block text-sm font-medium mb-4">
+                    Profile Picture
                   </label>
-                  <input
-                    type="url"
-                    id="profile_Picture"
-                    name="profile_Picture"
-                    value={form.profile_Picture}
-                    onChange={handleInputChange}
-                    placeholder="https://example.com/your-photo.jpg"
-                    className="w-full p-3 rounded-md border border-neutral-700 bg-neutral-900 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  />
+
+                  <div className="flex flex-col lg:flex-row items-center lg:items-start space-y-6 lg:space-y-0 lg:space-x-6">
+                    {/* Avatar Display */}
+                    <div className="relative">
+                      <div className="w-24 h-24 bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full flex items-center justify-center overflow-hidden">
+                        {profileImage ? (
+                          <img
+                            src={profileImage}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-white text-2xl font-bold">
+                            {currentUser?.username
+                              ? currentUser.username.charAt(0).toUpperCase()
+                              : "U"}
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute bottom-1 right-1 w-8 h-8 bg-neutral-800 hover:bg-neutral-700 rounded-full flex items-center justify-center transition-colors border-2 border-neutral-600"
+                      >
+                        <FaCamera className="text-white text-xs" />
+                      </button>
+                    </div>
+
+                    {/* Upload Section */}
+                    <div className="flex-1 w-full">
+                      <div
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        className={`relative border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
+                          isDragging
+                            ? "border-cyan-400 bg-cyan-400/10"
+                            : "border-neutral-600 hover:border-neutral-500"
+                        }`}
+                      >
+                        <FaUpload className="mx-auto text-gray-400 text-xl mb-2" />
+                        <p className="text-gray-300 mb-1 text-sm">
+                          Drag and drop your image here
+                        </p>
+                        <p className="text-gray-500 text-xs mb-3">or</p>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-md transition text-sm"
+                        >
+                          Browse Files
+                        </button>
+                      </div>
+
+                      {profileImage && (
+                        <div className="flex gap-2 mt-3">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="px-3 py-1 bg-neutral-700 hover:bg-neutral-600 text-white rounded-md transition text-sm"
+                          >
+                            Change
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setProfileImage(null);
+                              setProfileImageFile(null);
+                              setIsProfileImageUpdated(false);
+                            }}
+                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md transition text-sm flex items-center gap-1"
+                          >
+                            <FaTimes className="text-xs" />
+                            Remove
+                          </button>
+                        </div>
+                      )}
+
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileInputChange}
+                        className="hidden"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Resume URL */}
@@ -396,9 +591,16 @@ export default function ProfileSetupPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 py-3 px-6 bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md transition"
+                    className="flex-1 py-3 px-6 bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md transition flex items-center justify-center gap-2"
                   >
-                    {isSubmitting ? "Updating..." : "Save Profile"}
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        {uploadProgress || "Saving..."}
+                      </>
+                    ) : (
+                      "Save Profile"
+                    )}
                   </button>
                 </div>
               </div>

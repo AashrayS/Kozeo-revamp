@@ -294,7 +294,7 @@ export default function LoginSignupPage() {
           <div className="w-full sm:w-[90%] md:w-4/10 h-full relative flex flex-col items-center justify-center px-6 py-10 overflow-hidden bg-transparent  rounded-2xl ">
             <div className="mb-8 md:mb-12">
               <Image
-                src="/logofial.svg"
+                src="/logoFial.svg"
                 alt="Kozeo Full Logo"
                 width={625}
                 height={147}

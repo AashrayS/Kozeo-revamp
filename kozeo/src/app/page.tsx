@@ -281,7 +281,7 @@ const Hero = () => {
           {/* Kozeo Combined Logo */}
           <div className="mb-6 sm:mb-8 md:mb-10 flex items-center justify-center sm:justify-start w-full sm:-ml-8  lg:-ml-8 xl:-ml-12">
             <Image
-              src="/logofial.svg"
+              src="/logoFial.svg"
               alt="Kozeo Full Logo"
               width={625}
               height={147}
