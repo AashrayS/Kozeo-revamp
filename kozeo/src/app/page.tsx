@@ -128,7 +128,7 @@ const Navbar = () => {
             Login
           </Link>
           <Link
-            href="/profile/setupprofile"
+            href="/login"
             className={`rounded-full px-2 py-1 sm:px-6 sm:py-2 text-xs sm:text-base transition-all duration-300 hover:scale-105 ${
               isOnDarkBackground
                 ? "bg-white text-black hover:bg-gray-100 hover:shadow-lg"
@@ -157,15 +157,12 @@ const Hero = () => {
         {/* Twinkling stars for immediate feedback */}
         <div
           className="absolute top-20 left-20 w-2 h-2 bg-white rounded-full animate-twinkle"
-          style={{ animationDelay: "0s" }}
         ></div>
         <div
           className="absolute top-40 right-32 w-1 h-1 bg-white rounded-full animate-twinkle"
-          style={{ animationDelay: "0.5s" }}
         ></div>
         <div
           className="absolute top-60 left-1/3 w-1 h-1 bg-white rounded-full animate-twinkle"
-          style={{ animationDelay: "1s" }}
         ></div>
 
         {/* Twinkling Stars */}
@@ -173,71 +170,55 @@ const Hero = () => {
           {/* Large Stars */}
           <div
             className="absolute top-20 left-20 w-1 h-1 bg-white rounded-full animate-twinkle"
-            style={{ animationDelay: "0s" }}
           ></div>
           <div
             className="absolute top-40 right-32 w-1 h-1 bg-white rounded-full animate-twinkle"
-            style={{ animationDelay: "0.5s" }}
           ></div>
           <div
             className="absolute top-60 left-1/3 w-1 h-1 bg-white rounded-full animate-twinkle"
-            style={{ animationDelay: "1s" }}
           ></div>
           <div
             className="absolute bottom-40 right-20 w-1 h-1 bg-white rounded-full animate-twinkle"
-            style={{ animationDelay: "1.5s" }}
           ></div>
           <div
             className="absolute bottom-60 left-1/4 w-1 h-1 bg-white rounded-full animate-twinkle"
-            style={{ animationDelay: "2s" }}
           ></div>
           <div
             className="absolute top-1/3 right-1/4 w-1 h-1 bg-white rounded-full animate-twinkle"
-            style={{ animationDelay: "2.5s" }}
           ></div>
 
           {/* Medium Stars */}
           <div
             className="absolute top-32 right-40 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"
-            style={{ animationDelay: "0.3s" }}
           ></div>
           <div
             className="absolute top-52 left-16 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"
-            style={{ animationDelay: "0.8s" }}
           ></div>
           <div
             className="absolute bottom-32 left-1/2 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"
-            style={{ animationDelay: "1.3s" }}
           ></div>
           <div
             className="absolute bottom-20 right-1/3 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"
-            style={{ animationDelay: "1.8s" }}
           ></div>
           <div
             className="absolute top-1/2 left-8 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"
-            style={{ animationDelay: "2.3s" }}
           ></div>
 
           {/* Small Stars */}
           <div
             className="absolute top-24 left-1/2 w-px h-px bg-white animate-twinkle"
-            style={{ animationDelay: "0.2s" }}
           ></div>
           <div
             className="absolute top-48 right-16 w-px h-px bg-white animate-twinkle"
-            style={{ animationDelay: "0.7s" }}
           ></div>
           <div
             className="absolute bottom-48 left-40 w-px h-px bg-white animate-twinkle"
-            style={{ animationDelay: "1.2s" }}
           ></div>
           <div
             className="absolute bottom-24 right-1/2 w-px h-px bg-white animate-twinkle"
-            style={{ animationDelay: "1.7s" }}
           ></div>
           <div
             className="absolute top-2/3 right-8 w-px h-px bg-white animate-twinkle"
-            style={{ animationDelay: "2.2s" }}
           ></div>
         </div>
 
@@ -320,13 +301,13 @@ const Hero = () => {
           </p>
           <div className="flex flex-row gap-3 sm:gap-3 md:gap-4 items-center justify-center sm:justify-start">
             <Link
-              href="/Atrium"
+              href="/login"
               className="bg-white text-black px-4 py-3 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-full text-sm sm:text-sm md:text-base lg:text-lg font-medium hover:bg-gray-100 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] flex-1 sm:flex-none max-w-[140px] sm:max-w-none"
             >
               Start Building
             </Link>
             <Link
-              href="/projects/create"
+              href="/login"
               className="border border-white text-white px-4 py-3 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-full text-sm sm:text-sm md:text-base lg:text-lg font-medium hover:bg-white hover:text-black transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] flex-1 sm:flex-none max-w-[120px] sm:max-w-none"
             >
               Post Project
@@ -534,13 +515,13 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 justify-center items-center">
                 <Link
-                  href="/Atrium"
+                  href="/login"
                   className="bg-white text-black px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-medium hover:bg-gray-100 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] w-fit"
                 >
                   Start Building Your Profile
                 </Link>
                 <Link
-                  href="/projects/create"
+                  href="/login"
                   className="border border-white text-white px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-full text-xs sm:text-sm md:text-base lg:text-lg font-medium hover:bg-white hover:text-black transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] w-fit"
                 >
                   Post a Project
@@ -651,7 +632,7 @@ export default function Home() {
         <footer className="border-t">
           <div className="container mx-auto py-8 px-4 text-sm text-gray-600 flex items-center justify-between">
             <span>© {new Date().getFullYear()} Kozeo</span>
-            <a href="#" className="hover:underline">
+            <a href="/" className="hover:underline">
               Back to top
             </a>
           </div>

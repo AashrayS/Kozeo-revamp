@@ -18,6 +18,8 @@ import {
   FiX,
   FiSearch,
   FiEye,
+  FiChevronDown,
+  FiChevronUp,
 } from "react-icons/fi";
 import {
   getUserByUsername,
@@ -202,6 +204,17 @@ export default function UserProfilePage() {
   const [skillSearchQuery, setSkillSearchQuery] = useState("");
   const [showAllHostedGigs, setShowAllHostedGigs] = useState(false);
   const [showAllCollaboratedGigs, setShowAllCollaboratedGigs] = useState(false);
+  const [showAllOngoingProjects, setShowAllOngoingProjects] = useState(false);
+
+  // Collapse state for sections
+  const [isHostedSectionCollapsed, setIsHostedSectionCollapsed] =
+    useState(false);
+  const [
+    isCollaborationsSectionCollapsed,
+    setIsCollaborationsSectionCollapsed,
+  ] = useState(false);
+  const [isOngoingSectionCollapsed, setIsOngoingSectionCollapsed] =
+    useState(false);
 
   // Wallet-related state
   const [walletData, setWalletData] = useState<any>(null);
@@ -420,6 +433,10 @@ export default function UserProfilePage() {
     setShowAllCollaboratedGigs((prev) => !prev);
   };
 
+  const toggleOngoingProjects = () => {
+    setShowAllOngoingProjects((prev) => !prev);
+  };
+
   // Filter hosted gigs based on selected skills and exclude gigs with no reviews
   const filteredHostedGigs = useMemo(() => {
     let gigs = profile?.gigsHosted || [];
@@ -450,6 +467,30 @@ export default function UserProfilePage() {
     );
   }, [profile?.gigsCollaborated, selectedSkills]);
 
+  // Filter ongoing projects (gigs with no reviews) based on selected skills
+  const filteredOngoingProjects = useMemo(() => {
+    // Combine both hosted and collaborated gigs
+    const allGigs = [
+      ...(profile?.gigsHosted || []).map((gig) => ({ ...gig, type: "hosted" })),
+      ...(profile?.gigsCollaborated || []).map((gig) => ({
+        ...gig,
+        type: "collaborated",
+      })),
+    ];
+
+    // Filter to only include gigs with no reviews
+    let ongoingGigs = allGigs.filter(
+      (gig) => !gig.reviews || gig.reviews.length === 0
+    );
+
+    // Apply skills filter if any skills are selected
+    if (selectedSkills.length === 0) return ongoingGigs;
+
+    return ongoingGigs.filter((gig) =>
+      selectedSkills.some((skill) => gig.skills && gig.skills.includes(skill))
+    );
+  }, [profile?.gigsHosted, profile?.gigsCollaborated, selectedSkills]);
+
   // Display arrays that limit to 5 gigs when collapsed
   const displayedHostedGigs = useMemo(() => {
     return showAllHostedGigs
@@ -462,6 +503,12 @@ export default function UserProfilePage() {
       ? filteredCollaboratedGigs
       : filteredCollaboratedGigs.slice(0, 5);
   }, [filteredCollaboratedGigs, showAllCollaboratedGigs]);
+
+  const displayedOngoingProjects = useMemo(() => {
+    return showAllOngoingProjects
+      ? filteredOngoingProjects
+      : filteredOngoingProjects.slice(0, 5);
+  }, [filteredOngoingProjects, showAllOngoingProjects]);
 
   if (loading) {
     return (
@@ -853,7 +900,7 @@ export default function UserProfilePage() {
                           : "border-neutral-600 text-gray-300 hover:bg-neutral-800"
                       }`}
                     >
-                      Browse Gigs
+                      Browse Projects
                     </button>
                   </div>
                 </div>
@@ -1400,164 +1447,196 @@ export default function UserProfilePage() {
                       : "bg-neutral-900/70 border-neutral-800"
                   }`}
                 >
-                  <h3
-                    className={`text-2xl font-light tracking-tight mb-6 flex items-center gap-3 ${
-                      theme === "light" ? "text-gray-900" : "text-white"
-                    }`}
-                  >
-                    <FiUsers className="text-cyan-400" />
-                    Projects Hosted ({filteredHostedGigs.length}
-                    {selectedSkills.length > 0
-                      ? ` of ${profile.gigsHosted.length}`
-                      : ""}
-                    )
-                    {selectedSkills.length > 0 && (
-                      <span
-                        className={`text-sm font-normal ${
-                          theme === "light" ? "text-gray-600" : "text-gray-400"
-                        }`}
-                      >
-                        - Filtered by skills
-                      </span>
-                    )}
-                  </h3>
-                  <div className="space-y-6">
-                    {displayedHostedGigs.map((gig, index) => (
-                      <div
-                        key={index}
-                        className={`p-4 md:p-6 rounded-xl border backdrop-blur-sm theme-transition ${
-                          theme === "light"
-                            ? "bg-white/60 border-gray-200/50 hover:bg-white/80"
-                            : "bg-neutral-800/30 border-neutral-700/50 hover:bg-neutral-800/50"
-                        }`}
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                          <h4
-                            className={`text-lg font-medium theme-transition ${
-                              theme === "light" ? "text-gray-900" : "text-white"
-                            }`}
-                          >
-                            {gig.title}
-                          </h4>
-                          <div className="flex items-center gap-1">
-                            <FiStar
-                              className="text-yellow-400 text-sm"
-                              fill="currentColor"
-                            />
-                            <span className="text-sm text-yellow-400 font-medium">
-                              {gig.reviews && gig.reviews.length > 0
-                                ? (
-                                    gig.reviews.reduce(
-                                      (sum: number, review: any) =>
-                                        sum + review.rating,
-                                      0
-                                    ) / gig.reviews.length
-                                  ).toFixed(1)
-                                : "No rating"}
-                            </span>
-                          </div>
-                        </div>
-                        <p
-                          className={`text-sm mb-3 leading-relaxed theme-transition ${
+                  <div className="flex items-center justify-between mb-6">
+                    <h3
+                      className={`text-2xl font-light tracking-tight flex items-center gap-3 ${
+                        theme === "light" ? "text-gray-900" : "text-white"
+                      }`}
+                    >
+                      <FiUsers className="text-cyan-400" />
+                      Projects Hosted ({filteredHostedGigs.length}
+                      {selectedSkills.length > 0
+                        ? ` of ${profile.gigsHosted.length}`
+                        : ""}
+                      )
+                      {selectedSkills.length > 0 && (
+                        <span
+                          className={`text-sm font-normal ${
                             theme === "light"
                               ? "text-gray-600"
-                              : "text-gray-300"
-                          }`}
-                        >
-                          {gig.description}
-                        </p>
-                        <div
-                          className={`text-sm mb-4 theme-transition ${
-                            theme === "light"
-                              ? "text-gray-500"
                               : "text-gray-400"
                           }`}
                         >
-                          Looking for:{" "}
-                          <span className="text-cyan-400 font-medium">
-                            {gig.looking_For}
-                          </span>
-                        </div>
-                        {/* Skills Tags */}
-                        {gig.skills && gig.skills.length > 0 && (
-                          <div className="mb-4">
-                            <div className="flex flex-wrap gap-2">
-                              {gig.skills.map(
-                                (skill: string, skillIdx: number) => (
-                                  <span
-                                    key={skillIdx}
-                                    className={`px-2 py-1 text-xs rounded-full font-medium border theme-transition ${
-                                      selectedSkills.includes(skill)
-                                        ? theme === "light"
-                                          ? "bg-yellow-100 border-yellow-300 text-yellow-800"
-                                          : "bg-yellow-900/50 border-yellow-600/50 text-yellow-300"
-                                        : theme === "light"
-                                        ? "bg-cyan-50 border-cyan-200 text-cyan-700"
-                                        : "bg-cyan-950/50 border-cyan-800/50 text-cyan-300"
-                                    }`}
-                                  >
-                                    {skill}
-                                  </span>
-                                )
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        {gig.reviews && gig.reviews.length > 0 && (
+                          - Filtered by skills
+                        </span>
+                      )}
+                    </h3>
+                    <button
+                      onClick={() =>
+                        setIsHostedSectionCollapsed(!isHostedSectionCollapsed)
+                      }
+                      className={`p-2 rounded-lg transition-all duration-200 hover:scale-105 ${
+                        theme === "light"
+                          ? "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                          : "text-gray-400 hover:text-gray-200 hover:bg-neutral-800"
+                      }`}
+                      title={
+                        isHostedSectionCollapsed
+                          ? "Expand section"
+                          : "Collapse section"
+                      }
+                    >
+                      {isHostedSectionCollapsed ? (
+                        <FiChevronDown className="text-lg" />
+                      ) : (
+                        <FiChevronUp className="text-lg" />
+                      )}
+                    </button>
+                  </div>
+
+                  {!isHostedSectionCollapsed && (
+                    <>
+                      <div className="space-y-6">
+                        {displayedHostedGigs.map((gig, index) => (
                           <div
-                            className={`p-4 border rounded-lg backdrop-blur-sm theme-transition ${
+                            key={index}
+                            className={`p-4 md:p-6 rounded-xl border backdrop-blur-sm theme-transition ${
                               theme === "light"
-                                ? "bg-gray-50/80 border-gray-200/50"
-                                : "bg-neutral-900/50 border-neutral-700/50"
+                                ? "bg-white/60 border-gray-200/50 hover:bg-white/80"
+                                : "bg-neutral-800/30 border-neutral-700/50 hover:bg-neutral-800/50"
                             }`}
                           >
-                            <div
-                              className={`text-sm font-medium mb-2 theme-transition ${
-                                theme === "light"
-                                  ? "text-gray-900"
-                                  : "text-white"
-                              }`}
-                            >
-                              "{gig.reviews[0].title}"
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                              <h4
+                                className={`text-lg font-medium theme-transition ${
+                                  theme === "light"
+                                    ? "text-gray-900"
+                                    : "text-white"
+                                }`}
+                              >
+                                {gig.title}
+                              </h4>
+                              <div className="flex items-center gap-1">
+                                <FiStar
+                                  className="text-yellow-400 text-sm"
+                                  fill="currentColor"
+                                />
+                                <span className="text-sm text-yellow-400 font-medium">
+                                  {gig.reviews && gig.reviews.length > 0
+                                    ? (
+                                        gig.reviews.reduce(
+                                          (sum: number, review: any) =>
+                                            sum + review.rating,
+                                          0
+                                        ) / gig.reviews.length
+                                      ).toFixed(1)
+                                    : "No rating"}
+                                </span>
+                              </div>
                             </div>
-                            <div
-                              className={`text-sm mb-2 theme-transition ${
+                            <p
+                              className={`text-sm mb-3 leading-relaxed theme-transition ${
                                 theme === "light"
                                   ? "text-gray-600"
                                   : "text-gray-300"
                               }`}
                             >
-                              {gig.reviews[0].description}
+                              {gig.description}
+                            </p>
+                            <div
+                              className={`text-sm mb-4 theme-transition ${
+                                theme === "light"
+                                  ? "text-gray-500"
+                                  : "text-gray-400"
+                              }`}
+                            >
+                              Looking for:{" "}
+                              <span className="text-cyan-400 font-medium">
+                                {gig.looking_For}
+                              </span>
                             </div>
-                            <div className="text-sm text-cyan-400 font-medium">
-                              - @{gig.reviews[0].author?.username}
-                            </div>
+                            {/* Skills Tags */}
+                            {gig.skills && gig.skills.length > 0 && (
+                              <div className="mb-4">
+                                <div className="flex flex-wrap gap-2">
+                                  {gig.skills.map(
+                                    (skill: string, skillIdx: number) => (
+                                      <span
+                                        key={skillIdx}
+                                        className={`px-2 py-1 text-xs rounded-full font-medium border theme-transition ${
+                                          selectedSkills.includes(skill)
+                                            ? theme === "light"
+                                              ? "bg-yellow-100 border-yellow-300 text-yellow-800"
+                                              : "bg-yellow-900/50 border-yellow-600/50 text-yellow-300"
+                                            : theme === "light"
+                                            ? "bg-cyan-50 border-cyan-200 text-cyan-700"
+                                            : "bg-cyan-950/50 border-cyan-800/50 text-cyan-300"
+                                        }`}
+                                      >
+                                        {skill}
+                                      </span>
+                                    )
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            {gig.reviews && gig.reviews.length > 0 && (
+                              <div
+                                className={`p-4 border rounded-lg backdrop-blur-sm theme-transition ${
+                                  theme === "light"
+                                    ? "bg-gray-50/80 border-gray-200/50"
+                                    : "bg-neutral-900/50 border-neutral-700/50"
+                                }`}
+                              >
+                                <div
+                                  className={`text-sm font-medium mb-2 theme-transition ${
+                                    theme === "light"
+                                      ? "text-gray-900"
+                                      : "text-white"
+                                  }`}
+                                >
+                                  "{gig.reviews[0].title}"
+                                </div>
+                                <div
+                                  className={`text-sm mb-2 theme-transition ${
+                                    theme === "light"
+                                      ? "text-gray-600"
+                                      : "text-gray-300"
+                                  }`}
+                                >
+                                  {gig.reviews[0].description}
+                                </div>
+                                <div className="text-sm text-cyan-400 font-medium">
+                                  - @{gig.reviews[0].author?.username}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
+                        ))}
                       </div>
-                    ))}
-                  </div>
 
-                  {/* Load More / Show Less button for Hosted Gigs */}
-                  {filteredHostedGigs.length > 5 && (
-                    <div className="mt-6 flex justify-center">
-                      <button
-                        onClick={toggleHostedGigs}
-                        className={`px-6 py-3 text-sm font-medium rounded-lg border transition-all duration-200 ${
-                          theme === "light"
-                            ? "bg-white/60 border-gray-200/50 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-300"
-                            : "bg-neutral-800/50 border-neutral-700/50 text-cyan-400 hover:bg-cyan-950/30 hover:border-cyan-600/50"
-                        }`}
-                      >
-                        {showAllHostedGigs
-                          ? `Show Less (${
-                              filteredHostedGigs.length - 5
-                            } hidden)`
-                          : `Load More Projects (${
-                              filteredHostedGigs.length - 5
-                            } more)`}
-                      </button>
-                    </div>
+                      {/* Load More / Show Less button for Hosted Gigs */}
+                      {filteredHostedGigs.length > 5 && (
+                        <div className="mt-6 flex justify-center">
+                          <button
+                            onClick={toggleHostedGigs}
+                            className={`px-6 py-3 text-sm font-medium rounded-lg border transition-all duration-200 ${
+                              theme === "light"
+                                ? "bg-white/60 border-gray-200/50 text-cyan-600 hover:bg-cyan-50 hover:border-cyan-300"
+                                : "bg-neutral-800/50 border-neutral-700/50 text-cyan-400 hover:bg-cyan-950/30 hover:border-cyan-600/50"
+                            }`}
+                          >
+                            {showAllHostedGigs
+                              ? `Show Less (${
+                                  filteredHostedGigs.length - 5
+                                } hidden)`
+                              : `Load More Projects (${
+                                  filteredHostedGigs.length - 5
+                                } more)`}
+                          </button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </section>
 
@@ -1569,168 +1648,430 @@ export default function UserProfilePage() {
                       : "bg-neutral-900/70 border-neutral-800"
                   }`}
                 >
-                  <h3
-                    className={`text-2xl font-light tracking-tight mb-6 flex items-center gap-3 ${
-                      theme === "light" ? "text-gray-900" : "text-white"
-                    }`}
-                  >
-                    <FiUsers className="text-purple-400" />
-                    Collaborations ({filteredCollaboratedGigs.length}
-                    {selectedSkills.length > 0
-                      ? ` of ${profile.gigsCollaborated?.length || 0}`
-                      : ""}
-                    )
-                    {selectedSkills.length > 0 && (
-                      <span
-                        className={`text-sm font-normal ${
-                          theme === "light" ? "text-gray-600" : "text-gray-400"
-                        }`}
-                      >
-                        - Filtered by skills
-                      </span>
-                    )}
-                  </h3>
-                  <div className="space-y-6">
-                    {displayedCollaboratedGigs.map(
-                      (gig: any, index: number) => (
-                        <div
-                          key={index}
-                          className={`p-4 md:p-6 rounded-xl border backdrop-blur-sm theme-transition ${
+                  <div className="flex items-center justify-between mb-6">
+                    <h3
+                      className={`text-2xl font-light tracking-tight flex items-center gap-3 ${
+                        theme === "light" ? "text-gray-900" : "text-white"
+                      }`}
+                    >
+                      <FiUsers className="text-purple-400" />
+                      Collaborations ({filteredCollaboratedGigs.length}
+                      {selectedSkills.length > 0
+                        ? ` of ${profile.gigsCollaborated?.length || 0}`
+                        : ""}
+                      )
+                      {selectedSkills.length > 0 && (
+                        <span
+                          className={`text-sm font-normal ${
                             theme === "light"
-                              ? "bg-white/60 border-gray-200/50 hover:bg-white/80"
-                              : "bg-neutral-800/30 border-neutral-700/50 hover:bg-neutral-800/50"
+                              ? "text-gray-600"
+                              : "text-gray-400"
                           }`}
                         >
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                            <h4
-                              className={`text-lg font-medium theme-transition ${
-                                theme === "light"
-                                  ? "text-gray-900"
-                                  : "text-white"
-                              }`}
-                            >
-                              {gig.title}
-                            </h4>
-                            <div className="flex items-center gap-1">
-                              <FiStar
-                                className="text-yellow-400 text-sm"
-                                fill="currentColor"
-                              />
-                              <span className="text-sm text-yellow-400 font-medium">
-                                {gig.reviews && gig.reviews.length > 0
-                                  ? (
-                                      gig.reviews.reduce(
-                                        (sum: number, review: any) =>
-                                          sum + review.rating,
-                                        0
-                                      ) / gig.reviews.length
-                                    ).toFixed(1)
-                                  : "No rating"}
-                              </span>
-                            </div>
-                          </div>
-                          <p
-                            className={`text-sm mb-3 leading-relaxed theme-transition ${
-                              theme === "light"
-                                ? "text-gray-600"
-                                : "text-gray-300"
-                            }`}
-                          >
-                            {gig.description}
-                          </p>
-                          <div
-                            className={`text-sm mb-4 theme-transition ${
-                              theme === "light"
-                                ? "text-gray-500"
-                                : "text-gray-400"
-                            }`}
-                          >
-                            Looking for:{" "}
-                            <span className="text-purple-400 font-medium">
-                              {gig.looking_For}
-                            </span>
-                          </div>
-                          {/* Skills Tags */}
-                          {gig.skills && gig.skills.length > 0 && (
-                            <div className="mb-4">
-                              <div className="flex flex-wrap gap-2">
-                                {gig.skills.map(
-                                  (skill: string, skillIdx: number) => (
-                                    <span
-                                      key={skillIdx}
-                                      className={`px-2 py-1 text-xs rounded-full font-medium border theme-transition ${
-                                        selectedSkills.includes(skill)
-                                          ? theme === "light"
-                                            ? "bg-yellow-100 border-yellow-300 text-yellow-800"
-                                            : "bg-yellow-900/50 border-yellow-600/50 text-yellow-300"
-                                          : theme === "light"
-                                          ? "bg-purple-50 border-purple-200 text-purple-700"
-                                          : "bg-purple-950/50 border-purple-800/50 text-purple-300"
-                                      }`}
-                                    >
-                                      {skill}
-                                    </span>
-                                  )
-                                )}
-                              </div>
-                            </div>
-                          )}
-                          {gig.reviews && gig.reviews.length > 0 && (
+                          - Filtered by skills
+                        </span>
+                      )}
+                    </h3>
+                    <button
+                      onClick={() =>
+                        setIsCollaborationsSectionCollapsed(
+                          !isCollaborationsSectionCollapsed
+                        )
+                      }
+                      className={`p-2 rounded-lg transition-all duration-200 hover:scale-105 ${
+                        theme === "light"
+                          ? "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                          : "text-gray-400 hover:text-gray-200 hover:bg-neutral-800"
+                      }`}
+                      title={
+                        isCollaborationsSectionCollapsed
+                          ? "Expand section"
+                          : "Collapse section"
+                      }
+                    >
+                      {isCollaborationsSectionCollapsed ? (
+                        <FiChevronDown className="text-lg" />
+                      ) : (
+                        <FiChevronUp className="text-lg" />
+                      )}
+                    </button>
+                  </div>
+
+                  {!isCollaborationsSectionCollapsed && (
+                    <>
+                      <div className="space-y-6">
+                        {displayedCollaboratedGigs.map(
+                          (gig: any, index: number) => (
                             <div
-                              className={`p-4 border rounded-lg backdrop-blur-sm theme-transition ${
+                              key={index}
+                              className={`p-4 md:p-6 rounded-xl border backdrop-blur-sm theme-transition ${
                                 theme === "light"
-                                  ? "bg-gray-50/80 border-gray-200/50"
-                                  : "bg-neutral-900/50 border-neutral-700/50"
+                                  ? "bg-white/60 border-gray-200/50 hover:bg-white/80"
+                                  : "bg-neutral-800/30 border-neutral-700/50 hover:bg-neutral-800/50"
                               }`}
                             >
-                              <div
-                                className={`text-sm font-medium mb-2 theme-transition ${
-                                  theme === "light"
-                                    ? "text-gray-900"
-                                    : "text-white"
-                                }`}
-                              >
-                                "{gig.reviews[0].title}"
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                                <h4
+                                  className={`text-lg font-medium theme-transition ${
+                                    theme === "light"
+                                      ? "text-gray-900"
+                                      : "text-white"
+                                  }`}
+                                >
+                                  {gig.title}
+                                </h4>
+                                <div className="flex items-center gap-1">
+                                  <FiStar
+                                    className="text-yellow-400 text-sm"
+                                    fill="currentColor"
+                                  />
+                                  <span className="text-sm text-yellow-400 font-medium">
+                                    {gig.reviews && gig.reviews.length > 0
+                                      ? (
+                                          gig.reviews.reduce(
+                                            (sum: number, review: any) =>
+                                              sum + review.rating,
+                                            0
+                                          ) / gig.reviews.length
+                                        ).toFixed(1)
+                                      : "No rating"}
+                                  </span>
+                                </div>
                               </div>
-                              <div
-                                className={`text-sm mb-2 theme-transition ${
+                              <p
+                                className={`text-sm mb-3 leading-relaxed theme-transition ${
                                   theme === "light"
                                     ? "text-gray-600"
                                     : "text-gray-300"
                                 }`}
                               >
-                                {gig.reviews[0].description}
+                                {gig.description}
+                              </p>
+                              <div
+                                className={`text-sm mb-4 theme-transition ${
+                                  theme === "light"
+                                    ? "text-gray-500"
+                                    : "text-gray-400"
+                                }`}
+                              >
+                                Looking for:{" "}
+                                <span className="text-purple-400 font-medium">
+                                  {gig.looking_For}
+                                </span>
                               </div>
-                              <div className="text-sm text-purple-400 font-medium">
-                                - @{gig.reviews[0].author?.username}
-                              </div>
+                              {/* Skills Tags */}
+                              {gig.skills && gig.skills.length > 0 && (
+                                <div className="mb-4">
+                                  <div className="flex flex-wrap gap-2">
+                                    {gig.skills.map(
+                                      (skill: string, skillIdx: number) => (
+                                        <span
+                                          key={skillIdx}
+                                          className={`px-2 py-1 text-xs rounded-full font-medium border theme-transition ${
+                                            selectedSkills.includes(skill)
+                                              ? theme === "light"
+                                                ? "bg-yellow-100 border-yellow-300 text-yellow-800"
+                                                : "bg-yellow-900/50 border-yellow-600/50 text-yellow-300"
+                                              : theme === "light"
+                                              ? "bg-purple-50 border-purple-200 text-purple-700"
+                                              : "bg-purple-950/50 border-purple-800/50 text-purple-300"
+                                          }`}
+                                        >
+                                          {skill}
+                                        </span>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              {gig.reviews && gig.reviews.length > 0 && (
+                                <div
+                                  className={`p-4 border rounded-lg backdrop-blur-sm theme-transition ${
+                                    theme === "light"
+                                      ? "bg-gray-50/80 border-gray-200/50"
+                                      : "bg-neutral-900/50 border-neutral-700/50"
+                                  }`}
+                                >
+                                  <div
+                                    className={`text-sm font-medium mb-2 theme-transition ${
+                                      theme === "light"
+                                        ? "text-gray-900"
+                                        : "text-white"
+                                    }`}
+                                  >
+                                    "{gig.reviews[0].title}"
+                                  </div>
+                                  <div
+                                    className={`text-sm mb-2 theme-transition ${
+                                      theme === "light"
+                                        ? "text-gray-600"
+                                        : "text-gray-300"
+                                    }`}
+                                  >
+                                    {gig.reviews[0].description}
+                                  </div>
+                                  <div className="text-sm text-purple-400 font-medium">
+                                    - @{gig.reviews[0].author?.username}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
+                          )
+                        )}
+                      </div>
+
+                      {/* Load More / Show Less button for Collaborated Gigs */}
+                      {filteredCollaboratedGigs.length > 5 && (
+                        <div className="mt-6 flex justify-center">
+                          <button
+                            onClick={toggleCollaboratedGigs}
+                            className={`px-6 py-3 text-sm font-medium rounded-lg border transition-all duration-200 ${
+                              theme === "light"
+                                ? "bg-white/60 border-gray-200/50 text-purple-600 hover:bg-purple-50 hover:border-purple-300"
+                                : "bg-neutral-800/50 border-neutral-700/50 text-purple-400 hover:bg-purple-950/30 hover:border-purple-600/50"
+                            }`}
+                          >
+                            {showAllCollaboratedGigs
+                              ? `Show Less (${
+                                  filteredCollaboratedGigs.length - 5
+                                } hidden)`
+                              : `Load More Projects (${
+                                  filteredCollaboratedGigs.length - 5
+                                } more)`}
+                          </button>
                         </div>
+                      )}
+                    </>
+                  )}
+                </section>
+
+                {/* Ongoing Projects Section */}
+                <section
+                  className={`rounded-2xl sm:rounded-3xl p-6 md:p-8 border-0 relative drop-shadow-glow backdrop-blur-md overflow-hidden theme-transition ${
+                    theme === "light"
+                      ? "bg-white/90 border-gray-200"
+                      : "bg-neutral-900/70 border-neutral-800"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <h3
+                      className={`text-2xl font-light tracking-tight flex items-center gap-3 ${
+                        theme === "light" ? "text-gray-900" : "text-white"
+                      }`}
+                    >
+                      <FiCalendar className="text-orange-400" />
+                      Ongoing Projects ({filteredOngoingProjects.length}
+                      {selectedSkills.length > 0
+                        ? ` of ${
+                            (profile?.gigsHosted?.filter(
+                              (gig) => !gig.reviews || gig.reviews.length === 0
+                            )?.length || 0) +
+                            (profile?.gigsCollaborated?.filter(
+                              (gig) => !gig.reviews || gig.reviews.length === 0
+                            )?.length || 0)
+                          }`
+                        : ""}
                       )
-                    )}
+                      {selectedSkills.length > 0 && (
+                        <span
+                          className={`text-sm font-normal ${
+                            theme === "light"
+                              ? "text-gray-600"
+                              : "text-gray-400"
+                          }`}
+                        >
+                          - Filtered by skills
+                        </span>
+                      )}
+                    </h3>
+                    <button
+                      onClick={() =>
+                        setIsOngoingSectionCollapsed(!isOngoingSectionCollapsed)
+                      }
+                      className={`p-2 rounded-lg transition-all duration-200 hover:scale-105 ${
+                        theme === "light"
+                          ? "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                          : "text-gray-400 hover:text-gray-200 hover:bg-neutral-800"
+                      }`}
+                      title={
+                        isOngoingSectionCollapsed
+                          ? "Expand section"
+                          : "Collapse section"
+                      }
+                    >
+                      {isOngoingSectionCollapsed ? (
+                        <FiChevronDown className="text-lg" />
+                      ) : (
+                        <FiChevronUp className="text-lg" />
+                      )}
+                    </button>
                   </div>
 
-                  {/* Load More / Show Less button for Collaborated Gigs */}
-                  {filteredCollaboratedGigs.length > 5 && (
-                    <div className="mt-6 flex justify-center">
-                      <button
-                        onClick={toggleCollaboratedGigs}
-                        className={`px-6 py-3 text-sm font-medium rounded-lg border transition-all duration-200 ${
-                          theme === "light"
-                            ? "bg-white/60 border-gray-200/50 text-purple-600 hover:bg-purple-50 hover:border-purple-300"
-                            : "bg-neutral-800/50 border-neutral-700/50 text-purple-400 hover:bg-purple-950/30 hover:border-purple-600/50"
-                        }`}
-                      >
-                        {showAllCollaboratedGigs
-                          ? `Show Less (${
-                              filteredCollaboratedGigs.length - 5
-                            } hidden)`
-                          : `Load More Projects (${
-                              filteredCollaboratedGigs.length - 5
-                            } more)`}
-                      </button>
-                    </div>
+                  {!isOngoingSectionCollapsed && (
+                    <>
+                      {filteredOngoingProjects.length === 0 ? (
+                        <div
+                          className={`text-center py-12 theme-transition ${
+                            theme === "light"
+                              ? "text-gray-500"
+                              : "text-gray-400"
+                          }`}
+                        >
+                          <FiCalendar className="text-4xl mx-auto mb-3 opacity-50" />
+                          <div className="text-lg mb-2">
+                            No ongoing projects
+                          </div>
+                          <div className="text-sm">
+                            All projects have been completed and reviewed.
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          {displayedOngoingProjects.map(
+                            (gig: any, index: number) => (
+                              <div
+                                key={index}
+                                className={`p-4 md:p-6 rounded-xl border backdrop-blur-sm theme-transition ${
+                                  theme === "light"
+                                    ? "bg-white/60 border-gray-200/50 hover:bg-white/80"
+                                    : "bg-neutral-800/30 border-neutral-700/50 hover:bg-neutral-800/50"
+                                }`}
+                              >
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                                  <div className="flex items-center gap-3">
+                                    <h4
+                                      className={`text-lg font-medium theme-transition ${
+                                        theme === "light"
+                                          ? "text-gray-900"
+                                          : "text-white"
+                                      }`}
+                                    >
+                                      {gig.title}
+                                    </h4>
+                                    <span
+                                      className={`px-2 py-1 text-xs rounded-full font-medium ${
+                                        gig.type === "hosted"
+                                          ? "bg-cyan-100 text-cyan-800 border border-cyan-200"
+                                          : "bg-purple-100 text-purple-800 border border-purple-200"
+                                      } ${
+                                        theme === "dark" &&
+                                        (gig.type === "hosted"
+                                          ? "bg-cyan-900/50 text-cyan-300 border-cyan-600/50"
+                                          : "bg-purple-900/50 text-purple-300 border-purple-600/50")
+                                      }`}
+                                    >
+                                      {gig.type === "hosted"
+                                        ? "Hosting"
+                                        : "Collaborating"}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <FiCalendar className="text-orange-400 text-sm" />
+                                    <span className="text-sm text-orange-400 font-medium">
+                                      In Progress
+                                    </span>
+                                  </div>
+                                </div>
+                                <p
+                                  className={`text-sm mb-3 leading-relaxed theme-transition ${
+                                    theme === "light"
+                                      ? "text-gray-600"
+                                      : "text-gray-300"
+                                  }`}
+                                >
+                                  {gig.description}
+                                </p>
+                                <div
+                                  className={`text-sm mb-4 theme-transition ${
+                                    theme === "light"
+                                      ? "text-gray-500"
+                                      : "text-gray-400"
+                                  }`}
+                                >
+                                  Looking for:{" "}
+                                  <span className="text-orange-400 font-medium">
+                                    {gig.looking_For}
+                                  </span>
+                                </div>
+                                {/* Skills Tags */}
+                                {gig.skills && gig.skills.length > 0 && (
+                                  <div className="mb-4">
+                                    <div className="flex flex-wrap gap-2">
+                                      {gig.skills.map(
+                                        (skill: string, skillIdx: number) => (
+                                          <span
+                                            key={skillIdx}
+                                            className={`px-2 py-1 text-xs rounded-full font-medium border theme-transition ${
+                                              selectedSkills.includes(skill)
+                                                ? theme === "light"
+                                                  ? "bg-yellow-100 border-yellow-300 text-yellow-800"
+                                                  : "bg-yellow-900/50 border-yellow-600/50 text-yellow-300"
+                                                : theme === "light"
+                                                ? "bg-orange-50 border-orange-200 text-orange-700"
+                                                : "bg-orange-950/50 border-orange-800/50 text-orange-300"
+                                            }`}
+                                          >
+                                            {skill}
+                                          </span>
+                                        )
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                <div
+                                  className={`text-sm font-medium flex items-center gap-2 theme-transition ${
+                                    theme === "light"
+                                      ? "text-gray-700"
+                                      : "text-gray-300"
+                                  }`}
+                                >
+                                  {gig.amount === 0 ? (
+                                    <div
+                                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
+                                        theme === "dark"
+                                          ? "bg-gradient-to-r from-purple-900/60 to-blue-900/60 text-purple-300 border border-purple-700/50"
+                                          : "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200"
+                                      }`}
+                                    >
+                                      <FiStar className="w-3 h-3 mr-1" />
+                                      Skill Forge
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <FiDollarSign className="text-green-400" />
+                                      {gig.currency}{" "}
+                                      {gig.amount?.toLocaleString()}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+
+                      {/* Load More / Show Less button for Ongoing Projects */}
+                      {filteredOngoingProjects.length > 5 && (
+                        <div className="mt-6 flex justify-center">
+                          <button
+                            onClick={toggleOngoingProjects}
+                            className={`px-6 py-3 text-sm font-medium rounded-lg border transition-all duration-200 ${
+                              theme === "light"
+                                ? "bg-white/60 border-gray-200/50 text-orange-600 hover:bg-orange-50 hover:border-orange-300"
+                                : "bg-neutral-800/50 border-neutral-700/50 text-orange-400 hover:bg-orange-950/30 hover:border-orange-600/50"
+                            }`}
+                          >
+                            {showAllOngoingProjects
+                              ? `Show Less (${
+                                  filteredOngoingProjects.length - 5
+                                } hidden)`
+                              : `Load More Projects (${
+                                  filteredOngoingProjects.length - 5
+                                } more)`}
+                          </button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </section>
               </>
