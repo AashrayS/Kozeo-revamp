@@ -9,19 +9,7 @@ import {
   FiClock,
   FiExternalLink,
 } from "react-icons/fi";
-import { useNotificationContext } from "./NotificationContext";
-
-interface Notification {
-  id: string;
-  type: "info" | "success" | "warning" | "error";
-  title: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
-  username?: string;
-  action?: string;
-  actionLabel?: string;
-}
+import { useNotificationContext, Notification } from "./NotificationContext";
 
 interface NotificationBoxProps {
   isOpen: boolean;
@@ -35,7 +23,7 @@ interface NotificationBoxProps {
 const sampleNotifications: Notification[] = [
   {
     id: "1",
-    type: "success",
+    type: "gig_completed",
     title: "Gig Completed",
     message: "Your gig with john_doe has been completed successfully.",
     timestamp: "2 hours ago",
@@ -46,7 +34,7 @@ const sampleNotifications: Notification[] = [
   },
   {
     id: "2",
-    type: "info",
+    type: "gig_request",
     title: "New Collaboration Request",
     message: "jane_smith wants to collaborate on your project.",
     timestamp: "5 hours ago",
@@ -57,9 +45,9 @@ const sampleNotifications: Notification[] = [
   },
   {
     id: "3",
-    type: "warning",
-    title: "Payment Pending",
-    message: "Payment from alex_wilson is pending verification.",
+    type: "payment_received",
+    title: "Payment Received",
+    message: "Payment from alex_wilson has been received.",
     timestamp: "1 day ago",
     read: true,
     username: "alex_wilson",
@@ -80,11 +68,23 @@ const NotificationBox = ({
   const getIcon = (type: Notification["type"]) => {
     switch (type) {
       case "success":
+      case "gig_completed":
+      case "gig_accepted":
+      case "payment_received":
+      case "achievement_earned":
         return <FiCheck className="text-emerald-400" />;
       case "warning":
+      case "payment_sent":
         return <FiAlertTriangle className="text-yellow-400" />;
       case "error":
+      case "gig_rejected":
         return <FiX className="text-red-400" />;
+      case "gig_request":
+      case "review_received":
+        return <FiBell className="text-purple-400" />;
+      case "system_announcement":
+        return <FiInfo className="text-blue-400" />;
+      case "info":
       default:
         return <FiInfo className="text-cyan-400" />;
     }
