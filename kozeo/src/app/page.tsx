@@ -79,7 +79,7 @@ const Navbar = () => {
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ease-in-out ${
-        isOnDarkBackground ? "bg-black" : "bg-white border-b border-gray-200"
+        isOnDarkBackground ? "bg-transparent" : "bg-transparent border-gray-200"
       }`}
       style={{ height: "clamp(60px, 8vh, 100px)" }}
     >
@@ -124,8 +124,8 @@ const Navbar = () => {
             href="/login"
             className={`rounded-full transition-all duration-300 hover:scale-105 border ${
               isOnDarkBackground
-                ? "border-white text-white bg-transparent hover:bg-white hover:text-black hover:shadow-lg"
-                : "border-black text-black bg-transparent hover:bg-black hover:text-white hover:shadow-lg"
+                ? "border-white text-white bg-black hover:bg-white hover:text-black hover:shadow-lg"
+                : "border-black text-black bg-white hover:bg-black hover:text-white hover:shadow-lg"
             }`}
             style={{
               padding:
@@ -251,29 +251,31 @@ const Hero = () => {
 
       {/* Content */}
       <div
-        className="relative h-full flex items-center justify-start px-4 z-10"
+        className="relative h-full flex items-center justify-center sm:justify-start px-4 z-10 hero-content"
         style={{
-          paddingTop: "clamp(60px, 8vh, 100px)",
-          paddingLeft: "clamp(2rem, 8vw, 8rem)",
+          paddingTop: "clamp(40px, 6vh, 100px)",
+          paddingLeft: "clamp(1rem, 2vw, 2rem) clamp(1rem, 8vw, 8rem)",
         }}
       >
         <div
-          className="max-w-full text-left"
-          style={{ maxWidth: "min(60vw, 600px)" }}
+          className="max-w-full text-center sm:text-left"
+          style={{ maxWidth: "min(90vw, 600px)" }}
         >
           {/* Kozeo Combined Logo */}
           <div
-            className="flex items-center justify-start w-full"
-            style={{ marginBottom: "clamp(2rem, 6vh, 4rem)" }}
+            className="flex items-center justify-start w-full hero-logo"
+            style={{ 
+              marginBottom: "clamp(1rem, 4vh, 4rem)"
+            }}
           >
             <Image
               src="/logoFial.svg"
               alt="Kozeo Full Logo"
               width={625}
               height={147}
-              className="brightness-0 invert"
+              className="brightness-0 invert hero-logo"
               style={{
-                width: "clamp(280px, 50vw, 500px)",
+                width: "clamp(240px, 45vw, 500px)",
                 height: "auto",
                 maxWidth: "90vw",
               }}
@@ -282,10 +284,10 @@ const Hero = () => {
           </div>
 
           <h1
-            className="font-normal leading-tight text-white"
+            className="font-normal leading-tight text-white text-center sm:text-left hero-title"
             style={{
-              fontSize: "clamp(2rem, 6vw, 4rem)",
-              marginBottom: "clamp(1.5rem, 4vh, 2.5rem)",
+              fontSize: "clamp(1.5rem, 5vw, 4rem)",
+              marginBottom: "clamp(1rem, 3vh, 2.5rem)",
               lineHeight: "1.1",
             }}
           >
@@ -294,23 +296,23 @@ const Hero = () => {
             Hire With Purpose
           </h1>
           <p
-            className="text-gray-300 leading-relaxed"
+            className="text-gray-300 leading-relaxed text-center sm:text-left hero-subtitle"
             style={{
               fontSize: "clamp(1rem, 2.5vw, 1.25rem)",
               marginBottom: "clamp(2rem, 5vh, 3rem)",
-              maxWidth: "min(60vw, 500px)",
+              maxWidth: "min(90vw, 500px)",
             }}
           >
             Build your tech portfolio with real-world projects that matter.
             Every project on Kozeo contributes to your professional growth.
           </p>
           <div
-            className="flex flex-row items-center justify-start"
+            className="flex flex-row items-center justify-center sm:justify-start hero-buttons"
             style={{ gap: "clamp(0.75rem, 3vw, 1.5rem)" }}
           >
             <Link
               href="/login"
-              className="bg-white text-black rounded-full font-medium hover:bg-gray-100 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] text-center"
+              className="bg-white text-black rounded-full font-medium hover:bg-gray-100 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] text-center hero-button"
               style={{
                 padding: "clamp(0.75rem, 2vh, 1rem) clamp(1.5rem, 4vw, 2rem)",
                 fontSize: "clamp(0.875rem, 2vw, 1.125rem)",
@@ -321,7 +323,7 @@ const Hero = () => {
             </Link>
             <Link
               href="/login"
-              className="border border-white text-white rounded-full font-medium hover:bg-white hover:text-black transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] text-center"
+              className="border border-white text-white rounded-full font-medium hover:bg-white hover:text-black transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] text-center hero-button"
               style={{
                 padding: "clamp(0.75rem, 2vh, 1rem) clamp(1.5rem, 4vw, 2rem)",
                 fontSize: "clamp(0.875rem, 2vw, 1.125rem)",
