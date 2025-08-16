@@ -24,6 +24,29 @@
 body {
   background: var(--background);
    font-family: 'Roboto', sans-serif;
+   /* Ensure consistent zoom behavior */
+   -webkit-text-size-adjust: 100%;
+   -ms-text-size-adjust: 100%;
+   text-size-adjust: 100%;
+}
+
+/* Ensure consistent rendering across different DPI settings */
+* {
+  box-sizing: border-box;
+}
+
+/* Improve text rendering for consistent display */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Prevent layout shifts on zoom */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
 }
 
 /* Custom animation classes */

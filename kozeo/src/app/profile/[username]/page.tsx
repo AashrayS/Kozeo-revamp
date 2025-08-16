@@ -1005,7 +1005,7 @@ export default function UserProfilePage() {
                         >
                           Active
                         </span>
-                        <span
+                        {/* <span
                           className={`text-sm theme-transition ${
                             theme === "light"
                               ? "text-gray-500"
@@ -1013,7 +1013,7 @@ export default function UserProfilePage() {
                           }`}
                         >
                           Member since 2024
-                        </span>
+                        </span> */}
                       </div>
 
                       {/* Links */}

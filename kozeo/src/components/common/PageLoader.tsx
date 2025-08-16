@@ -77,6 +77,7 @@ export const PageLoader = ({
             width={80}
             height={80}
             className="w-16 h-16 sm:w-20 sm:h-20 drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+            style={{ borderRadius: "100%" }}
           />
         </div>
         <h1

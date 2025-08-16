@@ -249,6 +249,7 @@ export default function DiscussionRoomPage({
   // Drag and drop handlers for reply functionality with horizontal drag detection
   const handleDragStart = (e: React.DragEvent, message: any) => {
     if (message.type === "system") return; // Don't allow dragging system messages
+    debugger
     setDraggedMessage(message);
     setDragStartPos({ x: e.clientX, y: e.clientY });
     e.dataTransfer.effectAllowed = "copy";
@@ -631,7 +632,9 @@ export default function DiscussionRoomPage({
                                     </span>
                                   )}
                                 <button
-                                  onClick={() => setReplyTo(msg.id)}
+                                  onClick={() => 
+                                   { debugger
+                                    setReplyTo(msg.id)}}
                                   className={`text-[10px] opacity-50 hover:opacity-100 mx-2 transition-opacity ${
                                     theme === "dark"
                                       ? "hover:text-cyan-400"

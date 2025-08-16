@@ -78,62 +78,75 @@ const Navbar = () => {
 
   return (
     <header
-      className={`static sm:fixed top-0 inset-x-0 z-50 transition-all duration-300 ease-in-out ${
+      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ease-in-out ${
         isOnDarkBackground ? "bg-black" : "bg-white border-b border-gray-200"
       }`}
+      style={{ height: "clamp(60px, 8vh, 100px)" }}
     >
       <nav
-        className="flex items-center justify-between sm:justify-center px-4 sm:px-8 py-3 sm:py-8 relative"
+        className="flex items-center justify-center h-full relative"
+        style={{ padding: "0 clamp(1rem, 4vw, 3rem)" }}
         aria-label="Global"
       >
-        <div className="flex items-center justify-start sm:justify-center sm:absolute sm:left-1/2 sm:transform sm:-translate-x-1/2">
+        <div className="flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
           <Link
             href="/"
-            className={`flex items-center gap-2 sm:gap-3 font-bold text-xl sm:text-3xl tracking-tight transition-colors duration-300 ${
+            className={`flex items-center font-bold tracking-tight transition-colors duration-300 ${
               isOnDarkBackground ? "text-white" : "text-black"
             }`}
+            style={{
+              gap: "clamp(0.5rem, 1.5vw, 1rem)",
+              fontSize: "clamp(1.25rem, 3vw, 2rem)",
+            }}
           >
             <Image
               src="/kozeoLogo.png"
               alt="Kozeo Logo"
               width={32}
               height={32}
-              className="w-6 h-6 sm:w-8 sm:h-8"
+              style={{
+                width: "clamp(24px, 4vw, 40px)",
+                height: "clamp(24px, 4vw, 40px)",
+                borderRadius: "100%",
+              }}
             />
-            {/* <svg
-              width="100"
-              height="24"
-              viewBox="0 0 625 147"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 sm:h-6 w-auto"
-            >
-              <path
-                d="M104.8 145H83.6L33 76.8L18.4 89.6V145H0.400001V2.19999H18.4V72.6C22.4 68.0667 26.4667 63.5333 30.6 59C34.7333 54.4667 38.8667 49.9333 43 45.4L81.6 2.19999H102.6L46 64.4L104.8 145ZM244.922 73.4C244.922 84.4667 243.522 94.5333 240.722 103.6C237.922 112.533 233.722 120.267 228.122 126.8C222.655 133.333 215.789 138.333 207.522 141.8C199.389 145.267 189.922 147 179.122 147C167.922 147 158.189 145.267 149.922 141.8C141.655 138.2 134.789 133.2 129.322 126.8C123.855 120.267 119.789 112.467 117.122 103.4C114.455 94.3333 113.122 84.2667 113.122 73.2C113.122 58.5333 115.522 45.7333 120.322 34.8C125.122 23.8667 132.389 15.3333 142.122 9.2C151.989 3.06666 164.389 -4.76837e-06 179.322 -4.76837e-06C193.589 -4.76837e-06 205.589 3.06666 215.322 9.2C225.055 15.2 232.389 23.7333 237.322 34.8C242.389 45.7333 244.922 58.6 244.922 73.4ZM132.122 73.4C132.122 85.4 133.789 95.7333 137.122 104.4C140.455 113.067 145.589 119.733 152.522 124.4C159.589 129.067 168.455 131.4 179.122 131.4C189.922 131.4 198.722 129.067 205.522 124.4C212.455 119.733 217.589 113.067 220.922 104.4C224.255 95.7333 225.922 85.4 225.922 73.4C225.922 55.4 222.189 41.3333 214.722 31.2C207.255 20.9333 195.455 15.8 179.322 15.8C168.522 15.8 159.589 18.1333 152.522 22.8C145.589 27.3333 140.455 33.9333 137.122 42.6C133.789 51.1333 132.122 61.4 132.122 73.4ZM361.819 145H262.819V131.4L338.019 18.2H265.219V2.19999H359.819V15.8L284.619 129H361.819V145ZM468.872 145H389.072V2.19999H468.872V18H407.072V62.6H465.272V78.2H407.072V129.2H468.872V145ZM624.805 73.4C624.805 84.4667 623.405 94.5333 620.605 103.6C617.805 112.533 613.605 120.267 608.005 126.8C602.538 133.333 595.671 138.333 587.405 141.8C579.271 145.267 569.805 147 559.005 147C547.805 147 538.071 145.267 529.805 141.8C521.538 138.2 514.671 133.2 509.205 126.8C503.738 120.267 499.671 112.467 497.005 103.4C494.338 94.3333 493.005 84.2667 493.005 73.2C493.005 58.5333 495.405 45.7333 500.205 34.8C505.005 23.8667 512.271 15.3333 522.005 9.2C531.871 3.06666 544.271 -4.76837e-06 559.205 -4.76837e-06C573.471 -4.76837e-06 585.471 3.06666 595.205 9.2C604.938 15.2 612.271 23.7333 617.205 34.8C622.271 45.7333 624.805 58.6 624.805 73.4ZM512.005 73.4C512.005 85.4 513.671 95.7333 517.005 104.4C520.338 113.067 525.471 119.733 532.405 124.4C539.471 129.067 548.338 131.4 559.005 131.4C569.805 131.4 578.605 129.067 585.405 124.4C592.338 119.733 597.471 113.067 600.805 104.4C604.138 95.7333 605.805 85.4 605.805 73.4C605.805 55.4 602.071 41.3333 594.605 31.2C587.138 20.9333 575.338 15.8 559.205 15.8C548.405 15.8 539.471 18.1333 532.405 22.8C525.471 27.3333 520.338 33.9333 517.005 42.6C513.671 51.1333 512.005 61.4 512.005 73.4Z"
-                fill={isOnDarkBackground ? "white" : "black"}
-              />
-            </svg> */}
           </Link>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4 sm:absolute sm:right-8">
+        <div
+          className="flex items-center absolute right-0"
+          style={{
+            gap: "clamp(0.5rem, 2vw, 1rem)",
+            paddingRight: "clamp(1rem, 4vw, 3rem)",
+          }}
+        >
           <Link
             href="/login"
-            className={`rounded-full px-2 py-1 sm:px-6 sm:py-2 text-xs sm:text-base transition-all duration-300 hover:scale-105 border ${
+            className={`rounded-full transition-all duration-300 hover:scale-105 border ${
               isOnDarkBackground
                 ? "border-white text-white bg-transparent hover:bg-white hover:text-black hover:shadow-lg"
                 : "border-black text-black bg-transparent hover:bg-black hover:text-white hover:shadow-lg"
             }`}
+            style={{
+              padding:
+                "clamp(0.375rem, 1.5vh, 0.75rem) clamp(1rem, 3vw, 1.5rem)",
+              fontSize: "clamp(0.75rem, 1.5vw, 1rem)",
+            }}
           >
             Login
           </Link>
           <Link
             href="/login"
-            className={`rounded-full px-2 py-1 sm:px-6 sm:py-2 text-xs sm:text-base transition-all duration-300 hover:scale-105 ${
+            className={`rounded-full transition-all duration-300 hover:scale-105 ${
               isOnDarkBackground
                 ? "bg-white text-black hover:bg-gray-100 hover:shadow-lg"
                 : "bg-black text-white hover:bg-gray-800 hover:shadow-lg"
             }`}
+            style={{
+              padding:
+                "clamp(0.375rem, 1.5vh, 0.75rem) clamp(1rem, 3vw, 1.5rem)",
+              fontSize: "clamp(0.75rem, 1.5vw, 1rem)",
+            }}
           >
             Sign Up
           </Link>
@@ -155,71 +168,33 @@ const Hero = () => {
       {/* Animated Background */}
       <div className="absolute inset-0">
         {/* Twinkling stars for immediate feedback */}
-        <div
-          className="absolute top-20 left-20 w-2 h-2 bg-white rounded-full animate-twinkle"
-        ></div>
-        <div
-          className="absolute top-40 right-32 w-1 h-1 bg-white rounded-full animate-twinkle"
-        ></div>
-        <div
-          className="absolute top-60 left-1/3 w-1 h-1 bg-white rounded-full animate-twinkle"
-        ></div>
+        <div className="absolute top-20 left-20 w-2 h-2 bg-white rounded-full animate-twinkle"></div>
+        <div className="absolute top-40 right-32 w-1 h-1 bg-white rounded-full animate-twinkle"></div>
+        <div className="absolute top-60 left-1/3 w-1 h-1 bg-white rounded-full animate-twinkle"></div>
 
         {/* Twinkling Stars */}
         <div className="absolute inset-0">
           {/* Large Stars */}
-          <div
-            className="absolute top-20 left-20 w-1 h-1 bg-white rounded-full animate-twinkle"
-          ></div>
-          <div
-            className="absolute top-40 right-32 w-1 h-1 bg-white rounded-full animate-twinkle"
-          ></div>
-          <div
-            className="absolute top-60 left-1/3 w-1 h-1 bg-white rounded-full animate-twinkle"
-          ></div>
-          <div
-            className="absolute bottom-40 right-20 w-1 h-1 bg-white rounded-full animate-twinkle"
-          ></div>
-          <div
-            className="absolute bottom-60 left-1/4 w-1 h-1 bg-white rounded-full animate-twinkle"
-          ></div>
-          <div
-            className="absolute top-1/3 right-1/4 w-1 h-1 bg-white rounded-full animate-twinkle"
-          ></div>
+          <div className="absolute top-20 left-20 w-1 h-1 bg-white rounded-full animate-twinkle"></div>
+          <div className="absolute top-40 right-32 w-1 h-1 bg-white rounded-full animate-twinkle"></div>
+          <div className="absolute top-60 left-1/3 w-1 h-1 bg-white rounded-full animate-twinkle"></div>
+          <div className="absolute bottom-40 right-20 w-1 h-1 bg-white rounded-full animate-twinkle"></div>
+          <div className="absolute bottom-60 left-1/4 w-1 h-1 bg-white rounded-full animate-twinkle"></div>
+          <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-white rounded-full animate-twinkle"></div>
 
           {/* Medium Stars */}
-          <div
-            className="absolute top-32 right-40 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"
-          ></div>
-          <div
-            className="absolute top-52 left-16 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"
-          ></div>
-          <div
-            className="absolute bottom-32 left-1/2 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"
-          ></div>
-          <div
-            className="absolute bottom-20 right-1/3 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"
-          ></div>
-          <div
-            className="absolute top-1/2 left-8 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"
-          ></div>
+          <div className="absolute top-32 right-40 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"></div>
+          <div className="absolute top-52 left-16 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"></div>
+          <div className="absolute bottom-32 left-1/2 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"></div>
+          <div className="absolute bottom-20 right-1/3 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"></div>
+          <div className="absolute top-1/2 left-8 w-0.5 h-0.5 bg-white rounded-full animate-twinkle"></div>
 
           {/* Small Stars */}
-          <div
-            className="absolute top-24 left-1/2 w-px h-px bg-white animate-twinkle"
-          ></div>
-          <div
-            className="absolute top-48 right-16 w-px h-px bg-white animate-twinkle"
-          ></div>
-          <div
-            className="absolute bottom-48 left-40 w-px h-px bg-white animate-twinkle"
-          ></div>
-          <div
-            className="absolute bottom-24 right-1/2 w-px h-px bg-white animate-twinkle"
-          ></div>
-          <div
-            className="absolute top-2/3 right-8 w-px h-px bg-white animate-twinkle"
-          ></div>
+          <div className="absolute top-24 left-1/2 w-px h-px bg-white animate-twinkle"></div>
+          <div className="absolute top-48 right-16 w-px h-px bg-white animate-twinkle"></div>
+          <div className="absolute bottom-48 left-40 w-px h-px bg-white animate-twinkle"></div>
+          <div className="absolute bottom-24 right-1/2 w-px h-px bg-white animate-twinkle"></div>
+          <div className="absolute top-2/3 right-8 w-px h-px bg-white animate-twinkle"></div>
         </div>
 
         {/* Moving Stars */}
@@ -275,39 +250,83 @@ const Hero = () => {
       </div>
 
       {/* Content */}
-      <div className="relative h-full flex items-center justify-center sm:items-end sm:justify-start pb-8 sm:pb-16 md:pb-24 px-3 sm:pl-8 sm:pr-8 md:pl-16 lg:pl-24 z-10">
-        <div className="max-w-full sm:max-w-2xl text-center sm:text-left">
+      <div
+        className="relative h-full flex items-center justify-start px-4 z-10"
+        style={{
+          paddingTop: "clamp(60px, 8vh, 100px)",
+          paddingLeft: "clamp(2rem, 8vw, 8rem)",
+        }}
+      >
+        <div
+          className="max-w-full text-left"
+          style={{ maxWidth: "min(60vw, 600px)" }}
+        >
           {/* Kozeo Combined Logo */}
-          <div className="mb-6 sm:mb-8 md:mb-10 flex items-center justify-center sm:justify-start w-full sm:-ml-8  lg:-ml-8 xl:-ml-12">
+          <div
+            className="flex items-center justify-start w-full"
+            style={{ marginBottom: "clamp(2rem, 6vh, 4rem)" }}
+          >
             <Image
               src="/logoFial.svg"
               alt="Kozeo Full Logo"
               width={625}
               height={147}
-              className="w-72 sm:w-80 md:w-96 lg:w-[400px] xl:w-[450px] 2xl:w-[500px] h-auto brightness-0 invert max-w-[90vw]"
+              className="brightness-0 invert"
+              style={{
+                width: "clamp(280px, 50vw, 500px)",
+                height: "auto",
+                maxWidth: "90vw",
+              }}
               priority
             />
           </div>
 
-          <h1 className="text-3xl leading-tight sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-normal sm:leading-tight text-white mb-4 sm:mb-6 md:mb-8">
+          <h1
+            className="font-normal leading-tight text-white"
+            style={{
+              fontSize: "clamp(2rem, 6vw, 4rem)",
+              marginBottom: "clamp(1.5rem, 4vh, 2.5rem)",
+              lineHeight: "1.1",
+            }}
+          >
             Ignore The Noise,
             <br />
             Hire With Purpose
           </h1>
-          <p className="text-base leading-relaxed sm:text-base md:text-lg lg:text-xl text-gray-300 mb-6 sm:mb-8 max-w-full sm:max-w-xl mx-auto sm:mx-0">
+          <p
+            className="text-gray-300 leading-relaxed"
+            style={{
+              fontSize: "clamp(1rem, 2.5vw, 1.25rem)",
+              marginBottom: "clamp(2rem, 5vh, 3rem)",
+              maxWidth: "min(60vw, 500px)",
+            }}
+          >
             Build your tech portfolio with real-world projects that matter.
             Every project on Kozeo contributes to your professional growth.
           </p>
-          <div className="flex flex-row gap-3 sm:gap-3 md:gap-4 items-center justify-center sm:justify-start">
+          <div
+            className="flex flex-row items-center justify-start"
+            style={{ gap: "clamp(0.75rem, 3vw, 1.5rem)" }}
+          >
             <Link
               href="/login"
-              className="bg-white text-black px-4 py-3 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-full text-sm sm:text-sm md:text-base lg:text-lg font-medium hover:bg-gray-100 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] flex-1 sm:flex-none max-w-[140px] sm:max-w-none"
+              className="bg-white text-black rounded-full font-medium hover:bg-gray-100 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] text-center"
+              style={{
+                padding: "clamp(0.75rem, 2vh, 1rem) clamp(1.5rem, 4vw, 2rem)",
+                fontSize: "clamp(0.875rem, 2vw, 1.125rem)",
+                minWidth: "clamp(140px, 25vw, 180px)",
+              }}
             >
               Start Building
             </Link>
             <Link
               href="/login"
-              className="border border-white text-white px-4 py-3 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-full text-sm sm:text-sm md:text-base lg:text-lg font-medium hover:bg-white hover:text-black transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] flex-1 sm:flex-none max-w-[120px] sm:max-w-none"
+              className="border border-white text-white rounded-full font-medium hover:bg-white hover:text-black transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] text-center"
+              style={{
+                padding: "clamp(0.75rem, 2vh, 1rem) clamp(1.5rem, 4vw, 2rem)",
+                fontSize: "clamp(0.875rem, 2vw, 1.125rem)",
+                minWidth: "clamp(120px, 22vw, 160px)",
+              }}
             >
               Post Project
             </Link>
@@ -364,18 +383,38 @@ export default function Home() {
           <section
             id="value-section"
             data-scroll-animation
-            className={`py-12 sm:py-16 md:py-24 bg-stone-50 transition-all duration-1000 ease-out ${
+            className={`bg-stone-50 transition-all duration-1000 ease-out ${
               isVisible("value-section")
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-8"
             }`}
+            style={{ padding: "clamp(3rem, 8vh, 6rem) 0" }}
           >
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
-              <div className="text-center mb-8 sm:mb-12 md:mb-16">
-                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-normal leading-tight text-black mb-4 sm:mb-6 md:mb-8">
+            <div
+              className="max-w-6xl mx-auto"
+              style={{ padding: "0 clamp(1rem, 4vw, 2rem)" }}
+            >
+              <div
+                className="text-center"
+                style={{ marginBottom: "clamp(3rem, 8vh, 5rem)" }}
+              >
+                <h2
+                  className="font-normal leading-tight text-black"
+                  style={{
+                    fontSize: "clamp(2.5rem, 6vw, 4rem)",
+                    marginBottom: "clamp(1.5rem, 4vh, 2rem)",
+                  }}
+                >
                   Profile &gt; Money
                 </h2>
-                <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+                <p
+                  className="text-gray-600 mx-auto"
+                  style={{
+                    fontSize: "clamp(1rem, 2.5vw, 1.25rem)",
+                    maxWidth: "min(90vw, 750px)",
+                    lineHeight: "1.6",
+                  }}
+                >
                   Kozeo transforms project culture into career growth. Unlike
                   traditional platforms that focus only on task completion,
                   every project on Kozeo contributes to your tech portfolio and
@@ -383,41 +422,128 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 md:gap-12 mt-8 sm:mt-12 md:mt-20">
-                <div className="text-center px-2 py-4">
-                  <div className="w-16 h-16 bg-black rounded-full mx-auto mb-6 flex items-center justify-center">
-                    <FiCode className="w-8 h-8 text-white" />
+              <div
+                className="grid grid-cols-1 md:grid-cols-3"
+                style={{
+                  gap: "clamp(2rem, 5vw, 3rem)",
+                  marginTop: "clamp(3rem, 6vh, 5rem)",
+                }}
+              >
+                <div
+                  className="text-center"
+                  style={{ padding: "clamp(0.5rem, 2vh, 1rem)" }}
+                >
+                  <div
+                    className="bg-black rounded-full mx-auto mb-6 flex items-center justify-center"
+                    style={{
+                      width: "clamp(3rem, 8vw, 4rem)",
+                      height: "clamp(3rem, 8vw, 4rem)",
+                    }}
+                  >
+                    <FiCode
+                      className="text-white"
+                      style={{
+                        width: "clamp(1.5rem, 4vw, 2rem)",
+                        height: "clamp(1.5rem, 4vw, 2rem)",
+                      }}
+                    />
                   </div>
-                  <h3 className="text-xl font-semibold mb-4">
+                  <h3
+                    className="font-semibold"
+                    style={{
+                      fontSize: "clamp(1.125rem, 2.5vw, 1.375rem)",
+                      marginBottom: "clamp(0.75rem, 2vh, 1rem)",
+                    }}
+                  >
                     Profile-First Approach
                   </h3>
-                  <p className="text-gray-600">
+                  <p
+                    className="text-gray-600"
+                    style={{
+                      fontSize: "clamp(0.875rem, 2vw, 1rem)",
+                      lineHeight: "1.5",
+                    }}
+                  >
                     Every project builds your credible tech portfolio with
                     real-world projects from startups and NGOs.
                   </p>
                 </div>
 
-                <div className="text-center px-2 py-4">
-                  <div className="w-16 h-16 bg-black rounded-full mx-auto mb-6 flex items-center justify-center">
-                    <FiTrendingUp className="w-8 h-8 text-white" />
+                <div
+                  className="text-center"
+                  style={{ padding: "clamp(0.5rem, 2vh, 1rem)" }}
+                >
+                  <div
+                    className="bg-black rounded-full mx-auto mb-6 flex items-center justify-center"
+                    style={{
+                      width: "clamp(3rem, 8vw, 4rem)",
+                      height: "clamp(3rem, 8vw, 4rem)",
+                    }}
+                  >
+                    <FiTrendingUp
+                      className="text-white"
+                      style={{
+                        width: "clamp(1.5rem, 4vw, 2rem)",
+                        height: "clamp(1.5rem, 4vw, 2rem)",
+                      }}
+                    />
                   </div>
-                  <h3 className="text-xl font-semibold mb-4">
+                  <h3
+                    className="font-semibold"
+                    style={{
+                      fontSize: "clamp(1.125rem, 2.5vw, 1.375rem)",
+                      marginBottom: "clamp(0.75rem, 2vh, 1rem)",
+                    }}
+                  >
                     Resume-Enhancing Work
                   </h3>
-                  <p className="text-gray-600">
+                  <p
+                    className="text-gray-600"
+                    style={{
+                      fontSize: "clamp(0.875rem, 2vw, 1rem)",
+                      lineHeight: "1.5",
+                    }}
+                  >
                     Collaborative projects that develop communication,
                     leadership, and technical skills employers value.
                   </p>
                 </div>
 
-                <div className="text-center px-2 py-4">
-                  <div className="w-16 h-16 bg-black rounded-full mx-auto mb-6 flex items-center justify-center">
-                    <FiUsers className="w-8 h-8 text-white" />
+                <div
+                  className="text-center"
+                  style={{ padding: "clamp(0.5rem, 2vh, 1rem)" }}
+                >
+                  <div
+                    className="bg-black rounded-full mx-auto mb-6 flex items-center justify-center"
+                    style={{
+                      width: "clamp(3rem, 8vw, 4rem)",
+                      height: "clamp(3rem, 8vw, 4rem)",
+                    }}
+                  >
+                    <FiUsers
+                      className="text-white"
+                      style={{
+                        width: "clamp(1.5rem, 4vw, 2rem)",
+                        height: "clamp(1.5rem, 4vw, 2rem)",
+                      }}
+                    />
                   </div>
-                  <h3 className="text-xl font-semibold mb-4">
+                  <h3
+                    className="font-semibold"
+                    style={{
+                      fontSize: "clamp(1.125rem, 2.5vw, 1.375rem)",
+                      marginBottom: "clamp(0.75rem, 2vh, 1rem)",
+                    }}
+                  >
                     Impact-Driven Projects
                   </h3>
-                  <p className="text-gray-600">
+                  <p
+                    className="text-gray-600"
+                    style={{
+                      fontSize: "clamp(0.875rem, 2vw, 1rem)",
+                      lineHeight: "1.5",
+                    }}
+                  >
                     Work on meaningful projects that create real value while
                     building proof of your domain expertise.
                   </p>
@@ -430,61 +556,168 @@ export default function Home() {
           <section
             id="skill-forge-section"
             data-scroll-animation
-            className={`py-12 sm:py-16 md:py-24 bg-gray-50 transition-all duration-1000 ease-out ${
+            className={`bg-black text-white transition-all duration-1000 ease-out ${
               isVisible("skill-forge-section")
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-8"
             }`}
+            style={{ padding: "clamp(3rem, 8vh, 6rem) 0" }}
           >
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
-              <div className="text-center mb-16">
-                <div className="flex items-center justify-center mb-4">
-                  <FiStar className="text-yellow-500 w-8 h-8 mr-2" />
-                  <span className="bg-yellow-100 text-yellow-800 text-sm font-medium px-3 py-1 rounded-full">
+            <div
+              className="max-w-6xl mx-auto"
+              style={{ padding: "0 clamp(1rem, 4vw, 2rem)" }}
+            >
+              <div
+                className="text-center"
+                style={{ marginBottom: "clamp(3rem, 8vh, 4rem)" }}
+              >
+                <div
+                  className="flex items-center justify-center"
+                  style={{ marginBottom: "clamp(1rem, 3vh, 1.5rem)" }}
+                >
+                  {/* <FiStar
+                    className="text-yellow-500 mr-2"
+                    style={{
+                      width: "clamp(1.5rem, 4vw, 2rem)",
+                      height: "clamp(1.5rem, 4vw, 2rem)",
+                    }}
+                  /> */}
+                  <span
+                    className="bg-yellow-100 text-yellow-800 font-medium rounded-full"
+                    style={{
+                      fontSize: "clamp(0.75rem, 1.5vw, 0.875rem)",
+                      padding:
+                        "clamp(0.25rem, 1vh, 0.375rem) clamp(0.75rem, 2vw, 1rem)",
+                    }}
+                  >
                     Skill Forge
                   </span>
                 </div>
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-normal leading-tight text-black mb-4 sm:mb-6 md:mb-8">
+                <h2
+                  className="font-normal leading-tight text-white"
+                  style={{
+                    fontSize: "clamp(2.5rem, 6vw, 3.5rem)",
+                    marginBottom: "clamp(1.5rem, 4vh, 2rem)",
+                  }}
+                >
                   Free Learning Opportunities
                 </h2>
-                <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+                <p
+                  className="text-gray-300 mx-auto"
+                  style={{
+                    fontSize: "clamp(1rem, 2.5vw, 1.25rem)",
+                    maxWidth: "min(90vw, 750px)",
+                    lineHeight: "1.6",
+                  }}
+                >
                   Discover projects marked as "Skill Forge" - free opportunities
                   to learn, practice, and build your portfolio without any
                   payment commitments.
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div
+                className="grid md:grid-cols-2 items-center"
+                style={{ gap: "clamp(3rem, 6vw, 4rem)" }}
+              >
                 <div>
-                  <h3 className="text-2xl font-semibold mb-6">Perfect for:</h3>
-                  <ul className="space-y-4">
+                  <h3
+                    className="font-semibold text-white"
+                    style={{
+                      fontSize: "clamp(1.5rem, 3vw, 2rem)",
+                      marginBottom: "clamp(1.5rem, 3vh, 2rem)",
+                    }}
+                  >
+                    Perfect for:
+                  </h3>
+                  <ul
+                    className="space-y-4"
+                    style={{ gap: "clamp(1rem, 2vh, 1.5rem)" }}
+                  >
                     {[
                       "Students learning new technologies",
                       "Developers switching to new frameworks",
                       "Anyone wanting to contribute to open source",
                       "Building a portfolio with real projects",
                     ].map((item, index) => (
-                      <li key={index} className="flex items-center">
-                        <FiCheck className="text-green-500 w-5 h-5 mr-3 flex-shrink-0" />
-                        <span>{item}</span>
+                      <li
+                        key={index}
+                        className="flex items-center"
+                        style={{
+                          fontSize: "clamp(0.875rem, 2vw, 1rem)",
+                          marginBottom: "clamp(0.75rem, 2vh, 1rem)",
+                        }}
+                      >
+                        <FiCheck
+                          className="text-green-400 mr-3 flex-shrink-0"
+                          style={{
+                            width: "clamp(1rem, 2.5vw, 1.25rem)",
+                            height: "clamp(1rem, 2.5vw, 1.25rem)",
+                          }}
+                        />
+                        <span className="text-gray-300">{item}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
-                <div className="p-8 rounded-xl bg-white border-2 border-blue-200 shadow-lg">
-                  <div className="flex items-center mb-4">
-                    <FiStar className="text-yellow-500 w-6 h-6 mr-2" />
-                    <span className="bg-yellow-100 text-yellow-800 text-sm font-medium px-2 py-1 rounded">
-                      Skill Forge
-                    </span>
+                <div className="p-6 rounded-2xl bg-black border border-gray-800 shadow-lg">
+                  {/* Header with badge */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                      <span className="text-xs font-medium text-green-400 uppercase tracking-wider">
+                        Available Now
+                      </span>
+                    </div>
+                    <div className="px-3 py-1 bg-yellow-500/20 border border-yellow-500/30 rounded-full">
+                      <span className="text-xs font-semibold text-yellow-300">
+                        Skill Forge
+                      </span>
+                    </div>
                   </div>
-                  <h4 className="font-semibold text-lg mb-2">Sample Project</h4>
-                  <p className="text-gray-600 mb-4">
-                    "Build a React Todo App with TypeScript and implement
-                    real-time collaboration features."
+
+                  {/* Project Title */}
+                  <h4 className="text-lg font-bold text-white mb-3">
+                    TaskFlow Pro
+                  </h4>
+
+                  {/* Project Description */}
+                  <p className="text-gray-300 text-sm leading-relaxed mb-4">
+                    Collaborative task management platform with real-time
+                    updates, drag-and-drop interface, and team synchronization.
                   </p>
-                  <div className="text-sm text-blue-600 font-medium">
-                    💡 Free • Learn React, TypeScript, WebSockets
+
+                  {/* Tech Stack */}
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-400 mb-2 uppercase tracking-wide">
+                      Tech Stack
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {["React", "TypeScript", "Node.js", "WebSocket"].map(
+                        (tech, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-blue-500/20 border border-blue-500/30 rounded text-xs text-blue-300 font-medium"
+                          >
+                            {tech}
+                          </span>
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Project Info */}
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-700">
+                    <div className="flex items-center space-x-4 text-xs text-gray-400">
+                      <span>4-6 weeks</span>
+                      <span>•</span>
+                      <span>3-5 developers</span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-green-400">
+                        Portfolio + Certificate
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
