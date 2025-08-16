@@ -48,8 +48,9 @@ function ProfilePictureWithFallback({
     return (
       <div
         className={`
-          w-14 h-14 rounded-full flex items-center justify-center
+          w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center
           bg-gradient-to-br font-bold text-white shadow-lg border-2 transition-all duration-300
+          text-xs sm:text-sm md:text-base
           ${
             status === "pending"
               ? "from-gray-500 to-gray-600 border-gray-300"
@@ -73,7 +74,7 @@ function ProfilePictureWithFallback({
       onError={handleImageError}
       onLoad={handleImageLoad}
       className={`
-        w-14 h-14 rounded-full object-cover shadow-lg border-2 transition-all duration-300
+        w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full object-cover shadow-lg border-2 transition-all duration-300
         ${
           status === "pending"
             ? "border-gray-300"
@@ -101,7 +102,7 @@ export default function RequestCard({
   return (
     <div
       className={`
-        relative rounded-2xl p-6 flex flex-col gap-4 h-full
+        relative rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 flex flex-col gap-3 sm:gap-4 h-full
         transition-all duration-300 ease-out
         backdrop-blur-sm shadow-lg hover:shadow-xl
         border group overflow-hidden
@@ -136,10 +137,10 @@ export default function RequestCard({
       />
 
       {/* Header section with user info and status */}
-      <div className="relative z-10 flex justify-between items-start">
-        <div className="flex items-center gap-3">
+      <div className="relative z-10 flex justify-between items-start gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
           {/* Profile Picture or Avatar */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <ProfilePictureWithFallback
               src={req.requesterProfilePicture}
               alt={`${req.requesterName || req.name} profile`}
@@ -150,9 +151,9 @@ export default function RequestCard({
             />
           </div>
 
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0 flex-1">
             <div
-              className={`font-bold text-lg transition-colors duration-300 ${
+              className={`font-bold text-sm sm:text-base md:text-lg transition-colors duration-300 truncate ${
                 theme === "light" ? "text-gray-900" : "text-white"
               }`}
             >
@@ -160,10 +161,10 @@ export default function RequestCard({
             </div>
 
             {/* Gig stats - Hosted and Collaborated counts */}
-            <div className="flex items-center gap-3 mt-1">
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-3 mt-1">
               <div
                 className={`
-                  flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium
+                  flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs font-medium
                   backdrop-blur-sm border transition-colors duration-300
                   ${
                     theme === "light"
@@ -173,7 +174,7 @@ export default function RequestCard({
                 `}
               >
                 <svg
-                  className="w-3 h-3"
+                  className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -183,11 +184,13 @@ export default function RequestCard({
                     clipRule="evenodd"
                   />
                 </svg>
-                <span>{req.requesterGigHostedCount || 0} hosted</span>
+                <span className="text-xs whitespace-nowrap">
+                  {req.requesterGigHostedCount || 0} hosted
+                </span>
               </div>
               <div
                 className={`
-                  flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium
+                  flex items-center gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-xs font-medium
                   backdrop-blur-sm border transition-colors duration-300
                   ${
                     theme === "light"
@@ -197,13 +200,13 @@ export default function RequestCard({
                 `}
               >
                 <svg
-                  className="w-3 h-3"
+                  className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
                   <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>
+                <span className="text-xs whitespace-nowrap">
                   {req.requesterGigCollaboratedCount || 0} collaborated
                 </span>
               </div>
@@ -212,7 +215,7 @@ export default function RequestCard({
             {/* Enhanced status indicator */}
             <div
               className={`
-                inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold mt-2
+                inline-flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-semibold mt-1 sm:mt-2
                 backdrop-blur-sm border shadow-sm transition-all duration-300 w-fit
                 ${
                   req.status === "pending"
@@ -227,14 +230,14 @@ export default function RequestCard({
             >
               {req.status === "pending" && (
                 <>
-                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" />
-                  Pending Review
+                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-gray-400 animate-pulse" />
+                  <span className="text-xs">Pending Review</span>
                 </>
               )}
               {req.status === "accepted" && (
                 <>
                   <svg
-                    className="w-3 h-3"
+                    className="w-2.5 h-2.5 sm:w-3 sm:h-3"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -244,13 +247,13 @@ export default function RequestCard({
                       clipRule="evenodd"
                     />
                   </svg>
-                  Accepted
+                  <span className="text-xs">Accepted</span>
                 </>
               )}
               {req.status === "rejected" && (
                 <>
                   <svg
-                    className="w-3 h-3"
+                    className="w-2.5 h-2.5 sm:w-3 sm:h-3"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -260,7 +263,7 @@ export default function RequestCard({
                       clipRule="evenodd"
                     />
                   </svg>
-                  Rejected
+                  <span className="text-xs">Rejected</span>
                 </>
               )}
             </div>
@@ -268,10 +271,10 @@ export default function RequestCard({
         </div>
 
         {/* Rating and timestamp section */}
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-col items-end gap-1 sm:gap-2 flex-shrink-0">
           <div
             className={`
-            flex items-center gap-1.5 px-2 py-1 rounded-lg
+            flex items-center gap-1 sm:gap-1.5 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg
             backdrop-blur-sm border transition-colors duration-300
             ${
               theme === "light"
@@ -284,9 +287,9 @@ export default function RequestCard({
               className={`${
                 theme === "light" ? "text-yellow-500" : "text-yellow-400"
               }`}
-              size={12}
+              size={10}
             />
-            <span className="text-sm font-medium">
+            <span className="text-xs font-medium">
               {(() => {
                 const rating =
                   req.requesterRating || req.rating || req.sender?.rating;
@@ -296,7 +299,7 @@ export default function RequestCard({
           </div>
 
           <div
-            className={`text-xs font-medium ${
+            className={`text-xs font-medium text-center ${
               theme === "light" ? "text-gray-500" : "text-gray-400"
             }`}
           >
@@ -312,7 +315,7 @@ export default function RequestCard({
 
           {req.responseTime && req.status !== "pending" && (
             <div
-              className={`text-xs px-2 py-0.5 rounded backdrop-blur-sm border font-medium ${
+              className={`text-xs px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded backdrop-blur-sm border font-medium ${
                 req.status === "accepted"
                   ? theme === "light"
                     ? "bg-gray-100/70 border-gray-200/70 text-gray-700"
@@ -337,7 +340,7 @@ export default function RequestCard({
       {(req.requesterBio || req.sender?.bio) && (
         <div
           className={`
-            relative p-4 rounded-xl transition-colors duration-300
+            relative p-3 sm:p-4 rounded-lg sm:rounded-xl transition-colors duration-300
             backdrop-blur-sm border
             ${
               theme === "light"
@@ -348,7 +351,7 @@ export default function RequestCard({
         >
           <div className="flex items-center gap-2 mb-2">
             <svg
-              className={`w-4 h-4 ${
+              className={`w-3 h-3 sm:w-4 sm:h-4 ${
                 theme === "light" ? "text-gray-500" : "text-gray-400"
               }`}
               fill="currentColor"
@@ -368,7 +371,7 @@ export default function RequestCard({
               About
             </span>
           </div>
-          <div className="text-sm leading-relaxed line-clamp-4">
+          <div className="text-xs sm:text-sm leading-relaxed line-clamp-3 sm:line-clamp-4">
             {req.requesterBio}
           </div>
         </div>
@@ -377,7 +380,7 @@ export default function RequestCard({
       {/* Message section */}
       <div
         className={`
-          relative p-4 rounded-xl transition-colors duration-300
+          relative p-3 sm:p-4 rounded-lg sm:rounded-xl transition-colors duration-300
           backdrop-blur-sm border flex-grow
           ${
             theme === "light"
@@ -386,14 +389,14 @@ export default function RequestCard({
           }
         `}
       >
-        <div className="text-sm leading-relaxed font-medium">
+        <div className="text-xs sm:text-sm leading-relaxed font-medium">
           <b>Invite message:</b> {req.message}
         </div>
       </div>
 
       {/* Action buttons section */}
       {req.status === "pending" && (
-        <div className="relative z-10 flex gap-3 mt-2">
+        <div className="relative z-10 flex flex-col sm:flex-row gap-2 sm:gap-3 mt-2">
           <ProfessionalButton
             onClick={() => {
               const username = req.requesterName || req.name;
@@ -404,10 +407,10 @@ export default function RequestCard({
             }}
             variant="neutral"
             size="sm"
-            className="flex-1"
+            className="flex-1 text-xs sm:text-sm"
             icon={
               <svg
-                className="w-4 h-4"
+                className="w-3 h-3 sm:w-4 sm:h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -421,19 +424,20 @@ export default function RequestCard({
               </svg>
             }
           >
-            View Profile
+            <span className="hidden sm:inline">View Profile</span>
+            <span className="sm:hidden">Profile</span>
           </ProfessionalButton>
           <ProfessionalButton
             onClick={() => onAccept(req, idx)}
             disabled={processingRequests.has(idx)}
             variant="primary"
             size="sm"
-            className="flex-1"
+            className="flex-1 text-xs sm:text-sm"
             loading={processingRequests.has(idx)}
             loadingText="Processing..."
             icon={
               <svg
-                className="w-4 h-4"
+                className="w-3 h-3 sm:w-4 sm:h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -454,12 +458,12 @@ export default function RequestCard({
             disabled={processingRequests.has(idx)}
             variant="danger"
             size="sm"
-            className="flex-1"
+            className="flex-1 text-xs sm:text-sm"
             loading={processingRequests.has(idx)}
             loadingText="Processing..."
             icon={
               <svg
-                className="w-4 h-4"
+                className="w-3 h-3 sm:w-4 sm:h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -482,7 +486,7 @@ export default function RequestCard({
       {req.status === "accepted" && (
         <div
           className={`
-          relative z-10 mt-3 p-4 rounded-xl backdrop-blur-sm border
+          relative z-10 mt-2 sm:mt-3 p-3 sm:p-4 rounded-lg sm:rounded-xl backdrop-blur-sm border
           transition-all duration-300
           ${
             theme === "light"
@@ -491,10 +495,10 @@ export default function RequestCard({
           }
         `}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div
               className={`
-              w-8 h-8 rounded-full flex items-center justify-center
+              w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center
               ${
                 theme === "light"
                   ? "bg-gray-200 text-gray-700"
@@ -502,7 +506,11 @@ export default function RequestCard({
               }
             `}
             >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <svg
+                className="w-3 h-3 sm:w-4 sm:h-4"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
                 <path
                   fillRule="evenodd"
                   d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -511,7 +519,9 @@ export default function RequestCard({
               </svg>
             </div>
             <div className="flex-1">
-              <div className="font-semibold text-sm">Request Accepted</div>
+              <div className="font-semibold text-xs sm:text-sm">
+                Request Accepted
+              </div>
               <div className="text-xs opacity-90">
                 User can now join the gig workspace
               </div>
@@ -523,7 +533,7 @@ export default function RequestCard({
       {req.status === "rejected" && (
         <div
           className={`
-          relative z-10 mt-2 px-3 py-2 rounded-lg backdrop-blur-sm border
+          relative z-10 mt-2 px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg backdrop-blur-sm border
           transition-all duration-300 text-center
           ${
             theme === "light"
@@ -532,8 +542,12 @@ export default function RequestCard({
           }
         `}
         >
-          <div className="flex items-center justify-center gap-2">
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+          <div className="flex items-center justify-center gap-1 sm:gap-2">
+            <svg
+              className="w-2.5 h-2.5 sm:w-3 sm:h-3"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
               <path
                 fillRule="evenodd"
                 d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
