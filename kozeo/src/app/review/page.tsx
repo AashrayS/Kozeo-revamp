@@ -170,7 +170,7 @@ export default function ReviewPage() {
           }`}
         >
           <Sidebar />
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col pb-20 lg:pb-0">
             <main className="flex-1 p-0 sm:p-8 flex flex-col items-center sm:justify-center">
               <div
                 className={`w-full h-screen sm:h-auto max-w-2xl rounded-none sm:rounded-2xl border-0 sm:border shadow-none sm:shadow-xl p-4 sm:p-8 md:p-12 flex flex-col gap-6 sm:gap-8 justify-center items-center text-center transition-all duration-300 ${
@@ -193,8 +193,8 @@ export default function ReviewPage() {
                   }`}
                 >
                   Thank you for your feedback.{" "}
-                  {isHost && "The project has been marked as completed. "}You'll be
-                  redirected to the projects page shortly.
+                  {isHost && "The project has been marked as completed. "}You'll
+                  be redirected to the projects page shortly.
                 </p>
                 <div className="flex gap-2">
                   <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
@@ -233,7 +233,7 @@ export default function ReviewPage() {
         }`}
       >
         <Sidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col pb-20 lg:pb-0">
           <main className="flex-1 p-0 sm:p-8 flex flex-col items-center sm:justify-center">
             <form
               onSubmit={handleSubmit}
@@ -316,13 +316,16 @@ export default function ReviewPage() {
               {error && (
                 <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
                   <p className="text-red-500 text-sm mb-2">{error}</p>
-                  {error.includes("Missing gigs ID or receiver information") && (
+                  {error.includes(
+                    "Missing gigs ID or receiver information"
+                  ) && (
                     <div className="text-xs text-gray-500">
                       <p>To leave a review, you need to:</p>
                       <ul className="list-disc list-inside mt-1 space-y-1">
                         <li>Complete a project collaboration</li>
                         <li>
-                          Access the review page from the project completion flow
+                          Access the review page from the project completion
+                          flow
                         </li>
                       </ul>
                       <button

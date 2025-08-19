@@ -25,12 +25,15 @@ import {
   verifyRazorpayPayment,
   createGigTransaction,
   updateAttachmentDescription,
+  createCashfreeOrder,
+  verifyCashfreePayment,
 } from "../../../../utilities/kozeoApi";
 import { useUser } from "../../../../store/hooks";
 import { useTheme } from "../../../contexts/ThemeContext";
 
 import { io } from "socket.io-client";
 import { WEBSOCKET_URL } from "@/config";
+// import {sendPaymentMail} from "../../../../utilities/helper"
 
 // Declare Razorpay for TypeScript
 declare global {
@@ -47,10 +50,41 @@ interface Props {
 type Socket = ReturnType<typeof io>;
 
 export default function GigPage({
+  // ...existing code...
+  // Handle 'Accept and Pay' in manual mode
+
   params: paramsPromise,
 }: {
   params: Promise<{ gigId: string }>;
 }) {
+  // ...existing code...
+  // Manual payment submit handler
+  const handleManualPaymentSubmit = async () => {
+    setIsManualSubmitting(true);
+    try {
+      // Prepare email content
+      const mailData = {
+        gigId,
+        amount: paymentAmount,
+        currency : "INR",
+        to: getOtherPartyUsername(),
+        from: getCurrentUsername(),
+        contact: manualContact,
+      };
+
+      // Call backend API to send mail (replace with your API endpoint)
+      // await sendPaymentMail(mailData);
+
+      setShowManualPaymentModal(false);
+      setPaymentAmount("");
+      setManualContact("");
+      alert("You will be contacted soon regarding this payment.");
+    } catch (err) {
+      alert("Failed to submit manual payment. Please try again.");
+    } finally {
+      setIsManualSubmitting(false);
+    }
+  };
   const { gigId } = use(paramsPromise);
   const router = useRouter();
   const { theme } = useTheme();
@@ -111,8 +145,51 @@ export default function GigPage({
   const [tldrawInputDisabled, setTldrawInputDisabled] = useState(false);
 
   // Payment processing state
+  // Manual payment modal state
+  const [showManualPaymentModal, setShowManualPaymentModal] = useState(false);
+  const [manualContact, setManualContact] = useState("");
+  const [isManualSubmitting, setIsManualSubmitting] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentProgress, setPaymentProgress] = useState(0);
+
+  // Get payment gateway from environment variable
+  const paymentGateway = process.env.NEXT_PUBLIC_PAYMENT_GATEWAY || "Razorpay";
+
+  // Helper function to get payment gateway configuration
+  const getPaymentGatewayConfig = () => {
+    switch (paymentGateway) {
+      case "Cashfree":
+        return {
+          name: "Cashfree",
+          scriptUrl: "https://sdk.cashfree.com/js/v3/cashfree.js",
+          keyId: process.env.NEXT_PUBLIC_CASHFREE_CLIENT_ID,
+        };
+      case "Manual":
+        return {
+          name: "Manual",
+        };
+      case "Razorpay":
+      default:
+        return {
+          name: "Razorpay",
+          scriptUrl: "https://checkout.razorpay.com/v1/checkout.js",
+          keyId:
+            process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_your_key_id",
+        };
+    }
+  };
+
+  // Load payment gateway script
+  const loadPaymentScript = () => {
+    const config = getPaymentGatewayConfig();
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = config.scriptUrl || "";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
 
   useEffect(() => {
     const fetchGig = async () => {
@@ -150,6 +227,8 @@ export default function GigPage({
         setGigLoading(false);
       }
     };
+
+    
 
     const fetchChatMessages = async () => {
       try {
@@ -316,6 +395,39 @@ export default function GigPage({
 
     fetchGig();
   }, [gigId, username, user, email]);
+
+  // Handle payment verification when returning from Cashfree
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get("payment_status");
+    const orderId = urlParams.get("order_id");
+    const messageId = urlParams.get("message_id");
+
+    if (paymentStatus === "success" && orderId && messageId) {
+      console.log("Detected Cashfree payment return, verifying payment...", {
+        paymentStatus,
+        orderId,
+        messageId,
+      });
+
+      // Clean up URL parameters
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+
+      // Verify the payment after a small delay to ensure UI is ready
+      setTimeout(() => {
+        handleCashfreePaymentSuccess(
+          { orderId, order_id: orderId },
+          messageId
+        ).catch((error) => {
+          console.error("Error during payment verification:", error);
+          alert("Payment verification failed: " + error.message);
+          setIsProcessingPayment(false);
+          setTldrawInputDisabled(false);
+        });
+      }, 1000);
+    }
+  }, []);
 
   // Helper functions for user roles and messaging
   const getCurrentUserRole = () => {
@@ -1173,6 +1285,41 @@ export default function GigPage({
   };
 
   const handlePaymentRequest = async () => {
+    // Manual payment gateway logic
+    if (paymentGateway === "Manual") {
+      setShowPaymentModal(false);
+      setShowManualPaymentModal(true);
+      return;
+    }
+    const handleManualPaymentSubmit = async () => {
+      setIsManualSubmitting(true);
+      try {
+        // Prepare email content
+        const mailData = {
+          gigId,
+          amount: paymentAmount,
+          to: getOtherPartyUsername(),
+          from: getCurrentUsername(),
+          contact: manualContact,
+        };
+
+        // Call backend API to send mail (replace with your API endpoint)
+        await fetch("/api/sendManualPaymentMail", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(mailData),
+        });
+
+        setShowManualPaymentModal(false);
+        setPaymentAmount("");
+        setManualContact("");
+        alert("You will be contacted soon regarding this payment.");
+      } catch (err) {
+        alert("Failed to submit manual payment. Please try again.");
+      } finally {
+        setIsManualSubmitting(false);
+      }
+    };
     if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
       alert("Please enter a valid payment amount");
       return;
@@ -1417,7 +1564,7 @@ export default function GigPage({
     status: "completed" | "declined"
   ) => {
     try {
-      // If accepting payment, initiate Razorpay payment
+      // If accepting payment, initiate payment based on gateway
       if (status === "completed") {
         // Find the original payment request message to get the amount
         const paymentRequestMsg = messages.find(
@@ -1434,65 +1581,13 @@ export default function GigPage({
         );
         const amountInSmallestUnit = Math.round(amount);
 
-        // Create Razorpay order for payment acceptance
-        const orderResponse = await createRazorpayOrder(
-          amountInSmallestUnit,
-          gig?.currency === "INR" ? "INR" : "USD",
-          {
-            gigId: gigId,
-            originalRequestId: messageId,
-            paymentType: "acceptance",
-            description: `Payment acceptance for gig: ${gig?.title}`,
-          }
-        );
-
-        if ((orderResponse as any).success) {
-          const options = {
-            key:
-              process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_your_key_id",
-            amount: amountInSmallestUnit,
-            currency: gig?.currency === "INR" ? "INR" : "USD",
-            name: "Kozeo",
-            description: `Payment for gig: ${gig?.title}`,
-            order_id: (orderResponse as any).orderId,
-            handler: function (response: any) {
-              handlePaymentAcceptanceSuccess(response, messageId);
-            },
-            modal: {
-              ondismiss: function () {
-                // Re-enable Tldraw input if modal is dismissed
-                setTldrawInputDisabled(false);
-              },
-            },
-            prefill: {
-              name: user?.first_name + " " + user?.last_name || "",
-              email: getCurrentUserEmail(),
-            },
-            theme: {
-              color: "#10B981",
-            },
-          };
-
-          // Disable Tldraw input before opening Razorpay
-          setTldrawInputDisabled(true);
-
-          const openRazorpay = () => {
-            const rzp = new (window as any).Razorpay(options);
-            rzp.open();
-          };
-
-          if (!(window as any).Razorpay) {
-            const script = document.createElement("script");
-            script.src = "https://checkout.razorpay.com/v1/checkout.js";
-            script.onload = openRazorpay;
-            document.body.appendChild(script);
-          } else {
-            openRazorpay();
-          }
+        // Check payment gateway and create order accordingly
+        if (paymentGateway === "Cashfree") {
+          await handleCashfreePayment(amountInSmallestUnit, messageId);
+        } else if (paymentGateway === "Manual") {
+          await handleManualPayment(amountInSmallestUnit, messageId);
         } else {
-          alert(
-            (orderResponse as any).message || "Failed to create payment order"
-          );
+          await handleRazorpayPayment(amountInSmallestUnit, messageId);
         }
       } else {
         // Handle payment rejection
@@ -1507,8 +1602,6 @@ export default function GigPage({
             },
           ],
         };
-
-        // await sendGigMessage(rejectionMessage);
 
         // Find the original payment request message to get its message ID
         const originalPaymentRequestMsg = messages.find(
@@ -1550,13 +1643,274 @@ export default function GigPage({
     }
   };
 
+  // Handle Cashfree payment
+  const handleCashfreePayment = async (
+    amountInSmallestUnit: number,
+    messageId: string
+  ) => {
+    try {
+      // Create Cashfree order for payment acceptance
+      const orderResponse = await createCashfreeOrder(
+        amountInSmallestUnit,
+        gig?.currency === "INR" ? "INR" : "USD",
+        {
+          gigId: gigId,
+          // originalRequestId: messageId,
+          // paymentType: "acceptance",
+          // description: `Payment acceptance for gig: ${gig?.title}`,
+          customer_id: user?.id || "guest_" + Date.now(),
+          customer_name: user?.name || "Guest User",
+          customer_email: user?.email || "guest@example.com",
+          customer_phone: user?.phone || "+919999999999",
+        }
+      );
+
+      if ((orderResponse as any).success) {
+        // Disable Tldraw input before opening Cashfree
+        setTldrawInputDisabled(true);
+
+        // Load Cashfree SDK if not already loaded
+        const isScriptLoaded = await loadPaymentScript();
+        if (!isScriptLoaded) {
+          alert("Failed to load Cashfree payment gateway");
+          setTldrawInputDisabled(false);
+          return;
+        }
+
+        // Initialize Cashfree Checkout
+        const cashfree = new (window as any).Cashfree({
+          mode:
+            process.env.NODE_ENV === "production" ? "production" : "sandbox",
+        });
+
+        const checkoutOptions = {
+          paymentSessionId: (orderResponse as any).paymentSessionId,
+          returnUrl: `${
+            window.location.origin
+          }/gig/${gigId}?payment_status=success&order_id=${
+            (orderResponse as any).orderId
+          }&message_id=${messageId}`,
+        };
+
+        // Open Cashfree payment modal
+        cashfree.checkout(checkoutOptions).then((result: any) => {
+          if (result.error) {
+            console.error("Cashfree payment error:", result.error);
+            alert("Payment failed: " + result.error.message);
+            setTldrawInputDisabled(false);
+          } else {
+            // User was redirected to payment page
+            console.log("User redirected to Cashfree payment page");
+            // Payment verification will happen when user returns via URL parameters
+          }
+        });
+      } else {
+        alert(
+          (orderResponse as any).message ||
+            "Failed to create Cashfree payment order"
+        );
+      }
+    } catch (error) {
+      console.error("Error in Cashfree payment:", error);
+      alert("Failed to process Cashfree payment. Please try again.");
+      setTldrawInputDisabled(false);
+    }
+  };
+
+  const handleManualPayment = (
+      amount: number | string,
+      to?: string,
+      from?: string
+    ) => {
+      setPaymentAmount(amount?.toString() || "");
+      setShowManualPaymentModal(true);
+      // Optionally set other fields if needed
+      // You can also set 'to' and 'from' in state if you want to show/edit them in the modal
+    };
+
+  // Handle Razorpay payment (existing implementation)
+  const handleRazorpayPayment = async (
+    amountInSmallestUnit: number,
+    messageId: string
+  ) => {
+    try {
+      // Create Razorpay order for payment acceptance
+      const orderResponse = await createRazorpayOrder(
+        amountInSmallestUnit,
+        gig?.currency === "INR" ? "INR" : "USD",
+        {
+          gigId: gigId,
+          originalRequestId: messageId,
+          paymentType: "acceptance",
+          description: `Payment acceptance for gig: ${gig?.title}`,
+        }
+      );
+
+      if ((orderResponse as any).success) {
+        const options = {
+          key: getPaymentGatewayConfig().keyId,
+          amount: amountInSmallestUnit,
+          currency: gig?.currency === "INR" ? "INR" : "USD",
+          name: "Kozeo",
+          description: `Payment for gig: ${gig?.title}`,
+          order_id: (orderResponse as any).orderId,
+          handler: function (response: any) {
+            handleRazorpayPaymentSuccess(response, messageId);
+          },
+          modal: {
+            ondismiss: function () {
+              // Re-enable Tldraw input if modal is dismissed
+              setTldrawInputDisabled(false);
+            },
+          },
+          prefill: {
+            name: user?.first_name + " " + user?.last_name || "",
+            email: getCurrentUserEmail(),
+          },
+          theme: {
+            color: "#10B981",
+          },
+        };
+
+        // Disable Tldraw input before opening Razorpay
+        setTldrawInputDisabled(true);
+
+        const openRazorpay = () => {
+          const rzp = new (window as any).Razorpay(options);
+          rzp.open();
+        };
+
+        if (!(window as any).Razorpay) {
+          const script = document.createElement("script");
+          script.src = "https://checkout.razorpay.com/v1/checkout.js";
+          script.onload = openRazorpay;
+          document.body.appendChild(script);
+        } else {
+          openRazorpay();
+        }
+      } else {
+        alert(
+          (orderResponse as any).message || "Failed to create payment order"
+        );
+      }
+    } catch (error) {
+      console.error("Error in Razorpay payment:", error);
+      alert("Failed to process Razorpay payment. Please try again.");
+      setTldrawInputDisabled(false);
+    }
+  };
+
+  // Handle successful Cashfree payment
+  const handleCashfreePaymentSuccess = async (
+    result: any,
+    originalRequestId: string
+  ) => {
+    try {
+      console.log("Starting Cashfree payment verification:", result);
+
+      // Validate that we have the required orderId
+      const orderId = result.orderId || result.order_id;
+      if (!orderId) {
+        throw new Error("Missing orderId in payment result");
+      }
+
+      // Start payment processing with progress tracking
+      setIsProcessingPayment(true);
+      setPaymentProgress(20);
+
+      // Verify payment with backend - this should now work properly
+      setPaymentProgress(40);
+      console.log("Calling verifyCashfreePayment with orderId:", orderId);
+      const verificationResponse = await verifyCashfreePayment(orderId);
+
+      console.log("Payment verification response:", verificationResponse);
+
+      if (
+        !(verificationResponse as any).success ||
+        !(verificationResponse as any).verified
+      ) {
+        throw new Error(
+          (verificationResponse as any).message || "Payment verification failed"
+        );
+      }
+
+      setPaymentProgress(60);
+
+      // Create gig transaction
+      const transactionResponse = await createGigTransaction(
+        gigId,
+        (verificationResponse as any).amount,
+        (verificationResponse as any).order_id,
+        (verificationResponse as any).currency
+      );
+
+      if (!(transactionResponse as any).success) {
+        throw new Error(
+          (transactionResponse as any).message || "Failed to create transaction"
+        );
+      }
+
+      setPaymentProgress(80);
+
+      // Update attachment description to "accepted"
+      const originalPaymentRequestMsg = messages.find(
+        (msg) => msg.id === originalRequestId && msg.type === "payment-request"
+      );
+
+      if (originalPaymentRequestMsg?.id) {
+        await updateAttachmentDescription(
+          originalPaymentRequestMsg.id,
+          "accepted"
+        );
+      }
+
+      // Update local message status
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === originalRequestId
+            ? { ...msg, type: "payment-accepted" }
+            : msg
+        )
+      );
+
+      // Send success response to other user via socket
+      socketRef.current?.emit("payment-response", {
+        messageId: originalRequestId,
+        status: "completed",
+        gigId,
+        paymentDetails: verificationResponse,
+      });
+
+      setPaymentProgress(100);
+
+      // Re-enable Tldraw input
+      setTldrawInputDisabled(false);
+
+      // Complete processing
+      setTimeout(() => {
+        setIsProcessingPayment(false);
+        setPaymentProgress(0);
+        alert("Cashfree payment completed successfully!");
+      }, 500);
+    } catch (error: any) {
+      console.error("Error handling Cashfree payment success:", error);
+      setIsProcessingPayment(false);
+      setPaymentProgress(0);
+      setTldrawInputDisabled(false);
+      alert(
+        error?.message ||
+          "Cashfree payment was successful but there was an error updating the records."
+      );
+    }
+  };
+
   // Helper function for handling successful Razorpay payment acceptance
-  const handlePaymentAcceptanceSuccess = async (
+  const handleRazorpayPaymentSuccess = async (
     response: any,
     originalRequestId: string
   ) => {
     try {
-      console.log("Payment acceptance successful:", response);
+      console.log("Razorpay payment successful:", response);
 
       // Start payment processing with progress tracking
       setIsProcessingPayment(true);
@@ -1778,6 +2132,24 @@ export default function GigPage({
               </div>
             </div>
 
+            {/* Payment Gateway Indicator */}
+            {/* <div
+              className={`hidden md:block border p-2 text-center text-xs font-medium mx-3 mb-3 rounded-lg ${
+                paymentGateway === "Cashfree"
+                  ? theme === "light"
+                    ? "bg-orange-50/60 border-orange-200/40 text-orange-700"
+                    : "bg-orange-900/20 border-orange-700/30 text-orange-300"
+                  : theme === "light"
+                  ? "bg-blue-50/60 border-blue-200/40 text-blue-700"
+                  : "bg-blue-900/20 border-blue-700/30 text-blue-300"
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <FaDollarSign className="w-3 h-3" />
+                <span>Payment Gateway: {paymentGateway}</span>
+              </div>
+            </div> */}
+
             {/* Mobile Navigation Tabs */}
             <div
               className={`md:hidden flex border-b backdrop-blur-sm ${
@@ -1995,7 +2367,7 @@ export default function GigPage({
               {/* Mobile Chat View */}
               {showMobileChat && (
                 <div
-                  className="md:hidden flex flex-col overflow-x-hidden border-neutral-700 w-full min-h-0"
+                  className="md:hidden flex flex-col overflow-x-hidden border-neutral-700 w-full min-h-0 mb-16"
                   style={{ height: "100%" }}
                 >
                   <div className="p-3 border-b border-neutral-700 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 flex-shrink-0">
@@ -2740,9 +3112,19 @@ export default function GigPage({
                     Request Payment
                   </h3>
                   <p className="text-sm text-blue-200/80">
-                    Send a payment request
+                    Send a payment request via {paymentGateway}
                   </p>
                 </div>
+              </div>
+              {/* Payment Gateway Indicator */}
+              <div
+                className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                  paymentGateway === "Cashfree"
+                    ? "bg-orange-500/20 border-orange-500/30 text-orange-200"
+                    : "bg-blue-500/20 border-blue-500/30 text-blue-200"
+                }`}
+              >
+                {paymentGateway}
               </div>
             </div>
 
@@ -2987,6 +3369,53 @@ export default function GigPage({
           </div>
         </div>
       )}
+      {/* Manual Payment Modal */}
+       {showManualPaymentModal && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center  backdrop-blur-sm">
+                    <div className={`bg-gradient-to-br from-neutral-800 to-neutral-900 border border-blue-500/20 rounded-xl shadow-2xl p-6 max-w-md w-full mx-4 ${theme === "light" ? "text-gray-900" : "text-white"}`}>
+                      <h2 className="text-2xl font-bold mb-4 text-blue-300">Manual Payment Request</h2>
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-blue-200 mb-1">Gig ID</label>
+                        <input type="text" value={gigId} readOnly className="w-full border border-blue-500/30 rounded-lg px-3 py-2 bg-neutral-900/60 text-blue-200" />
+                      </div>
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-blue-200 mb-1">Amount</label>
+                        <input type="text" value={paymentAmount} readOnly className="w-full border border-blue-500/30 rounded-lg px-3 py-2 bg-neutral-900/60 text-blue-200" />
+                      </div>
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-blue-200 mb-1">To</label>
+                        <input type="text" value={getOtherPartyUsername()} readOnly className="w-full border border-blue-500/30 rounded-lg px-3 py-2 bg-neutral-900/60 text-blue-200" />
+                      </div>
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-blue-200 mb-1">From</label>
+                        <input type="text" value={getCurrentUsername()} readOnly className="w-full border border-blue-500/30 rounded-lg px-3 py-2 bg-neutral-900/60 text-blue-200" />
+                      </div>
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-blue-200 mb-1">Your Contact Details</label>
+                        <input
+                          type="text"
+                          value={manualContact}
+                          onChange={e => setManualContact(e.target.value)}
+                          placeholder="Email or phone number"
+                          className="w-full border border-blue-500/30 rounded-lg px-3 py-2 bg-neutral-900/80 text-blue-100 placeholder-blue-400"
+                          required
+                        />
+                      </div>
+                      <div className="flex justify-end mt-6 gap-2">
+                        <button
+                          className="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-blue-200 font-medium rounded-lg border border-blue-500/30 transition-colors"
+                          onClick={() => setShowManualPaymentModal(false)}
+                          disabled={isManualSubmitting}
+                        >Cancel</button>
+                        <button
+                          className="px-4 py-2 bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold rounded-lg shadow-md border border-green-500/30 hover:from-green-600 hover:to-blue-600 transition-colors"
+                          onClick={handleManualPaymentSubmit}
+                          disabled={isManualSubmitting || !manualContact}
+                        >Submit</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
     </>
   );
 }

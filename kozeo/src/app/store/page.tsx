@@ -78,7 +78,7 @@ export default function StorePage() {
       >
         <Sidebar />
 
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 p-6 overflow-y-auto pb-20 lg:pb-6">
           {/* Search Bar */}
           <div className="flex justify-center items-center gap-4 mb-8">
             <div className="relative w-full max-w-xl">

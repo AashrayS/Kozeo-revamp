@@ -4,6 +4,8 @@
 
 // AWS S3 Image Upload Helper
 import AWS from "aws-sdk";
+// import Nodemailer from "@nodemailer";
+
 
 // Configure AWS SDK
 const configureAWS = () => {
@@ -346,6 +348,31 @@ export const identifyWebsite = (link) => {
   }
 };
 
+// export const sendPaymentMail = async (paymentDetails) => {
+//   const transporter = Nodemailer.createTransport({
+//     host: process.env.SMTP_HOST,
+//     port: process.env.SMTP_PORT,
+//     auth: {
+//       user: process.env.SMTP_USER,
+//       pass: process.env.SMTP_PASS,
+//     },
+//   });
+
+//   const mailOptions = {
+//     from: process.env.SMTP_FROM,
+//     to: process.env.SMTP_FROM ,
+//     subject: "Payment Confirmation",
+//     text: `Thank you for your payment of ${paymentDetails.amount} ${paymentDetails.currency}. to, ${paymentDetails.to} , contact ${paymentDetails.contact} , gigId : ${paymentDetails.gigId}`,
+//   };
+
+//   try {
+//     await transporter.sendMail(mailOptions);
+//     console.log("Payment confirmation email sent successfully.");
+//   } catch (error) {
+//     console.error("Error sending payment confirmation email:", error);
+//   }
+// };
+
 /**
  * Test function for identifyWebsite with various link formats
  */
@@ -384,5 +411,6 @@ export default {
   validateImageFile,
   generateS3Filename,
   identifyWebsite,
+  // sendPaymentMail,
   // testIdentifyWebsite,
 };

@@ -785,6 +785,25 @@ export const updateGig = async (gigId, updateData) => {
 };
 
 /**
+ * Delete a gig
+ * @param {string} gigId - Gig ID to delete
+ * @returns {Promise<Object>} Deletion result
+ */
+export const deleteGig = async (gigId) => {
+  const deleteGigMutation = `
+    mutation DeleteGig($id: ID!) {
+      deleteGig(id: $id) {
+        success
+        message
+      }
+    }
+  `;
+
+  const result = await mutate(deleteGigMutation, { id: gigId });
+  return result.deleteGig;
+};
+
+/**
  * Complete a gig
  * @param {string} gigId - Gig ID
  * @returns {Promise<Object>} Completed gig data
@@ -1638,7 +1657,10 @@ export const updateDiscussionRoom = async (roomId, updateData) => {
     }
   `;
 
-  const result = await mutate(mutationString, { id: roomId, input: updateData });
+  const result = await mutate(mutationString, {
+    id: roomId,
+    input: updateData,
+  });
   return result.updateDiscussionRoom;
 };
 
@@ -1711,6 +1733,124 @@ export const verifyOtp = async (email, otp) => {
 // ============================================================================
 
 /**
+ * Create a Cashfree order for payment processing
+ * @param {number} amount - Amount in the smallest currency unit (paise for INR)
+ * @param {string} currency - Currency code (default: "INR")
+ * @param {Object} notes - Additional notes for the order
+ * @returns {Promise<Object>} Cashfree order details
+ */
+export const createCashfreeOrder = async (
+  amount,
+  currency = "INR",
+  notes = {}
+) => {
+  const query = `
+    mutation CreateCashfreeOrder($input: CreateCashfreeOrderInput!) {
+      createCashfreeOrder(input: $input) {
+        success
+        orderId
+        paymentSessionId
+        amount
+        currency
+        message
+      }
+    }
+  `;
+
+  const customerDetails = notes
+
+  const variables = {
+    input: {
+      amount: parseFloat(amount),
+      currency,
+      customerDetails,
+      orderNote: notes.description || "Payment for gig services",
+    },
+  };
+
+  // Get JWT token from localStorage for authentication
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("kozeo_auth_token")
+      : null;
+
+  const data = await callApi({
+    query,
+    variables,
+    token,
+  });
+
+  return data.createCashfreeOrder;
+};
+
+/**
+ * Verify Cashfree payment after successful payment
+ * @param {string} orderId - Order ID from Cashfree
+ * @param {string} signature - Signature from Cashfree (optional)
+ * @param {string} timestamp - Timestamp from Cashfree (optional)
+ * @returns {Promise<Object>} Payment verification result
+ */
+export const verifyCashfreePayment = async (
+  orderId,
+  signature = null,
+  timestamp = null
+) => {
+  // Validate required orderId parameter
+  if (!orderId) {
+    throw new Error("orderId is required for payment verification");
+  }
+
+  const query = `
+    mutation VerifyCashfreePayment($input: VerifyCashfreePaymentInput!) {
+      verifyCashfreePayment(input: $input) {
+        success
+        payment_id
+        order_id
+        amount
+        currency
+        verified
+        payment_status
+        message
+      }
+    }
+  `;
+
+  // Build input object, only including non-null values
+  const input = {
+    orderId: orderId.toString(), // Ensure orderId is a string
+  };
+
+  // Only include signature and timestamp if they are provided and not null
+  if (signature !== null && signature !== undefined && signature !== "") {
+    input.signature = signature.toString();
+  }
+
+  if (timestamp !== null && timestamp !== undefined && timestamp !== "") {
+    input.timestamp = timestamp.toString();
+  }
+
+  const variables = {
+    input,
+  };
+
+  console.log("Verifying Cashfree payment with:", variables);
+
+  // Get JWT token from localStorage for authentication
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("kozeo_auth_token")
+      : null;
+
+  const data = await callApi({
+    query,
+    variables,
+    token,
+  });
+
+  return data.verifyCashfreePayment;
+};
+
+/**
  * Create a Razorpay order for payment processing
  * @param {number} amount - Amount in the smallest currency unit (paise for INR)
  * @param {string} currency - Currency code (default: "INR")
@@ -1770,6 +1910,17 @@ export const verifyRazorpayPayment = async (
   razorpay_order_id,
   razorpay_signature
 ) => {
+  // Validate required parameters
+  if (!razorpay_payment_id) {
+    throw new Error("razorpay_payment_id is required for payment verification");
+  }
+  if (!razorpay_order_id) {
+    throw new Error("razorpay_order_id is required for payment verification");
+  }
+  if (!razorpay_signature) {
+    throw new Error("razorpay_signature is required for payment verification");
+  }
+
   const query = `
     mutation VerifyRazorpayPayment($input: VerifyRazorpayPaymentInput!) {
       verifyRazorpayPayment(input: $input) {
@@ -1784,11 +1935,13 @@ export const verifyRazorpayPayment = async (
 
   const variables = {
     input: {
-      razorpay_payment_id,
-      razorpay_order_id,
-      razorpay_signature,
+      razorpay_payment_id: razorpay_payment_id.toString(),
+      razorpay_order_id: razorpay_order_id.toString(),
+      razorpay_signature: razorpay_signature.toString(),
     },
   };
+
+  console.log("Verifying Razorpay payment with:", variables);
 
   // Get JWT token from localStorage for authentication
   const token =

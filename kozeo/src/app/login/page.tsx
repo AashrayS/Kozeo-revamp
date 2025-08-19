@@ -600,14 +600,15 @@ export default function LoginSignupPage() {
                         </label>
                         <input
                           type="text"
-                          placeholder="Username"
+                          placeholder="Username (no spaces allowed)"
                           value={signupData.username}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\s/g, ""); // Remove all spaces
                             setSignupData({
                               ...signupData,
-                              username: e.target.value,
-                            })
-                          }
+                              username: value,
+                            });
+                          }}
                           className="w-full p-3 rounded-md border transform focus:outline-none focus:ring-0 transition-all duration-300 focus:-translate-y-1 focus:shadow-lg bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder-gray-300"
                         />
                       </div>
@@ -666,6 +667,11 @@ export default function LoginSignupPage() {
                             !signupData.password
                           ) {
                             setSignupError("Please fill in all fields");
+                            return;
+                          }
+
+                          if (signupData.username.includes(" ")) {
+                            setSignupError("Username cannot contain spaces");
                             return;
                           }
 

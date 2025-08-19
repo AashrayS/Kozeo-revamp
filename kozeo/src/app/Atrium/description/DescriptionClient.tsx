@@ -3,7 +3,14 @@ import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
 import ProfessionalButton from "@/components/common/ProfessionalButton";
 import { PageLoader } from "@/components/common/PageLoader";
-import { FiStar, FiUser } from "react-icons/fi";
+import {
+  FiStar,
+  FiUser,
+  FiEdit3,
+  FiTrash2,
+  FiX,
+  FiCheck,
+} from "react-icons/fi";
 import { FaStar } from "react-icons/fa";
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -12,6 +19,8 @@ import {
   getUserBasicProfile,
   sendGigRequest,
   cancelGigRequest,
+  updateGig,
+  deleteGig,
 } from "../../../../utilities/kozeoApi";
 import { io, Socket } from "socket.io-client";
 import { useUser } from "../../../../store/hooks";
@@ -32,6 +41,17 @@ export default function DescriptionClient() {
   const [requestMessage, setRequestMessage] = useState("");
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [sendingRequest, setSendingRequest] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    title: "",
+    description: "",
+    looking_For: "",
+    skills: "",
+    amount: 0,
+    currency: "INR",
+  });
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const searchParams = useSearchParams();
   const gigIdParam = searchParams.get("gigId");
   const socketRef = useRef<Socket | null>(null);
@@ -302,6 +322,70 @@ export default function DescriptionClient() {
     setShowMessageModal(true);
   };
 
+  const handleEditGig = () => {
+    setEditFormData({
+      title: gig.title || "",
+      description: gig.description || "",
+      looking_For: gig.looking_For || "",
+      skills: gig.skills || "",
+      amount: gig.amount || 0,
+      currency: gig.currency || "INR",
+    });
+    setIsEditMode(true);
+  };
+
+  const handleUpdateGig = async () => {
+    try {
+      setIsUpdating(true);
+      const updateData = {
+        title: editFormData.title,
+        description: editFormData.description,
+        looking_For: editFormData.looking_For,
+        skills: editFormData.skills,
+        amount: parseFloat(editFormData.amount.toString()),
+        currency: editFormData.currency,
+      };
+
+      const updatedGig = await updateGig(gigId ?? "", updateData);
+      setGig(updatedGig);
+      setIsEditMode(false);
+      alert("Gig updated successfully!");
+    } catch (error) {
+      console.error("Error updating gig:", error);
+      alert("Failed to update gig. Please try again.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteGig = async () => {
+    try {
+      const result = await deleteGig(gigId ?? "");
+      const { success, message } = result as { success?: boolean; message?: string };
+      if (success) {
+        alert("Gig deleted successfully!");
+        router.push("/gigs");
+      } else {
+        alert(message || "Failed to delete gig");
+      }
+    } catch (error) {
+      console.error("Error deleting gig:", error);
+      alert("Failed to delete gig. Please try again.");
+    }
+  };
+
+  const cancelEdit = () => {
+    setIsEditMode(false);
+    setEditFormData({
+      title: "",
+      description: "",
+      looking_For: "",
+      skills: "",
+      amount: 0,
+      currency: "INR",
+    });
+  };
+
   if (loading) {
     return <PageLoader />;
   }
@@ -372,7 +456,7 @@ export default function DescriptionClient() {
       >
         <Sidebar />
         <div className="flex-1 flex flex-col p-0 sm:p-8">
-          <main className="flex-1 flex flex-col md:flex-row gap-8 items-stretch justify-center w-full mx-auto py-8">
+          <main className="flex-1 flex flex-col md:flex-row gap-4 md:gap-8 items-stretch justify-center w-full mx-auto py-4 md:py-8 px-4 md:px-0">
             {/* Gig Details Container - Golden Ratio smaller section (38.2%) */}
             <section
               className={`md:flex-[0.618] rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 min-w-[0] w-full border-0 relative drop-shadow-glow backdrop-blur-md overflow-hidden theme-transition ${
@@ -608,30 +692,54 @@ export default function DescriptionClient() {
 
                 {/* Show different button based on user status */}
                 {user && gig.host?.id === user.id ? (
-                  // User is the host
-                  <ProfessionalButton
-                    onClick={() => router.push(`/gigs/${gigId}/lobby`)}
-                    variant="primary"
-                    size="lg"
-                    className="w-full"
-                    icon={
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                  // User is the host - show lobby button and edit/delete options
+                  <div className="space-y-3">
+                    <ProfessionalButton
+                      onClick={() => router.push(`/gigs/${gigId}/lobby`)}
+                      variant="primary"
+                      size="lg"
+                      className="w-full"
+                      icon={
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                          />
+                        </svg>
+                      }
+                    >
+                      Go to Lobby
+                    </ProfessionalButton>
+
+                    {/* Edit/Delete buttons for gig owner */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <ProfessionalButton
+                        onClick={handleEditGig}
+                        variant="primary"
+                        size="md"
+                        className="w-full"
+                        icon={<FiEdit3 className="w-4 h-4" />}
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                        />
-                      </svg>
-                    }
-                  >
-                    Go to Lobby
-                  </ProfessionalButton>
+                        Edit Gig
+                      </ProfessionalButton>
+                      <ProfessionalButton
+                        onClick={() => setShowDeleteConfirm(true)}
+                        variant="danger"
+                        size="md"
+                        className="w-full"
+                        icon={<FiTrash2 className="w-4 h-4" />}
+                      >
+                        Delete
+                      </ProfessionalButton>
+                    </div>
+                  </div>
                 ) : gig.guest ? (
                   // Gig has a guest - check if current user is the guest
                   user && gig.guest.username === user.username ? (
@@ -776,7 +884,7 @@ export default function DescriptionClient() {
 
             {/* Host Profile Container - Golden Ratio larger section (61.8%) */}
             <section
-              className={`md:flex-[1] rounded-2xl p-6 shadow-xl drop-shadow-glow backdrop-blur-md min-w-[300px] border theme-transition ${
+              className={`md:flex-[1] rounded-2xl p-4 sm:p-6 shadow-xl drop-shadow-glow backdrop-blur-md min-w-[300px] border theme-transition ${
                 theme === "light"
                   ? "bg-white/90 border-gray-200"
                   : "bg-neutral-900/70 border-neutral-800"
@@ -1196,6 +1304,307 @@ export default function DescriptionClient() {
                 >
                   {sendingRequest ? "Sending..." : "Send Request"}
                 </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Edit Gig Modal */}
+      {isEditMode && (
+        <>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div
+              className={`w-full max-w-2xl rounded-2xl border shadow-2xl transition-colors duration-300 max-h-[90vh] overflow-y-auto ${
+                theme === "dark"
+                  ? "bg-neutral-900 border-neutral-700"
+                  : "bg-white border-gray-200"
+              }`}
+            >
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h3
+                    className={`text-xl font-semibold transition-colors duration-300 ${
+                      theme === "dark" ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    Edit Gig
+                  </h3>
+                  <button
+                    onClick={cancelEdit}
+                    className={`p-2 rounded-lg transition-colors duration-300 ${
+                      theme === "dark"
+                        ? "text-gray-400 hover:text-white hover:bg-neutral-800"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                    }`}
+                  >
+                    <FiX className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Title */}
+                  <div>
+                    <label
+                      className={`block text-sm font-medium mb-2 ${
+                        theme === "dark" ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      Title *
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.title}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          title: e.target.value,
+                        })
+                      }
+                      className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors duration-300 ${
+                        theme === "dark"
+                          ? "bg-neutral-800 border-neutral-700 text-white placeholder-gray-400"
+                          : "bg-white border-gray-200 text-gray-900 placeholder-gray-500"
+                      }`}
+                      placeholder="Enter gig title"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label
+                      className={`block text-sm font-medium mb-2 ${
+                        theme === "dark" ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      Description *
+                    </label>
+                    <textarea
+                      value={editFormData.description}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          description: e.target.value,
+                        })
+                      }
+                      rows={4}
+                      className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none transition-colors duration-300 ${
+                        theme === "dark"
+                          ? "bg-neutral-800 border-neutral-700 text-white placeholder-gray-400"
+                          : "bg-white border-gray-200 text-gray-900 placeholder-gray-500"
+                      }`}
+                      placeholder="Describe your gig"
+                    />
+                  </div>
+
+                  {/* Looking For */}
+                  <div>
+                    <label
+                      className={`block text-sm font-medium mb-2 ${
+                        theme === "dark" ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      Looking For *
+                    </label>
+                    <textarea
+                      value={editFormData.looking_For}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          looking_For: e.target.value,
+                        })
+                      }
+                      rows={3}
+                      className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none transition-colors duration-300 ${
+                        theme === "dark"
+                          ? "bg-neutral-800 border-neutral-700 text-white placeholder-gray-400"
+                          : "bg-white border-gray-200 text-gray-900 placeholder-gray-500"
+                      }`}
+                      placeholder="What kind of collaborator are you looking for?"
+                    />
+                  </div>
+
+                  {/* Skills */}
+                  <div>
+                    <label
+                      className={`block text-sm font-medium mb-2 ${
+                        theme === "dark" ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      Skills Required *
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.skills}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          skills: e.target.value,
+                        })
+                      }
+                      className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors duration-300 ${
+                        theme === "dark"
+                          ? "bg-neutral-800 border-neutral-700 text-white placeholder-gray-400"
+                          : "bg-white border-gray-200 text-gray-900 placeholder-gray-500"
+                      }`}
+                      placeholder="e.g., React, Node.js, Python, UI/UX Design"
+                    />
+                  </div>
+
+                  {/* Amount and Currency */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        className={`block text-sm font-medium mb-2 ${
+                          theme === "dark" ? "text-gray-300" : "text-gray-700"
+                        }`}
+                      >
+                        Amount
+                      </label>
+                      <input
+                        type="number"
+                        value={editFormData.amount}
+                        onChange={(e) =>
+                          setEditFormData({
+                            ...editFormData,
+                            amount: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        min="0"
+                        step="0.01"
+                        className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors duration-300 ${
+                          theme === "dark"
+                            ? "bg-neutral-800 border-neutral-700 text-white placeholder-gray-400"
+                            : "bg-white border-gray-200 text-gray-900 placeholder-gray-500"
+                        }`}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        className={`block text-sm font-medium mb-2 ${
+                          theme === "dark" ? "text-gray-300" : "text-gray-700"
+                        }`}
+                      >
+                        Currency
+                      </label>
+                      <select
+                        value={editFormData.currency}
+                        onChange={(e) =>
+                          setEditFormData({
+                            ...editFormData,
+                            currency: e.target.value,
+                          })
+                        }
+                        className={`w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors duration-300 ${
+                          theme === "dark"
+                            ? "bg-neutral-800 border-neutral-700 text-white"
+                            : "bg-white border-gray-200 text-gray-900"
+                        }`}
+                      >
+                        <option value="INR">INR</option>
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 justify-end mt-8">
+                  <button
+                    onClick={cancelEdit}
+                    className={`px-6 py-3 rounded-lg font-medium transition-colors duration-300 shadow-sm border ${
+                      theme === "dark"
+                        ? "bg-neutral-800 border-neutral-700 text-gray-200 hover:bg-neutral-700"
+                        : "bg-white border-gray-200 text-gray-800 hover:bg-gray-100"
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUpdateGig}
+                    disabled={
+                      !editFormData.title.trim() ||
+                      !editFormData.description.trim() ||
+                      isUpdating
+                    }
+                    className={`px-6 py-3 rounded-lg font-medium transition-colors duration-300 shadow-sm border text-white flex items-center gap-2 ${
+                      !editFormData.title.trim() ||
+                      !editFormData.description.trim() ||
+                      isUpdating
+                        ? "bg-gray-400 border-gray-300 cursor-not-allowed"
+                        : "bg-emerald-600 border-emerald-700 hover:bg-emerald-700"
+                    }`}
+                  >
+                    {isUpdating && (
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    )}
+                    {isUpdating ? "Updating..." : "Update Gig"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div
+              className={`w-full max-w-md rounded-2xl border shadow-2xl transition-colors duration-300 ${
+                theme === "dark"
+                  ? "bg-neutral-900 border-neutral-700"
+                  : "bg-white border-gray-200"
+              }`}
+            >
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30">
+                    <FiTrash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+                  </div>
+                  <h3
+                    className={`text-lg font-semibold transition-colors duration-300 ${
+                      theme === "dark" ? "text-white" : "text-gray-900"
+                    }`}
+                  >
+                    Delete Gig
+                  </h3>
+                </div>
+
+                <p
+                  className={`mb-6 text-base transition-colors duration-300 ${
+                    theme === "dark" ? "text-gray-300" : "text-gray-600"
+                  }`}
+                >
+                  Are you sure you want to delete this gig? This action cannot
+                  be undone.
+                </p>
+
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className={`px-5 py-2 rounded-lg font-medium transition-colors duration-300 shadow-sm border ${
+                      theme === "dark"
+                        ? "bg-neutral-800 border-neutral-700 text-gray-200 hover:bg-neutral-700"
+                        : "bg-white border-gray-200 text-gray-800 hover:bg-gray-100"
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleDeleteGig();
+                      setShowDeleteConfirm(false);
+                    }}
+                    className="px-5 py-2 rounded-lg font-medium transition-colors duration-300 shadow-sm border bg-red-600 border-red-700 text-white hover:bg-red-700"
+                  >
+                    Delete Gig
+                  </button>
+                </div>
               </div>
             </div>
           </div>

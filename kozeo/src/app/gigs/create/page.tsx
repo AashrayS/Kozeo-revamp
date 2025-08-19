@@ -222,7 +222,7 @@ export default function CreateGigPage() {
         }`}
       >
         <Sidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col pb-20 lg:pb-0">
           <main className="flex-1 p-2 sm:p-4 lg:p-8 flex flex-col items-center justify-center min-h-screen">
             <div className="w-full max-w-4xl px-2 sm:px-4">
               {/* Header Section */}
@@ -444,7 +444,7 @@ export default function CreateGigPage() {
                               theme === "dark" ? "text-white" : "text-gray-900"
                             }`}
                           >
-                            Skill Development Collaboration
+                            Profile Building Collaboration
                           </h3>
                           <p
                             className={`text-sm sm:text-base leading-relaxed transition-colors duration-300 ${
@@ -539,7 +539,7 @@ export default function CreateGigPage() {
                                     : "text-gray-900"
                                 }`}
                               >
-                                Benefits of Skill Development Collaboration
+                                Skill Forge Projects
                               </h4>
                               <div
                                 className={`grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm transition-colors duration-300 ${
@@ -549,20 +549,20 @@ export default function CreateGigPage() {
                                 }`}
                               >
                                 <div className="flex items-center gap-2 sm:gap-3">
-                                  <FiTrendingUp className="text-green-500 text-sm flex-shrink-0" />
-                                  <span>Gain practical experience</span>
+                                  <FiUsers className="text-green-500 text-sm flex-shrink-0" />
+                                  <span>Get eager learners</span>
                                 </div>
                                 <div className="flex items-center gap-2 sm:gap-3">
-                                  <FiBriefcase className="text-blue-500 text-sm flex-shrink-0" />
-                                  <span>Build professional portfolio</span>
+                                  <FiHeart className="text-red-500 text-sm flex-shrink-0" />
+                                  <span>No payment required</span>
                                 </div>
                                 <div className="flex items-center gap-2 sm:gap-3">
-                                  <FiAward className="text-purple-500 text-sm flex-shrink-0" />
-                                  <span>Earn platform recognition</span>
+                                  <FiGift className="text-purple-500 text-sm flex-shrink-0" />
+                                  <span>Help others learn</span>
                                 </div>
                                 <div className="flex items-center gap-2 sm:gap-3">
-                                  <FiUsers className="text-orange-500 text-sm flex-shrink-0" />
-                                  <span>Expand professional network</span>
+                                  <FiTrendingUp className="text-blue-500 text-sm flex-shrink-0" />
+                                  <span>Build your network</span>
                                 </div>
                               </div>
                             </div>
@@ -582,11 +582,9 @@ export default function CreateGigPage() {
                               }`}
                             >
                               <FiTarget className="inline mr-2 text-blue-500 flex-shrink-0" />
-                              <strong>Ideal for:</strong> Students,
-                              professionals changing careers, developers
-                              building portfolios, and anyone looking to
-                              contribute to meaningful projects while advancing
-                              their skills.
+                              <strong>Good for:</strong> Projects where you want
+                              to teach, share knowledge, or work with people who
+                              are learning - no money involved.
                             </p>
                           </div>
                         </div>

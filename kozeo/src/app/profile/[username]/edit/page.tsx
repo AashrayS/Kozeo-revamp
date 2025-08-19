@@ -358,7 +358,7 @@ export default function EditProfilePage() {
       {/* Main Layout */}
       <div className="min-h-screen relative z-10 flex flex-row bg-[radial-gradient(circle_at_center,_rgba(17,17,17,0.8),_rgba(0,0,0,0.6))] text-white">
         <Sidebar />
-        <div className="flex flex-1">
+        <div className="flex flex-1 pb-20 lg:pb-0">
           <main className="flex-1 p-6 overflow-y-auto">
             <div className="w-full max-w-3xl mx-auto">
               {loadingProfile ? (

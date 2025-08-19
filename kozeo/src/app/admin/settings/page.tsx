@@ -63,7 +63,7 @@ export default function AdminSettingsPage() {
       >
         <Sidebar />
 
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 p-6 overflow-y-auto pb-20 lg:pb-6">
           <div className="max-w-4xl mx-auto">
             {/* Header */}
             <div className="mb-8">

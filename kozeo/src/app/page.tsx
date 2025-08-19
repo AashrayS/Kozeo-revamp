@@ -385,7 +385,7 @@ export default function Home() {
         }`}
       >
         <Navbar />
-        <main>
+        <main className="pb-20 lg:pb-0">
           <div
             id="hero-section"
             data-scroll-animation

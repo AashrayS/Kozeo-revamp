@@ -143,7 +143,7 @@ export default function Home() {
         }`}
       >
         <Sidebar />
-        <div className="flex flex-1">
+        <div className="flex flex-1 pb-20 lg:pb-0">
           <main className="flex-1 p-6 overflow-y-auto">
             {/* Search & Create Gig Section */}
             <div className="flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-3 sm:gap-4 mb-8 w-full">

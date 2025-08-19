@@ -152,7 +152,7 @@ export default function GigListPage() {
           </>
         )}
         <Sidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col pb-20 lg:pb-0">
           <main className="flex-1 p-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
               <h1

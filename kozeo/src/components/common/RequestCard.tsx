@@ -68,13 +68,9 @@ function ProfilePictureWithFallback({
   }
 
   return (
-    <img
-      src={src}
-      alt={alt}
-      onError={handleImageError}
-      onLoad={handleImageLoad}
+    <div
       className={`
-        w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full object-cover shadow-lg border-2 transition-all duration-300
+        w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full overflow-hidden shadow-lg border-2 transition-all duration-300
         ${
           status === "pending"
             ? "border-gray-300"
@@ -85,7 +81,15 @@ function ProfilePictureWithFallback({
             : "border-gray-300"
         }
       `}
-    />
+    >
+      <img
+        src={src}
+        alt={alt}
+        onError={handleImageError}
+        onLoad={handleImageLoad}
+        className="w-full h-full object-cover object-center"
+      />
+    </div>
   );
 }
 

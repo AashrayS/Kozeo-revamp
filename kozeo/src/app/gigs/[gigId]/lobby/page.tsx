@@ -693,7 +693,7 @@ export default function GigLobbyPage({
                 {/* System Information */}
                 <div className="pt-6 border-t border-gray-200/50 dark:border-gray-700/50">
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
+                    {/* <div className="flex items-center justify-between">
                       <span
                         className={`text-sm uppercase tracking-wide font-medium ${
                           theme === "light" ? "text-gray-500" : "text-gray-500"
@@ -717,7 +717,7 @@ export default function GigLobbyPage({
                           {wsConnected ? "Online" : "Offline"}
                         </span>
                       </div>
-                    </div>
+                    </div> */}
                     <div className="flex items-center justify-between">
                       <span
                         className={`text-sm uppercase tracking-wide font-medium ${

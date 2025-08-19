@@ -153,7 +153,7 @@ function ProfileImage({ profilePic, username, size }: ProfileImageProps) {
 
   const iconSizeClasses = {
     sm: "w-6 h-6",
-    md: "w-8 h-8", 
+    md: "w-8 h-8",
     lg: "w-12 h-12",
   };
 
@@ -822,7 +822,7 @@ export default function UserProfilePage() {
       >
         {/* Main Layout */}
         <Sidebar />
-        <div className="flex-1 flex flex-col lg:flex-row p-4 sm:p-8 gap-0 lg:gap-8 justify-center items-start">
+        <div className="flex-1 flex flex-col lg:flex-row p-4 sm:p-8 gap-0 lg:gap-8 justify-center items-start pb-20 lg:pb-8">
           {/* Main Content */}
           <main className="flex-1 flex flex-col gap-8 items-stretch justify-center w-full max-w-8xl px-4 sm:px-6 lg:pr-10 mx-auto py-8">
             {/* Loading State */}
@@ -2130,25 +2130,25 @@ export default function UserProfilePage() {
           </main>
 
           {/* Mobile Filter Toggle Button */}
-          <div className="lg:hidden fixed bottom-6 right-6 z-50">
-            <button
-              onClick={() => setShowSkillsFilter(!showSkillsFilter)}
-              className={`flex items-center gap-2 px-4 py-3 rounded-full shadow-lg transition-all duration-300 ${
-                theme === "light"
-                  ? "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-                  : "bg-neutral-800 text-gray-300 hover:bg-neutral-700 border border-neutral-700"
-              }`}
-            >
-              <FiFilter className="text-lg" />
-              <span className="text-sm font-medium">
-                {showSkillsFilter ? "Hide Filters" : "Filter Skills"}
-              </span>
-              {selectedSkills.length > 0 && (
-                <span className="bg-cyan-500 text-white text-xs rounded-full px-2 py-1 ml-1">
-                  {selectedSkills.length}
-                </span>
-              )}
-            </button>
+          <div className="lg:hidden fixed bottom-20 right-6 z-50">
+            {!showSkillsFilter && (
+              <button
+                onClick={() => setShowSkillsFilter(true)}
+                className={`flex items-center gap-2 px-3 py-3 rounded-full shadow-lg transition-all duration-300 ${
+                  theme === "light"
+                    ? "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
+                    : "bg-neutral-800 text-gray-300 hover:bg-neutral-700 border border-neutral-700"
+                }`}
+              >
+                <FiFilter className="text-lg" />
+                <span className="text-sm font-medium hidden lg:block">Show Filters</span>
+                {selectedSkills.length > 0 && (
+                  <span className="bg-cyan-500 text-white text-xs rounded-full px-2 py-1 ml-1">
+                    {selectedSkills.length}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
 
           {/* Skills Filter Sidebar */}
@@ -2427,7 +2427,6 @@ export default function UserProfilePage() {
                             }`}
                           >
                             <FiX className="text-lg" />
-                            Close
                           </button>
                         </div>
                       </div>
