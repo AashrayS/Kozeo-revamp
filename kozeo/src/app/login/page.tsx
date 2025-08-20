@@ -248,14 +248,14 @@ export default function LoginSignupPage() {
           </div>
         </div>
 
-        <div className="md:w-full w-full flex flex-col  items-center justify-center p-6 md:p-10 text-center relative z-10 text-white">
+        <div className="md:w-full w-full  flex flex-col  items-center justify-center p-6 md:p-10 text-center relative z-10 text-white">
           {/* <p className="mb-4 md:mb-6 text-sm md:text-base" style={{}}>
             Get your hands dirty with real life projects
           </p> */}
 
           {/* Kozeo Logo positioned right above the container */}
 
-          <div className="w-full sm:w-[90%] md:w-4/10 h-full relative flex flex-col items-center justify-center px-6 py-10 overflow-hidden bg-transparent  rounded-2xl ">
+          <div className="w-full sm:w-[90%] border md:w-4/10 h-[1000px] relative flex flex-col items-center justify-center px-6 py-10 overflow-hidden bg-transparent  rounded-2xl ">
              <div className="mb-8 md:mb-12 flex justify-center items-center w-full">
               <Image
                 src="/logoFial.svg"
