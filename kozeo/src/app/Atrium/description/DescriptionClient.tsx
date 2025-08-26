@@ -1185,7 +1185,7 @@ export default function DescriptionClient() {
                       {displayHost.reviewsReceived &&
                       displayHost.reviewsReceived.length > 0 ? (
                         displayHost.reviewsReceived
-                          .slice(0, 3)
+                          
                           .map((review: any, idx: number) => (
                             <div
                               key={idx}

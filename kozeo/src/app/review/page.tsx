@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { uploadReviewImagesToS3 } from "../../../utilities/helper";
+import { Fragment, useRef } from "react";
+import Image from "next/image";
 import Header from "@/components/common/Header";
 import Sidebar from "@/components/common/Sidebar";
 import { PageLoader } from "@/components/common/PageLoader";
@@ -29,6 +32,44 @@ interface GigInfo {
 }
 
 export default function ReviewPage() {
+  const [previewIdx, setPreviewIdx] = useState<number | null>(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const modalInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle paste in modal
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    if (images.length >= 3) return;
+    const items = e.clipboardData.items;
+    let pastedFiles: File[] = [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image") !== -1) {
+        const file = items[i].getAsFile();
+        if (file) pastedFiles.push(file);
+      }
+    }
+    if (pastedFiles.length) {
+      const totalImages = images.length + pastedFiles.length;
+      if (totalImages > 3) {
+        setError("You can attach up to 3 images only.");
+        return;
+      }
+      setImages((prev) => [...prev, ...pastedFiles]);
+      setError("");
+    }
+  };
+
+  // Handle file input in modal
+  const handleModalFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const totalImages = images.length + files.length;
+    if (totalImages > 3) {
+      setError("You can attach up to 3 images only.");
+      return;
+    }
+    setImages((prev) => [...prev, ...files]);
+    setError("");
+    setShowImageModal(false);
+  };
   const router = useRouter();
   const searchParams = useSearchParams();
   const { theme } = useTheme();
@@ -43,6 +84,34 @@ export default function ReviewPage() {
   const [revieweeUsername, setRevieweeUsername] = useState("");
   const [error, setError] = useState("");
   const [isHost, setIsHost] = useState(false);
+  const [images, setImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  // Handle image selection
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const totalImages = images.length + files.length;
+    if (totalImages > 3) {
+      setError("You can attach up to 3 images only.");
+      return;
+    }
+    setImages((prev) => [...prev, ...files]);
+    setError("");
+  };
+
+  // Generate previews when images change
+  useEffect(() => {
+    const previews = images.map((file) => URL.createObjectURL(file));
+    setImagePreviews(previews);
+    return () => {
+      previews.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [images]);
+
+  // Remove an image
+  const handleRemoveImage = (idx: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== idx));
+    setError("");
+  };
 
   useEffect(() => {
     const fetchGigInfo = async () => {
@@ -112,41 +181,48 @@ export default function ReviewPage() {
       setError("Please provide a title, rating, and review");
       return;
     }
-
+    if (images.length > 3) {
+      setError("You can attach up to 3 images only.");
+      return;
+    }
     if (!user || !gigInfo) {
       setError("Missing user or project information");
       return;
     }
-
     setSubmitting(true);
     setError("");
-
     try {
-      // Create the review
-      const reviewData = {
+      // Upload images to S3 and collect URLs
+      let imageUrls: string[] = [];
+      if (images.length > 0) {
+        for (const img of images) {
+          const url = await uploadReviewImagesToS3(
+            img,
+            "reviews",
+            gigInfo.id
+           
+          );
+          imageUrls.push(url);
+        }
+      }
+      let reviewData: any = {
         receiver: revieweeUsername,
         title: title.trim(),
         description: review.trim(),
         rating: rating,
         gig: gigInfo.id,
+        images: imageUrls,
       };
-
       await createReview(reviewData);
-
-      // If user is the host, complete the project after successful review
       if (isHost) {
         try {
           await completeGig(gigInfo.id);
           console.log("Project completed successfully");
         } catch (completeError) {
           console.error("Failed to complete project:", completeError);
-          // Don't fail the whole process if completing project fails
         }
       }
-
       setSubmitted(true);
-
-      // Redirect after 3 seconds
       setTimeout(() => {
         router.push("/projects");
       }, 3000);
@@ -235,9 +311,47 @@ export default function ReviewPage() {
         <Sidebar />
         <div className="flex-1 flex flex-col pb-20 lg:pb-0">
           <main className="flex-1 p-0 sm:p-8 flex flex-col items-center sm:justify-center">
+            {/* Disclaimer Banner */}
+            <div
+              className={`w-full max-w-7xl mb-6 rounded-2xl px-5 md:py-4  pt-10 text-sm font-medium shadow-md flex items-start gap-3 ${
+                theme === "dark"
+                  ? "bg-transaprent  border-neutral-700 text-neutral-200"
+                  : "bg-neutral-100 border border-neutral-300 text-neutral-800"
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 flex-shrink-0 text-blue-400 mt-1"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z"
+                />
+              </svg>
+              <span className="leading-relaxed">
+                Please share a{" "}
+                <span className="font-semibold text-white">
+                  genuine, detailed review
+                </span>{" "}
+                to help build stronger profiles.{" "}
+                <span className="font-semibold text-red-400">
+                  Fake or inappropriate reviews
+                </span>{" "}
+                may lead to suspension. Honest feedback helps create a{" "}
+                <span className="font-semibold text-white">
+                  better community for everyone.
+                </span>
+              </span>
+            </div>
+
             <form
               onSubmit={handleSubmit}
-              className={`w-full h-screen sm:h-auto max-w-2xl rounded-none sm:rounded-2xl border-0 sm:border shadow-none sm:shadow-xl p-4 sm:p-8 md:p-12 flex flex-col gap-6 sm:gap-8 justify-start transition-all duration-300 ${
+              className={`w-full h-screen sm:h-auto max-w-7xl rounded-none sm:rounded-2xl border-0 sm:border shadow-none sm:shadow-xl p-4 sm:p-8 md:p-12 flex flex-col gap-6 sm:gap-8 justify-start transition-all duration-300 ${
                 theme === "dark"
                   ? "bg-transparent border-neutral-800 drop-shadow-none sm:drop-shadow-glow backdrop-blur-none sm:backdrop-blur-md"
                   : "bg-white/80 border-gray-200 backdrop-blur-sm shadow-lg"
@@ -436,6 +550,170 @@ export default function ReviewPage() {
                 >
                   {review.length}/500 characters
                 </p>
+              </div>
+
+              {/* Image Upload Section */}
+              <div className="space-y-3">
+                <label
+                  className={`block font-medium text-base sm:text-lg transition-colors duration-300 ${
+                    theme === "dark" ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Attach Images (optional)
+                  <span className="ml-2 text-xs font-normal text-gray-500">
+                    {images.length}/3
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowImageModal(true)}
+                  disabled={images.length >= 3}
+                  className={`inline-block px-6 py-2 rounded-lg font-semibold transition-colors duration-300 cursor-pointer border shadow-sm ${
+                    theme === "dark"
+                      ? "bg-neutral-900 border-neutral-700 text-white hover:bg-neutral-800 hover:border-purple-500"
+                      : "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 hover:border-blue-400"
+                  } ${
+                    images.length >= 3 ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  {images.length >= 3 ? "Max Images Selected" : "Choose Images"}
+                </button>
+
+                {/* Image Upload Modal */}
+                {showImageModal && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div
+                      className={`bg-white dark:bg-neutral-900 rounded-xl shadow-lg p-6 w-full max-w-md relative`}
+                    >
+                      <button
+                        type="button"
+                        className="absolute top-2 right-2 text-gray-400 hover:text-red-500 text-2xl"
+                        onClick={() => setShowImageModal(false)}
+                        aria-label="Close"
+                      >
+                        ×
+                      </button>
+                      <h2
+                        className={`text-lg font-semibold mb-3 ${
+                          theme === "dark" ? "text-white" : "text-gray-900"
+                        }`}
+                      >
+                        Add Images
+                      </h2>
+                      <div
+                        className="border-dashed border-2 border-gray-300 dark:border-gray-700 rounded-lg p-4 mb-4 flex flex-col items-center justify-center cursor-pointer"
+                        tabIndex={0}
+                        onPaste={handlePaste}
+                        onClick={() => modalInputRef.current?.click()}
+                      >
+                        <p
+                          className={`mb-2 text-sm ${
+                            theme === "dark" ? "text-gray-300" : "text-gray-700"
+                          }`}
+                        >
+                          Paste images here or click to select from device
+                        </p>
+                        <input
+                          ref={modalInputRef}
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          style={{ display: "none" }}
+                          onChange={handleModalFileChange}
+                          disabled={images.length >= 3}
+                        />
+                        <span className="text-xs text-gray-500">
+                          {images.length}/3 selected
+                        </span>
+                      </div>
+                      <div className="flex gap-3 flex-wrap mt-2 border border-neutral-700">
+                        {imagePreviews.map((src, idx) => (
+                          <div key={idx} className="relative w-20 h-20">
+                            <Image
+                              src={src}
+                              alt={`Preview ${idx + 1}`}
+                              fill
+                              className="object-cover rounded-lg border"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(idx)}
+                              className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                              aria-label="Remove image"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      {images.length >= 3 && (
+                        <p className="text-xs text-red-500 mt-2">
+                          Maximum 3 images allowed.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <div className="flex gap-3 w-auto flex-wrap mt-2 border border-neutral-800 rounded-2xl px-4 ">
+                  {imagePreviews.map((src, idx) => (
+                    <div
+                      key={idx}
+                      className="relative w-24 h-24 group cursor-pointer"
+                    >
+                      <Image
+                        src={src}
+                        alt={`Preview ${idx + 1}`}
+                        fill
+                        className="object-cover rounded-lg border"
+                        onClick={() => setPreviewIdx(idx)}
+                        style={{ zIndex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(idx)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                        aria-label="Remove image"
+                        style={{ zIndex: 2 }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Large Image Preview Modal */}
+                {previewIdx !== null && (
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+                    onClick={() => setPreviewIdx(null)}
+                  >
+                    <div
+                      className="relative max-w-full w-full flex items-center justify-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Image
+                        src={imagePreviews[previewIdx]}
+                        alt={`Large Preview ${previewIdx + 1}`}
+                        width={800}
+                        height={800}
+                        className="object-fill rounded-xl border shadow-lg bg-transparent dark:bg-transaprent max-h-[70vh]"
+                      />
+                      <button
+                        type="button"
+                        className="absolute top-4 right-4 bg-white/80 dark:bg-neutral-900/80 border border-gray-300 dark:border-neutral-700 shadow-lg rounded-full w-10 h-10 flex items-center justify-center text-2xl text-gray-500 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-400"
+                        onClick={() => setPreviewIdx(null)}
+                        aria-label="Close preview"
+                      >
+                        <span className="font-bold">&times;</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {images.length >= 3 && (
+                  <p className="text-xs text-red-500">
+                    Maximum 3 images allowed.
+                  </p>
+                )}
               </div>
 
               {/* Submit Button */}

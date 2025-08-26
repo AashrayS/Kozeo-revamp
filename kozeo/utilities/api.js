@@ -1,6 +1,7 @@
 // utilities/api.js
 
 // GraphQL API configuration
+
 const GRAPHQL_ENDPOINT =
   process.env.NEXT_PUBLIC_GRAPHQL_URL || "http://localhost:4001/graphql";
 

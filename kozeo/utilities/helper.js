@@ -4,8 +4,8 @@
 
 // AWS S3 Image Upload Helper
 import AWS from "aws-sdk";
-// import Nodemailer from "@nodemailer";
 
+// import Nodemailer from "@nodemailer";
 
 // Configure AWS SDK
 const configureAWS = () => {
@@ -26,6 +26,92 @@ const configureAWS = () => {
 export const uploadImageToS3 = async (
   file,
   folder = "images",
+  bucketName = null
+) => {
+  try {
+    // Validate input
+
+    if (!file) {
+      throw new Error("No file provided for upload");
+    }
+
+    // Validate file type
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error(
+        "Invalid file type. Please upload a valid image file (JPEG, PNG, GIF, WebP)"
+      );
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new Error(
+        "File size too large. Please upload an image smaller than 5MB"
+      );
+    }
+
+    // Configure AWS
+    configureAWS();
+
+    // Create S3 instance
+    const s3 = new AWS.S3();
+    debugger
+
+    // Generate unique filename
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 15);
+    const fileExtension = file.name.split(".").pop();
+    const fileName = `${folder}/${timestamp}_${randomString}.${fileExtension}`;
+
+    // Set bucket name
+    const bucket = bucketName || process.env.NEXT_PUBLIC_AWS_S3_BUCKET_NAME;
+
+    if (!bucket) {
+      throw new Error(
+        "S3 bucket name not configured. Please set NEXT_PUBLIC_AWS_S3_BUCKET_NAME in environment variables"
+      );
+    }
+
+    // Upload parameters
+    const uploadParams = {
+      Bucket: bucket,
+      Key: fileName,
+      Body: file,
+      ContentType: file.type,
+    //   ACL: "public-read", // Make the file publicly accessible
+      Metadata: {
+        "original-name": file.name,
+        "uploaded-by": "kozeo-app",
+        "upload-timestamp": timestamp.toString(),
+      },
+    };
+
+    // Upload to S3
+    console.log("Uploading to S3...", fileName);
+    const result = await s3.upload(uploadParams).promise();
+
+    // Return the public URL
+    const publicUrl = result.Location;
+    console.log("Upload successful:", publicUrl);
+
+    return publicUrl;
+  } catch (error) {
+    console.error("S3 Upload Error:", error);
+    throw new Error(`Upload failed: ${error.message}`);
+  }
+};
+
+export const uploadReviewImagesToS3 = async(
+  file,
+  folder = "images",
+  gigId,
   bucketName = null
 ) => {
   try {

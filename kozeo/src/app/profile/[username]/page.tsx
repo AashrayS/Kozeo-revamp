@@ -31,6 +31,7 @@ import { useUser } from "../../../../store/hooks";
 import { isAuthenticated } from "../../../../utilities/api";
 import { useTheme } from "@/contexts/ThemeContext";
 import { identifyWebsite } from "../../../../utilities/helper";
+import ImagePreviewModal from "@/components/common/ImagePreviewModal";
 
 interface ProfileData {
   id: string;
@@ -199,6 +200,7 @@ function ProfileImage({ profilePic, username, size }: ProfileImageProps) {
 }
 
 export default function UserProfilePage() {
+  const [previewImg, setPreviewImg] = useState<string | null>(null);
   const params = useParams();
   const router = useRouter();
   const { theme } = useTheme();
@@ -214,6 +216,8 @@ export default function UserProfilePage() {
   const [showAllHostedGigs, setShowAllHostedGigs] = useState(false);
   const [showAllCollaboratedGigs, setShowAllCollaboratedGigs] = useState(false);
   const [showAllOngoingProjects, setShowAllOngoingProjects] = useState(false);
+  const [reviewImageModal, setReviewImageModal] = useState<string | null>(null);
+  const [reviewImageUrl, setReviewImageUrl] = useState("");
 
   // Collapse state for sections
   const [isHostedSectionCollapsed, setIsHostedSectionCollapsed] =
@@ -246,6 +250,10 @@ export default function UserProfilePage() {
     userLoggedIn,
     canViewSensitiveInfo,
   });
+
+  const handleImageClick = (imageUrl: string) => {
+  setReviewImageModal(imageUrl);
+};
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -561,8 +569,8 @@ export default function UserProfilePage() {
           }`}
         >
           <Sidebar />
-          <div className="flex flex-1">
-            <main className="flex-1 p-6 overflow-y-auto">
+          <div className="flex flex-1 overflow-y-hidden">
+            <main className="flex-1 p-6 overflow-y-hidden">
               <div className="flex justify-center items-center min-h-screen">
                 <div className="text-center max-w-md mx-auto">
                   <div className="text-8xl mb-6 animate-bounce">🤖</div>
@@ -1585,6 +1593,7 @@ export default function UserProfilePage() {
                                 </span>
                               </div>
                             </div>
+
                             <p
                               className={`text-sm mb-3 leading-relaxed theme-transition ${
                                 theme === "light"
@@ -1594,6 +1603,7 @@ export default function UserProfilePage() {
                             >
                               {gig.description}
                             </p>
+
                             <div
                               className={`text-sm mb-4 theme-transition ${
                                 theme === "light"
@@ -1606,6 +1616,7 @@ export default function UserProfilePage() {
                                 {gig.looking_For}
                               </span>
                             </div>
+
                             {/* Skills Tags */}
                             {gig.skills && gig.skills.length > 0 && (
                               <div className="mb-4">
@@ -1631,34 +1642,92 @@ export default function UserProfilePage() {
                                 </div>
                               </div>
                             )}
+
+                            {/* Review Section with Professional Layout */}
                             {gig.reviews && gig.reviews.length > 0 && (
                               <div
-                                className={`p-4 border rounded-lg backdrop-blur-sm theme-transition ${
+                                className={`border rounded-lg backdrop-blur-sm theme-transition overflow-hidden ${
                                   theme === "light"
                                     ? "bg-gray-50/80 border-gray-200/50"
                                     : "bg-neutral-900/50 border-neutral-700/50"
                                 }`}
                               >
-                                <div
-                                  className={`text-sm font-medium mb-2 theme-transition ${
-                                    theme === "light"
-                                      ? "text-gray-900"
-                                      : "text-white"
-                                  }`}
-                                >
-                                  "{gig.reviews[0].title}"
-                                </div>
-                                <div
-                                  className={`text-sm mb-2 theme-transition ${
-                                    theme === "light"
-                                      ? "text-gray-600"
-                                      : "text-gray-300"
-                                  }`}
-                                >
-                                  {gig.reviews[0].description}
-                                </div>
-                                <div className="text-sm text-cyan-400 font-medium">
-                                  - @{gig.reviews[0].author?.username}
+                                <div className="flex flex-col lg:flex-row">
+                                  {/* Review Content - Left Side */}
+                                  <div className="flex-1 p-4">
+                                    <div
+                                      className={`text-sm font-medium mb-2 theme-transition ${
+                                        theme === "light"
+                                          ? "text-gray-900"
+                                          : "text-white"
+                                      }`}
+                                    >
+                                      "{gig.reviews[0].title}"
+                                    </div>
+                                    <div
+                                      className={`text-sm mb-2 theme-transition ${
+                                        theme === "light"
+                                          ? "text-gray-600"
+                                          : "text-gray-300"
+                                      }`}
+                                    >
+                                      {gig.reviews[0].description}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <div className="text-sm text-cyan-400 font-medium">
+                                        @{gig.reviews[0].author?.username}
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        {[...Array(5)].map((_, i) => (
+                                          <FiStar
+                                            key={i}
+                                            className={`w-3 h-3 ${
+                                              i < gig.reviews[0].rating
+                                                ? "text-yellow-400 fill-current"
+                                                : theme === "light"
+                                                ? "text-gray-300"
+                                                : "text-gray-600"
+                                            }`}
+                                          />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Unified Review Images Section (max 3 images) */}
+                                  {gig.reviews[0].images &&
+                                    gig.reviews[0].images.length > 0 && (
+                                      <div className="mt-3">
+                                        {/* <h4
+                                          className={`text-xs font-semibold mb-2 ${
+                                            theme === "light"
+                                              ? "text-gray-700"
+                                              : "text-gray-300"
+                                          }`}
+                                        >
+                                          Review Images
+                                        </h4> */}
+                                        <div className="flex gap-2 flex-wrap">
+                                          {gig.reviews[0].images
+                                            .slice(0, 3)
+                                            .map(
+                                              (imgUrl: string, idx: number) => (
+                                                <img
+                                                  key={idx}
+                                                  src={imgUrl}
+                                                  onClick={() => {
+                                                    handleImageClick(imgUrl);
+                                                  }}
+                                                  alt={`Review Image ${
+                                                    idx + 1
+                                                  }`}
+                                                  className="w-14 h-14 object-cover rounded-lg  cursor-pointer"
+                                                />
+                                              )
+                                            )}
+                                        </div>
+                                      </div>
+                                    )}
                                 </div>
                               </div>
                             )}
@@ -1787,6 +1856,22 @@ export default function UserProfilePage() {
                                         ).toFixed(1)
                                       : "No rating"}
                                   </span>
+                                  {/* Show review images if present */}
+                                  {gig.reviews[0].images &&
+                                    gig.reviews[0].images.length > 0 && (
+                                      <div className="flex gap-2 mt-2 flex-wrap">
+                                        {gig.reviews[0].images.map(
+                                          (imgUrl: string, idx: number) => (
+                                            <img
+                                              key={idx}
+                                              src={imgUrl}
+                                              alt={`Review Image ${idx + 1}`}
+                                              className="w-20 h-20 object-cover rounded-lg "
+                                            />
+                                          )
+                                        )}
+                                      </div>
+                                    )}
                                 </div>
                               </div>
                               <p
@@ -2141,7 +2226,9 @@ export default function UserProfilePage() {
                 }`}
               >
                 <FiFilter className="text-lg" />
-                <span className="text-sm font-medium hidden lg:block">Show Filters</span>
+                <span className="text-sm font-medium hidden lg:block">
+                  Show Filters
+                </span>
                 {selectedSkills.length > 0 && (
                   <span className="bg-cyan-500 text-white text-xs rounded-full px-2 py-1 ml-1">
                     {selectedSkills.length}
@@ -2633,6 +2720,15 @@ export default function UserProfilePage() {
           )}
         </div>
       </div>
+
+      {/* review image preview Modal */}
+     <ImagePreviewModal
+  imgUrl={reviewImageModal}  // ✅ Same state variable
+  onClose={() => setReviewImageModal(null)}  // ✅ Same state variable
+  title="Review Image"
+  altText="Customer review image"
+  showActions={true}
+/>
 
       {/* Transaction Modal */}
       <TransactionModal

@@ -335,7 +335,8 @@ export async function fetchUserProfile({ id, username, email }) {
               id
               title
               description
-              rating            
+              rating
+              images            
               author {
                 username
                 first_name
@@ -967,6 +968,7 @@ export const createReview = async (reviewData) => {
         title
         description
         rating
+        images
         author {
           id
           username
