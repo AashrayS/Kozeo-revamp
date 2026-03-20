@@ -97,8 +97,8 @@ export const PageLoader = ({
       }`}
     >
       {/* Dynamic Background Accents */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full blur-[120px] bg-blue-600/10 pointer-events-none animate-pulse" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] bg-purple-600/5 pointer-events-none animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full blur-[120px] bg-white/5 pointer-events-none animate-pulse" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full blur-[120px] bg-white/5 pointer-events-none animate-pulse" style={{ animationDelay: '1s' }} />
 
       {/* Main Content */}
       <div className="relative z-10 flex flex-col items-center">
@@ -106,7 +106,7 @@ export const PageLoader = ({
         <div
           className="mb-8 relative animate-premiumLogoIn"
         >
-          <div className="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full animate-pulse z-0" />
+          <div className="absolute inset-0 bg-white/20 blur-2xl rounded-full animate-pulse z-0" />
           <Image
             src="/kozeoLogo.png"
             alt="Kozeo Logo"
@@ -141,7 +141,7 @@ export const PageLoader = ({
         {/* Minimalist Progress Indicator */}
         <div className="mt-16 w-32 sm:w-48 h-[1px] bg-white/10 rounded-full relative overflow-hidden">
           <div 
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 via-cyan-400 to-purple-500 transition-all duration-75 ease-out"
+            className="absolute inset-y-0 left-0 bg-gradient-to-r from-white/40 via-white/80 to-white/40 transition-all duration-75 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>

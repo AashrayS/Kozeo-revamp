@@ -17,6 +17,118 @@ import { PageLoader } from "../../components/common/PageLoader";
 import Image from "next/image";
 import Link from "next/link";
 
+// ─── Canvas Dash Field ────────────────────────────────────────────────────────
+type Dash = {
+  x: number; y: number; bx: number; by: number;
+  vx: number; vy: number; baseVx: number; baseVy: number;
+  length: number; width: number; baseAlpha: number;
+  phase: number; speed: number; rx: number; ry: number; ox: number; oy: number;
+};
+
+const DotField = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mouseRef = useRef({ x: -9999, y: -9999 });
+  const frameRef = useRef<number>(0);
+  const dashesRef = useRef<Dash[]>([]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d")!;
+
+    const initDashes = (w: number, h: number) => {
+      dashesRef.current = Array.from({ length: 150 }, () => {
+        const bx = Math.random();
+        const by = Math.random();
+        return {
+          x: bx * w, y: by * h, bx, by,
+          vx: 0, vy: 0,
+          baseVx: (Math.random() - 0.5) * 0.4,
+          baseVy: (Math.random() - 0.5) * 0.4,
+          length: 3 + Math.random() * 3,
+          width: 1 + Math.random() * 1,
+          baseAlpha: 0.35 + Math.random() * 0.45,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.005 + Math.random() * 0.01,
+          rx: Math.random() * Math.PI * 2,
+          ry: Math.random() * Math.PI * 2,
+          ox: (Math.random() - 0.5) * 35,
+          oy: (Math.random() - 0.5) * 35,
+        };
+      });
+    };
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.scale(dpr, dpr);
+      initDashes(w, h);
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+
+    let t = 0;
+    const draw = () => {
+      t += 0.01;
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      const rect = canvas.getBoundingClientRect();
+      const localMx = mouseRef.current.x - rect.left;
+      const localMy = mouseRef.current.y - rect.top;
+
+      ctx.clearRect(0, 0, w, h);
+      for (const d of dashesRef.current) {
+          d.phase += d.speed;
+          d.x += d.baseVx; d.y += d.baseVy;
+          if (d.x < 0) d.x += w; if (d.x > w) d.x -= w;
+          if (d.y < 0) d.y += h; if (d.y > h) d.y -= h;
+
+          const tx = (d.bx * w) + Math.sin(t * 3 + d.rx) * d.ox;
+          const ty = (d.by * h) + Math.cos(t * 2 + d.ry) * d.oy;
+          const dxM = d.x - localMx;
+          const dyM = d.y - localMy;
+          const distM = Math.sqrt(dxM * dxM + dyM * dyM) || 1;
+          const proximity = distM < 280 ? 1 - distM / 280 : 0;
+
+          d.vx += (tx - d.x) * 0.035; d.vy += (ty - d.y) * 0.035;
+          if (proximity > 0) {
+            const f = Math.pow(proximity, 2) * 4.5;
+            d.vx += (dxM / distM) * f * 15; d.vy += (dyM / distM) * f * 15;
+          }
+          d.vx *= 0.82; d.vy *= 0.82;
+          d.x += d.vx; d.y += d.vy;
+
+          const angle = Math.atan2(d.y - h / 2, d.x - w / 2);
+          const alpha = Math.min(d.baseAlpha + proximity * 0.4, 1);
+          
+          ctx.save();
+          ctx.translate(d.x, d.y);
+          ctx.rotate(angle);
+          ctx.beginPath();
+          ctx.moveTo(-(d.length + proximity * 4) / 2, 0);
+          ctx.lineTo((d.length + proximity * 4) / 2, 0);
+          ctx.lineWidth = d.width + proximity;
+          ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.15})`;
+          ctx.lineCap = "round";
+          ctx.stroke();
+          ctx.restore();
+      }
+      frameRef.current = requestAnimationFrame(draw);
+    };
+    frameRef.current = requestAnimationFrame(draw);
+
+    const onMove = (e: MouseEvent) => { mouseRef.current = { x: e.clientX, y: e.clientY }; };
+    window.addEventListener("mousemove", onMove, { passive: true });
+    return () => { cancelAnimationFrame(frameRef.current); ro.disconnect(); window.removeEventListener("mousemove", onMove); };
+  }, []);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true" />;
+};
+
 import { useSearchParams } from "next/navigation";
 
 // Navbar Component - Same as landing page but simplified for login
@@ -109,17 +221,11 @@ export default function LoginSignupPage() {
       <Navbar />
 
       <div className="relative min-h-screen w-full bg-white flex flex-col items-center justify-center overflow-hidden pt-20 pb-12">
-        {/* Subtle Blue Radial Glow */}
+        <DotField />
         <div
-          className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full pointer-events-none"
+          className="absolute top-0 left-0 w-[600px] h-[600px] rounded-full pointer-events-none opacity-30"
           style={{
-            background: "radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%)",
-          }}
-        />
-        <div
-          className="absolute bottom-[-15%] right-[-10%] w-[700px] h-[700px] rounded-full pointer-events-none"
-          style={{
-            background: "radial-gradient(circle, rgba(96,165,250,0.05) 0%, transparent 70%)",
+            background: "radial-gradient(circle at 10% 10%, rgba(59,130,246,0.1) 0%, transparent 60%)",
           }}
         />
 
@@ -147,7 +253,7 @@ export default function LoginSignupPage() {
           </div>
 
           {/* Form Card */}
-          <div className="bg-white rounded-2xl border border-black/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8">
+          <div className="premium-card p-8 !bg-white/90">
             {/* Toggle tabs */}
             <div className="flex p-1 bg-black/5 rounded-full mb-8">
               <button
@@ -257,7 +363,7 @@ export default function LoginSignupPage() {
                             placeholder="name@company.com"
                             value={signupData.email}
                             onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                            className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white text-black placeholder-black/30 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300"
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/20 focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/40 transition-all duration-300"
                           />
                         </div>
                         {emailError && <p className="text-red-500 text-xs text-center font-medium">{emailError}</p>}
@@ -305,7 +411,7 @@ export default function LoginSignupPage() {
                             placeholder="Enter 6-digit code"
                             value={otp}
                             onChange={(e) => setOtp(e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white text-black placeholder-black/30 text-center tracking-widest text-lg font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300"
+                            className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white text-black placeholder-black/30 text-center tracking-widest text-lg font-bold focus:outline-none focus:ring-1 focus:ring-black/40 focus:border-black/40 transition-all duration-300"
                           />
                         </div>
                         {otpError && <p className="text-red-500 text-xs text-center font-medium">{otpError}</p>}
@@ -332,7 +438,7 @@ export default function LoginSignupPage() {
                         <div className="text-center">
                           <button
                             type="button"
-                            className="text-xs text-blue-600 font-medium hover:underline disabled:opacity-40"
+                            className="text-xs text-black/40 hover:text-black transition-colors duration-200 disabled:opacity-40"
                             disabled={isSendingOtp || resendCooldown > 0}
                             onClick={async () => {
                               setIsSendingOtp(true);

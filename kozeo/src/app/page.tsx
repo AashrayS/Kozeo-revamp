@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSelector } from "react-redux";
+import { selectIsAuthenticated } from "../../store/userSlice";
 import { PageLoader } from "../components/common/PageLoader";
 import { WordReveal, HeaderReveal } from "../components/common/ScrollReveal";
 
@@ -250,9 +252,6 @@ const DotField = () => {
 };
 
 
-import { useSelector } from "react-redux";
-import { selectIsAuthenticated } from "../../store/userSlice";
-
 // ─── Navbar ──────────────────────────────────────────────────────────────────
 const Navbar = () => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -273,8 +272,8 @@ const Navbar = () => {
         const el = document.getElementById(id);
         if (el) {
           const rect = el.getBoundingClientRect();
-          // If the navbar (top 64px) is within this dark section
-          if (rect.top <= 64 && rect.bottom > 64) {
+          // Precise intersection: If the section covers the center of the navbar (40px)
+          if (rect.top <= 40 && rect.bottom > 40) {
             overDark = true;
             break;
           }
@@ -295,7 +294,9 @@ const Navbar = () => {
     <header
       className={`fixed top-0 inset-x-0 z-50 h-20 theme-transition transition-all duration-700 ease-out ${
         scrolled
-          ? "bg-white/80 backdrop-blur-md border-b border-black/5"
+          ? onDark 
+            ? "bg-black/80 backdrop-blur-md border-b border-white/5" 
+            : "bg-white/80 backdrop-blur-md border-b border-black/5"
           : "bg-transparent border-transparent"
       } ${isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-[-20px]"}`}
     >
@@ -412,6 +413,7 @@ const ScrollToTop = () => {
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 const Hero = () => {
+  const isAuthenticated = useSelector(selectIsAuthenticated);
   const { displayedText, isComplete } = useTypewriter("The Proof-First Portfolio\nfor Tech Pros.", 30, 1500);
 
   return (
@@ -453,13 +455,13 @@ const Hero = () => {
           <HeaderReveal delay={0.2}>
             <div className="flex flex-col sm:flex-row items-center gap-4 pt-2">
               <Link
-                href="/login"
+                href={isAuthenticated ? "/Atrium" : "/login"}
                 className="flex items-center gap-3 px-8 py-4 bg-black text-white rounded-full font-bold text-[15px] hover:bg-neutral-800 hover:-translate-y-1 hover:shadow-2xl active:scale-95 transition-all duration-300 shadow-xl"
               >
-                Start Your First Speedrun
+                {isAuthenticated ? "Go to Mission Control" : "Start Your First Speedrun"}
               </Link>
               <Link
-                href="/login"
+                href={isAuthenticated ? "/Atrium" : "/login"}
                 className="flex items-center gap-2 px-8 py-4 bg-white text-black/80 rounded-full font-bold text-[15px] hover:bg-neutral-50 hover:-translate-y-1 hover:shadow-xl active:scale-95 transition-all duration-300 border border-black/10"
               >
                 Browse Active Sprints

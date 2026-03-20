@@ -218,7 +218,7 @@ export default function CreateGigPage() {
         className={`min-h-screen relative z-10 flex flex-row transition-colors duration-300 ${
           theme === "dark"
             ? "bg-[radial-gradient(circle_at_center,_rgba(17,17,17,0.8),_rgba(0,0,0,0.6))] text-white"
-            : "bg-gradient-to-br from-white via-gray-50 to-blue-50 text-gray-900"
+            : "bg-gradient-to-br from-white via-gray-50 to-gray-100 text-gray-900"
         }`}
       >
         <Sidebar />
@@ -233,7 +233,7 @@ export default function CreateGigPage() {
                   }`}
                 >
                   Create Your Next
-                  <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent font-medium ml-2 sm:ml-3 block sm:inline">
+                  <span className="bg-gradient-to-r from-black via-black/80 to-black/60 dark:from-white dark:via-white/80 dark:to-white/60 bg-clip-text text-transparent font-medium ml-2 sm:ml-3 block sm:inline">
                     Collaboration
                   </span>
                 </h1>
@@ -367,10 +367,10 @@ export default function CreateGigPage() {
                           className={`p-3 sm:p-4 rounded-lg sm:rounded-xl transition-all duration-300 flex-shrink-0 ${
                             form.isSkillForge
                               ? theme === "dark"
-                                ? "bg-blue-900/50 shadow-md"
-                                : "bg-blue-100 shadow-sm"
+                                ? "bg-white/10 shadow-md"
+                                : "bg-black/5 shadow-sm"
                               : theme === "dark"
-                              ? "bg-neutral-700"
+                              ? "bg-neutral-800"
                               : "bg-gray-200"
                           }`}
                         >
@@ -378,8 +378,8 @@ export default function CreateGigPage() {
                             className={`text-xl sm:text-2xl transition-all duration-300 ${
                               form.isSkillForge
                                 ? theme === "dark"
-                                  ? "text-blue-400"
-                                  : "text-blue-600"
+                                  ? "text-white"
+                                  : "text-black"
                                 : theme === "dark"
                                 ? "text-gray-400"
                                 : "text-gray-600"
@@ -420,8 +420,8 @@ export default function CreateGigPage() {
                           className={`relative w-14 sm:w-16 h-7 sm:h-8 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 flex-shrink-0 ${
                             form.isSkillForge
                               ? theme === "dark"
-                                ? "bg-blue-600 focus:ring-blue-500/30"
-                                : "bg-blue-500 focus:ring-blue-400/30"
+                                ? "bg-white/40 focus:ring-white/30"
+                                : "bg-black/40 focus:ring-black/30"
                               : theme === "dark"
                               ? "bg-neutral-600 focus:ring-neutral-500/30"
                               : "bg-gray-300 focus:ring-gray-400/30"
@@ -435,7 +435,7 @@ export default function CreateGigPage() {
                             }`}
                           >
                             {form.isSkillForge && (
-                              <FiCheck className="text-blue-600 text-xs" />
+                              <FiCheck className="text-black text-xs" />
                             )}
                           </div>
                         </button>
@@ -443,8 +443,8 @@ export default function CreateGigPage() {
                           className={`text-sm sm:text-base font-medium transition-colors duration-300 ${
                             form.isSkillForge
                               ? theme === "dark"
-                                ? "text-blue-400"
-                                : "text-blue-600"
+                                ? "text-white/60"
+                                : "text-black/60"
                               : theme === "dark"
                               ? "text-gray-400"
                               : "text-gray-600"
@@ -467,15 +467,15 @@ export default function CreateGigPage() {
                             <div
                               className={`p-2 sm:p-3 rounded-lg flex-shrink-0 ${
                                 theme === "dark"
-                                  ? "bg-blue-900/30"
-                                  : "bg-blue-100"
+                                  ? "bg-white/10"
+                                : "bg-black/5"
                               }`}
                             >
                               <FiInfo
                                 className={`text-lg ${
                                   theme === "dark"
-                                    ? "text-blue-400"
-                                    : "text-blue-600"
+                                    ? "text-white/60"
+                                    : "text-black/60"
                                 }`}
                               />
                             </div>
@@ -518,8 +518,8 @@ export default function CreateGigPage() {
                           <div
                             className={`mt-3 sm:mt-4 p-3 sm:p-4 rounded-lg transition-colors duration-300 ${
                               theme === "dark"
-                                ? "bg-blue-950/20 border border-blue-800/20"
-                                : "bg-blue-50/70 border border-blue-200/30"
+                                ? "bg-white/5 border border-white/10"
+                                : "bg-black/5 border border-black/10"
                             }`}
                           >
                             <p
@@ -553,8 +553,8 @@ export default function CreateGigPage() {
                             onClick={updateExchangeRates}
                             className={`flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors duration-300 ${
                               theme === "dark"
-                                ? "text-blue-400 hover:bg-blue-900/30"
-                                : "text-blue-600 hover:bg-blue-100"
+                                ? "text-white/60 hover:bg-white/10"
+                                : "text-black/60 hover:bg-black/5"
                             }`}
                           >
                             <FiRefreshCw className="text-xs" />
@@ -614,7 +614,7 @@ export default function CreateGigPage() {
                                   ? "rotate-180"
                                   : "rotate-0"
                               } ${
-                                  : "text-gray-500"
+                                theme === "dark" ? "text-gray-400" : "text-gray-500"
                               }`}
                             />
                           </button>
@@ -701,8 +701,8 @@ export default function CreateGigPage() {
                           min="0"
                           className={`sm:col-span-2 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl border-2 text-base sm:text-lg focus:outline-none focus:ring-4 transition-all duration-300 ${
                             theme === "dark"
-                              ? "bg-neutral-800/50 border-neutral-700 text-white placeholder-gray-500 focus:ring-cyan-500/30 focus:border-cyan-500"
-                              : "bg-white/80 border-gray-200 text-gray-900 placeholder-gray-400 focus:ring-blue-500/30 focus:border-blue-500"
+                              ? "bg-neutral-800/50 border-neutral-700 text-white placeholder-gray-500 focus:ring-white/20 focus:border-white/40"
+                              : "bg-white/80 border-gray-200 text-gray-900 placeholder-gray-400 focus:ring-black/10 focus:border-black/40"
                           }`}
                           required
                         />
@@ -785,8 +785,8 @@ export default function CreateGigPage() {
                           <FiGift
                             className={`text-lg sm:text-xl ${
                               theme === "dark"
-                                ? "text-blue-400"
-                                : "text-blue-600"
+                                ? "text-white/60"
+                                : "text-black/60"
                             }`}
                           />
                         </div>

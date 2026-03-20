@@ -283,10 +283,10 @@ export default function Home() {
                         {/* Top Content */}
                         <div>
                           <div
-                            className={`text-sm font-medium mb-1 ${
+                            className={`text-sm font-semibold mb-1 ${
                               theme === "light"
-                                ? "text-cyan-600"
-                                : "text-cyan-400"
+                                ? "text-black/80"
+                                : "text-white/80"
                             }`}
                           >
                             {gig.host?.username ||
@@ -366,17 +366,17 @@ export default function Home() {
                         >
                           {gig.amount === 0 ? (
                             <div
-                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ${
                                 theme === "dark"
-                                  ? "bg-gradient-to-r from-purple-900/60 to-blue-900/60 text-purple-300 border border-purple-700/50"
-                                  : "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200"
+                                  ? "bg-white/10 text-white/90 border border-white/10"
+                                  : "bg-black/5 text-black/80 border border-black/5"
                               }`}
                             >
-                              <FiStar className="w-3 h-3 mr-1" />
+                              <FiStar className="w-3 h-3 mr-1.5" />
                               Skill Forge
                             </div>
                           ) : (
-                            <span className="text-sm font-semibold text-emerald-500">
+                            <span className="text-sm font-bold text-black dark:text-white">
                               {gig.currency}{" "}
                               {Number(gig.amount).toLocaleString("en-IN")}
                             </span>
@@ -445,16 +445,16 @@ export default function Home() {
                           {/* Username & Rating */}
                           <div className="flex items-center justify-center gap-2 mb-2">
                             <span
-                              className={`text-lg font-semibold ${
+                              className={`text-lg font-bold ${
                                 theme === "light"
-                                  ? "text-cyan-600"
-                                  : "text-cyan-400"
+                                  ? "text-black"
+                                  : "text-white"
                               }`}
                             >
                               {user.username}
                             </span>
-                            <span className="flex items-center gap-1 text-yellow-500 text-sm">
-                              <FiStar className="inline-block" fill="#eab308" />
+                            <span className="flex items-center gap-1 text-gray-400 text-sm">
+                              <FiStar className="inline-block" />
                               {user.rating ? user.rating.toFixed(1) : "N/A"}
                             </span>
                           </div>
@@ -479,15 +479,15 @@ export default function Home() {
 
                           {/* Gig Stats */}
                           <div className="flex justify-center items-center gap-6 mb-3">
-                            <div className="text-xs font-medium text-gray-500">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-black/40 dark:text-white/40">
                               Hosted <br />
-                              <span className="text-cyan-500 font-semibold text-base">
+                              <span className="text-black dark:text-white font-bold text-base">
                                 {user.gigHostedCount ?? 0}
                               </span>
                             </div>
-                            <div className="text-xs font-medium text-gray-500">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-black/40 dark:text-white/40">
                               Collaborated <br />
-                              <span className="text-purple-500 font-semibold text-base">
+                              <span className="text-black dark:text-white font-bold text-base">
                                 {user.gigCollaboratedCount ?? 0}
                               </span>
                             </div>
@@ -579,8 +579,8 @@ export default function Home() {
                         className={`px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 hover:scale-105 ${
                           isCurrentPage
                             ? theme === "light"
-                              ? "bg-blue-500 text-white border border-blue-500"
-                              : "bg-blue-600 text-white border border-blue-600"
+                              ? "bg-black text-white border border-black"
+                              : "bg-white text-black border border-white"
                             : theme === "light"
                             ? "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                             : "bg-neutral-800 border border-neutral-600 text-gray-300 hover:bg-neutral-700"

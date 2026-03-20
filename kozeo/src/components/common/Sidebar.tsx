@@ -127,8 +127,8 @@ export default function Sidebar() {
                         className={`absolute left-full ml-2 px-2 py-1 text-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[99999] top-1/2 transform -translate-y-1/2 shadow-lg border ${
                           isActive
                             ? theme === "light"
-                              ? "bg-blue-100 text-blue-600 border-blue-200"
-                              : "bg-blue-900/50 text-blue-400 border-blue-800"
+                              ? "bg-black text-white border-black"
+                              : "bg-white text-black border-white"
                             : theme === "light"
                             ? "bg-white text-gray-900 border-gray-200"
                             : "bg-neutral-800 text-white border-neutral-700"
@@ -140,8 +140,8 @@ export default function Sidebar() {
                           className={`absolute right-full top-1/2 transform -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent ${
                             isActive
                               ? theme === "light"
-                                ? "border-r-blue-100"
-                                : "border-r-blue-900/50"
+                                ? "border-r-black"
+                                : "border-r-white"
                               : theme === "light"
                               ? "border-r-white"
                               : "border-r-neutral-800"

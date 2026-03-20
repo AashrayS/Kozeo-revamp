@@ -526,10 +526,10 @@ export default function DescriptionClient() {
               <div className="mb-8">
                 {gig.amount === 0 ? (
                   <div
-                    className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                    className={`inline-flex items-center px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ${
                       theme === "dark"
-                        ? "bg-gradient-to-r from-purple-900/60 to-blue-900/60 text-purple-300 border border-purple-700/50"
-                        : "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200"
+                        ? "bg-white/10 text-white/90 border border-white/10"
+                        : "bg-black/5 text-black/80 border border-black/5"
                     }`}
                   >
                     <FiStar className="w-4 h-4 mr-2" />
@@ -679,12 +679,12 @@ export default function DescriptionClient() {
                           gig.guest &&
                           gig.guest.username === user.username
                         ? theme === "light"
-                          ? "text-green-600"
-                          : "text-green-400"
+                          ? "text-black font-black"
+                          : "text-white font-black"
                         : requested
                         ? theme === "light"
-                          ? "text-yellow-600"
-                          : "text-yellow-400"
+                          ? "text-black/60 font-black"
+                          : "text-white/60 font-black"
                         : theme === "light"
                         ? "text-gray-600"
                         : "text-gray-400"

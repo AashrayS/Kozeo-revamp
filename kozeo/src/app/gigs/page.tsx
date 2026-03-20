@@ -226,7 +226,7 @@ export default function GigListPage() {
                     onClick={() => handleGigNavigation(gig)}
                     className={`relative flex flex-col justify-between h-full min-h-[320px] rounded-lg p-5 shadow-md transition-all duration-200 ease-in-out hover:scale-[1.03] cursor-pointer ${
                       theme === "dark"
-                        ? "bg-gradient-to-br from-[#111] to-[#1a1a1a] hover:bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.1),_rgba(168,85,247,0.1))]"
+                        ? "bg-gradient-to-br from-[#111] to-[#1a1a1a] hover:bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.05),_rgba(255,255,255,0.02))]"
                         : "bg-white/90 hover:bg-white border border-gray-200 shadow-lg hover:shadow-xl"
                     }`}
                   >
@@ -251,7 +251,7 @@ export default function GigListPage() {
                     {/* Top Content */}
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <div className="text-sm text-cyan-400 font-medium">
+                        <div className="text-sm text-white/40 font-medium">
                           @{gig.host.username}
                         </div>
                         {user && gig.host.id === user.id ? (
@@ -372,8 +372,8 @@ export default function GigListPage() {
                         <div
                           className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-300 ${
                             theme === "dark"
-                              ? "bg-gradient-to-r from-purple-900/60 to-blue-900/60 text-purple-300 border border-purple-700/50"
-                              : "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 border border-purple-200"
+                              ? "bg-white/10 text-white/80 border border-white/20"
+                              : "bg-black/5 text-black/80 border border-black/10"
                           }`}
                         >
                           <FiStar className="w-3 h-3 mr-1" />

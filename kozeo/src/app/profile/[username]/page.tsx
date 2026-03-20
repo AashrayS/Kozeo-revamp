@@ -546,7 +546,7 @@ export default function UserProfilePage() {
         <div className="text-center max-w-md mx-auto">
           <div className="text-8xl mb-6 animate-bounce">🤖</div>
           <h2
-            className={`text-4xl font-bold mb-4 bg-gradient-to-r from-red-500 via-pink-500 to-purple-500 bg-clip-text text-transparent ${
+            className={`text-4xl font-bold mb-4 bg-gradient-to-r from-black via-black/80 to-black/60 dark:from-white dark:via-white/80 dark:to-white/60 bg-clip-text text-transparent ${
               theme === "dark" ? "drop-shadow-lg" : ""
             }`}
           >
@@ -571,7 +571,7 @@ export default function UserProfilePage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => window.location.reload()}
-              className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+               className="px-8 py-3 bg-black dark:bg-white text-white dark:text-black rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
             >
               Try Again 🔄
             </button>

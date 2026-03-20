@@ -5,9 +5,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --blue-glow: #3b82f6;
-  --blue-light: #60a5fa;
-  --blue-ultra: #93c5fd;
+  --premium-glow: rgba(255, 255, 255, 0.2);
+  --premium-accent: #888888;
 }
 
 /* Allow the root background to transition smoothly */
@@ -242,13 +241,13 @@ img {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Blue Glow Effect */
-.glow-blue {
-  box-shadow: 0 0 30px rgba(59, 130, 246, 0.4), 0 0 60px rgba(59, 130, 246, 0.15);
+/* Premium Monochrome Glow Effect */
+.glow-premium {
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.1), 0 0 60px rgba(255, 255, 255, 0.05);
 }
 
-.text-glow-blue {
-  text-shadow: 0 0 20px rgba(96, 165, 250, 0.6);
+.text-glow-premium {
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
 }
 
 /* ===================== SCROLLBAR ===================== */
@@ -288,10 +287,12 @@ img {
 
 /* ===================== CUSTOM SCROLLBAR (DARK) ===================== */
 .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: rgba(156,163,175,0.1); border-radius: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.5); border-radius: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(59,130,246,0.7); }
-.custom-scrollbar { scrollbar-width: thin; scrollbar-color: rgba(59,130,246,0.5) rgba(156,163,175,0.1); }
+.custom-scrollbar::-webkit-scrollbar-track { background: rgba(156,163,175,0.05); border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+.dark-theme .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+.dark-theme .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+.custom-scrollbar { scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.1) rgba(156,163,175,0.05); }
 
 .chat-scrollbar::-webkit-scrollbar { width: 4px; }
 .chat-scrollbar::-webkit-scrollbar-track { background: rgba(64,64,64,0.2); }
