@@ -27,7 +27,7 @@ export const DynamicShowcase = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: NodeJS.Timeout | undefined;
 
     const runShowcase = async () => {
       // ─── Stage 0: Typing ──────────────────────────────────────────

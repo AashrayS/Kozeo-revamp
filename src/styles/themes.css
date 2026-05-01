@@ -1,3 +1,5 @@
+@reference "tailwindcss";
+
 /* Theme Variables */
 :root {
   /* Dark Theme (Default) */
